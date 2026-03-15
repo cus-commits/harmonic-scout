@@ -255,6 +255,43 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
   );
 
   /* ═══════════════════════════════════════════════════ */
+  /* INLINE TEAM PICKER — for mobile settings panel     */
+  /* ═══════════════════════════════════════════════════ */
+  const TEAM_NAMES = ['Mark', 'Joe', 'Liam', 'Carlo', 'Jake', 'Serena'];
+  const RESTRICTED_NAMES = ['Dean', 'Brett'];
+
+  function InlineTeamPicker() {
+    const [user, setUser] = useState(localStorage.getItem('crm_user') || '');
+    const pick = (name) => { localStorage.setItem('crm_user', name); setUser(name); window.location.reload(); };
+    const clear = () => { localStorage.removeItem('crm_user'); setUser(''); window.location.reload(); };
+
+    if (user) {
+      const isR = RESTRICTED_NAMES.includes(user);
+      return (
+        <div className="flex items-center justify-between">
+          <span className={`text-sm font-bold ${isR ? 'text-red-400/70' : 'text-amber-400'}`}>{user} {isR ? '(view only)' : ''}</span>
+          <button onClick={clear} className="text-[10px] px-2 py-1 rounded-md border border-red-500/20 text-red-400/60 hover:text-red-400">Change</button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-2 gap-1.5">
+        {[...TEAM_NAMES, ...RESTRICTED_NAMES].map(name => (
+          <button key={name} onClick={() => pick(name)}
+            className={`text-xs px-3 py-2 rounded-lg border font-medium transition-colors text-left ${
+              RESTRICTED_NAMES.includes(name)
+                ? 'border-border/20 text-muted/50 hover:bg-white/3'
+                : 'border-amber-400/15 text-bright/70 hover:bg-amber-500/10 hover:border-amber-400/25'
+            }`}>
+            {name} {RESTRICTED_NAMES.includes(name) ? <span className="text-[9px] text-muted/30">(view)</span> : ''}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  /* ═══════════════════════════════════════════════════ */
   /* MOBILE NAV                                          */
   /* ═══════════════════════════════════════════════════ */
   if (isMobile) {
@@ -290,7 +327,6 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
               <div className="p-3 space-y-1">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-[10px] uppercase tracking-widest text-muted/50 font-bold">All Pages</p>
-                  <CrmIdentity />
                 </div>
 
                 {/* Search */}
@@ -380,10 +416,10 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
                   )}
                 </div>
 
-                {/* Team Identity */}
+                {/* Team Identity — inline picker */}
                 <div className="glass-card p-3">
                   <p className="text-[10px] uppercase tracking-wider text-muted font-medium mb-1.5">Team Identity</p>
-                  <CrmIdentity />
+                  <InlineTeamPicker />
                 </div>
 
                 {/* API Keys */}
