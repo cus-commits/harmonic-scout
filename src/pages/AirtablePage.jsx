@@ -91,6 +91,7 @@ export default function AirtablePage() {
   const [expandedNote, setExpandedNote] = useState(null);
   const [noteModal, setNoteModal] = useState(null); // { company, existing }
   const [noteText, setNoteText] = useState('');
+  const [reachoutModal, setReachoutModal] = useState(null); // { company, notes, loading }
   const [savingNote, setSavingNote] = useState(false); // "company-IN" or "company-OUT"
   const crmUser = typeof window !== 'undefined' ? localStorage.getItem('crm_user') || '' : '';
 
@@ -607,7 +608,28 @@ export default function AirtablePage() {
               const twitterWarn = ta && ta.days_since !== null && ta.days_since > 10;
 
               return (
-                <div key={c.airtable_id || i} className="rounded-xl border border-border/25 bg-surface/50 transition-all">
+                <div key={c.airtable_id || i} className="rounded-xl border border-border/25 bg-surface/50 transition-all relative">
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      if (c.reachout_notes) {
+                        setReachoutModal({ company: c.company, notes: c.reachout_notes || 'No reachout notes found.', loading: false });
+                      } else {
+                        setReachoutModal({ company: c.company, notes: '', loading: true });
+                        try {
+                          const resp = await fetch(`${API_BASE}/api/airtable/reachout-notes?company=${encodeURIComponent(c.company)}`);
+                          const data = await resp.json();
+                          setReachoutModal({ company: c.company, notes: data.reachoutNotes || 'No reachout notes found.', loading: false });
+                        } catch(err) {
+                          setReachoutModal({ company: c.company, notes: 'Error loading notes: ' + err.message, loading: false });
+                        }
+                      }
+                    }}
+                    className="absolute top-2 right-2 text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 transition-colors z-10"
+                    title="View initial reachout notes"
+                  >
+                    Reachouts
+                  </button>
                   <div className="p-3 space-y-1.5">
                     {/* Row 1: Logo + Name + Website + Twitter */}
                     <div className="flex items-start gap-3">
@@ -843,6 +865,25 @@ export default function AirtablePage() {
                 {enrichCommitting ? 'Writing...' : `✓ Write ${Object.keys(enrichPreview.updates || {}).length} fields to Airtable`}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reachout Notes Modal */}
+      {reachoutModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setReachoutModal(null)}>
+          <div className="bg-surface border border-border/50 rounded-xl p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-bright font-semibold text-lg">Reachout Notes — {reachoutModal.company}</h3>
+              <button onClick={() => setReachoutModal(null)} className="text-muted hover:text-bright text-xl">×</button>
+            </div>
+            {reachoutModal.loading ? (
+              <p className="text-muted text-sm">Loading...</p>
+            ) : (
+              <div className="text-bright/80 text-sm whitespace-pre-wrap leading-relaxed">
+                {reachoutModal.notes}
+              </div>
+            )}
           </div>
         </div>
       )}
