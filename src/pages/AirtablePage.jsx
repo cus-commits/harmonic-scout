@@ -880,9 +880,49 @@ export default function AirtablePage() {
             {reachoutModal.loading ? (
               <p className="text-muted text-sm">Loading...</p>
             ) : (
-              <div className="text-bright/80 text-sm whitespace-pre-wrap leading-relaxed">
-                {reachoutModal.notes}
-              </div>
+              <>
+                <div className="text-bright/80 text-sm whitespace-pre-wrap leading-relaxed mb-4 p-3 bg-ink/30 rounded-lg border border-border/20 min-h-[60px]">
+                  {reachoutModal.notes || <span className="text-muted italic">No reachout notes yet.</span>}
+                </div>
+                <div className="border-t border-border/30 pt-3">
+                  <textarea
+                    id="reachout-new-note"
+                    placeholder="Add a reachout note..."
+                    className="w-full bg-ink/50 border border-border/30 rounded-lg p-3 text-bright text-sm resize-none focus:outline-none focus:border-accent/50"
+                    rows={2}
+                  />
+                  <div className="flex justify-end mt-2">
+                    <button
+                      onClick={async () => {
+                        const noteEl = document.getElementById('reachout-new-note');
+                        const note = noteEl?.value?.trim();
+                        if (!note) return;
+                        const crmName = localStorage.getItem('crm_identity') || 'Unknown';
+                        const API_BASE = import.meta.env.VITE_API_URL || 'https://pigeon-api.up.railway.app';
+                        try {
+                          const resp = await fetch(`${API_BASE}/api/airtable/save-reachout-note`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ company: reachoutModal.company, author: crmName, note })
+                          });
+                          const data = await resp.json();
+                          if (data.success) {
+                            setReachoutModal(prev => ({ ...prev, notes: data.notes }));
+                            noteEl.value = '';
+                          } else {
+                            alert('Failed to save: ' + (data.error || 'Unknown error'));
+                          }
+                        } catch(err) {
+                          alert('Error: ' + err.message);
+                        }
+                      }}
+                      className="px-4 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 text-sm font-medium transition-colors"
+                    >
+                      Save Note
+                    </button>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>
