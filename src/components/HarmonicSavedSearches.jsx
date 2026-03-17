@@ -12,7 +12,7 @@ function CompanyCard({ company, addFavorite, isFavorited }) {
   const logo = company.logo_url || company.logo || company.logoUrl || '';
   const stage = company.funding_stage || company.stage || '';
   const ft = company.funding_total || company.fundingTotal || null;
-  const funding = typeof ft === 'number' && ft > 0 ? (ft >= 1e6 ? `$${(ft / 1e6).toFixed(1)}M` : `$${(ft / 1e3).toFixed(0)}K`) : null;
+  const funding = typeof ft === 'number' && ft > 0 ? (ft >= 1e9 ? `$${(ft/1e9).toFixed(1)}B` : ft >= 1e6 ? `$${(ft / 1e6).toFixed(1)}M` : `$${(ft / 1e3).toFixed(0)}K`) : null;
   const desc = typeof company.description === 'string' ? company.description.slice(0, 200) : '';
   const hc = company.headcount || null;
   const loc = typeof company.location === 'string' ? company.location : '';

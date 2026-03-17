@@ -693,7 +693,7 @@ function TopPicksPanel({ personId, addFavorite, isFavorited }) {
                 const globalIdx = picks.indexOf(pick);
                 const isLogicOpen = expandedLogic === globalIdx;
                 const stage = c.funding_stage ? (typeof c.funding_stage === 'string' ? c.funding_stage : '').replace(/_/g,' ').replace(/\b\w/g, ch => ch.toUpperCase()).replace('Pre Seed','Preseed') : '';
-                const total = c.funding_total ? (c.funding_total >= 1e6 ? `$${(c.funding_total/1e6).toFixed(1)}M` : `$${(c.funding_total/1e3).toFixed(0)}K`) : null;
+                const total = c.funding_total ? (c.funding_total >= 1e9 ? `$${(c.funding_total/1e9).toFixed(1)}B` : c.funding_total >= 1e6 ? `$${(c.funding_total/1e6).toFixed(1)}M` : `$${(c.funding_total/1e3).toFixed(0)}K`) : null;
                 const saved = isFavorited && isFavorited(c.name);
                 const scanLabel = pick.scanName || 'Scan';
                 const scanIcon = pick.scanMode === 'savedSearch' ? 'Ⓗ' : '🔍';
@@ -1729,7 +1729,7 @@ export default function AutoScanPage({ addFavorite, isFavorited }) {
                           <span className="text-sm font-semibold text-bright">{s.name}</span>
                         )}
                         {s.stage && <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300/60 border border-emerald-400/15">{String(s.stage).replace(/_/g,' ')}</span>}
-                        {s.funding_total && <span className="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-300/60 border border-sky-400/15">💰 {typeof s.funding_total === 'number' ? (s.funding_total >= 1e6 ? `$${(s.funding_total/1e6).toFixed(1)}M` : `$${s.funding_total}`) : s.funding_total}</span>}
+                        {s.funding_total && <span className="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-300/60 border border-sky-400/15">💰 {typeof s.funding_total === 'number' ? (s.funding_total >= 1e9 ? `$${(s.funding_total/1e9).toFixed(1)}B` : s.funding_total >= 1e6 ? `$${(s.funding_total/1e6).toFixed(1)}M` : `$${s.funding_total}`) : s.funding_total}</span>}
                       </div>
                       {s.description && <p className="text-[10px] text-bright/40 truncate mt-0.5">{s.description}</p>}
                       {(s.location || s.headcount) && (

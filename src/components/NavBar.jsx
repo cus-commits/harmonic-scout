@@ -218,7 +218,7 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
           {searchResults.map((s, i) => {
             const webUrl = s.website ? (s.website.startsWith('http') ? s.website : `https://${s.website}`) : null;
             const ft = s.funding_total;
-            const funding = ft && typeof ft === 'number' ? (ft >= 1e6 ? `$${(ft/1e6).toFixed(1)}M` : `$${(ft/1e3).toFixed(0)}K`) : null;
+            const funding = ft && typeof ft === 'number' ? (ft >= 1e9 ? `$${(ft/1e9).toFixed(1)}B` : ft >= 1e6 ? `$${(ft/1e6).toFixed(1)}M` : `$${(ft/1e3).toFixed(0)}K`) : null;
             return (
               <div key={s.id || i} className="px-3 py-2 hover:bg-amber-500/8 transition-colors border-b border-white/3 last:border-0">
                 <div className="flex items-center gap-2">
