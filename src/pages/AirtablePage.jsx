@@ -211,8 +211,8 @@ export default function AirtablePage() {
     setTwitterChecking(false);
   };
 
-  const stages = ['BO', 'BORO', 'BORO-SM', 'Warm', 'Reachouts'];
-  const stageLabels = { 'BO': 'BO', 'BORO': 'BORO', 'BORO-SM': '🏆 SM', 'Warm': 'Warm', 'Reachouts': '📞 Reachouts' };
+  const stages = ['BO', 'BORO', 'BORO-SM', 'Warm'];
+  const stageLabels = { 'BO': 'BO', 'BORO': 'BORO', 'BORO-SM': '🏆 SM', 'Warm': 'Warm' };
   const [allReachouts, setAllReachouts] = useState([]);
 
   const fetchCompanies = async (stage, silent = false) => {
@@ -507,6 +507,10 @@ export default function AirtablePage() {
           {Object.keys(enrichAvailable).length > 0 && (
             <span className="text-[9px] text-amber-400 font-bold">{Object.keys(enrichAvailable).length} ⚡</span>
           )}
+          <button onClick={() => setActiveStage('Reachouts')}
+            className={`text-[9px] px-2.5 py-1.5 rounded-lg font-medium ${activeStage === 'Reachouts' ? 'bg-amber-500/20 border border-amber-400/30 text-amber-300' : 'bg-amber-500/10 border border-amber-400/20 text-amber-400 hover:bg-amber-500/20'}`}>
+            📞 Reachout History
+          </button>
           <button onClick={() => fetchCompanies(activeStage)}
             className="text-[9px] px-2 py-1.5 rounded-lg border border-border/20 text-muted/40 hover:text-bright">↻</button>
         </div>
@@ -615,7 +619,7 @@ export default function AirtablePage() {
                         }`}>{c.crm_stage}</span>
                       </div>
                       <button
-                        onClick={() => setReachoutModal({ company: c.company, notes: c.reachout_notes || '', loading: false })}
+                        onClick={() => setReachoutModal({ company: c.company, stage: c.crm_stage, notes: c.reachout_notes || '', loading: false })}
                         className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 hover:bg-amber-500/30"
                       >+ Add Note</button>
                     </div>
@@ -667,15 +671,15 @@ export default function AirtablePage() {
                     onClick={async (e) => {
                       e.stopPropagation();
                       if (c.reachout_notes) {
-                        setReachoutModal({ company: c.company, notes: c.reachout_notes || 'No reachout notes found.', loading: false });
+                        setReachoutModal({ company: c.company, stage: c.crm_stage, notes: c.reachout_notes || 'No reachout notes found.', loading: false });
                       } else {
-                        setReachoutModal({ company: c.company, notes: '', loading: true });
+                        setReachoutModal({ company: c.company, stage: c.crm_stage, notes: '', loading: true });
                         try {
                           const resp = await fetch(`${API_BASE}/api/airtable/reachout-notes?company=${encodeURIComponent(c.company)}`);
                           const data = await resp.json();
-                          setReachoutModal({ company: c.company, notes: data.reachoutNotes || 'No reachout notes found.', loading: false });
+                          setReachoutModal({ company: c.company, stage: c.crm_stage, notes: data.reachoutNotes || 'No reachout notes found.', loading: false });
                         } catch(err) {
-                          setReachoutModal({ company: c.company, notes: 'Error loading notes: ' + err.message, loading: false });
+                          setReachoutModal({ company: c.company, stage: c.crm_stage, notes: 'Error loading notes: ' + err.message, loading: false });
                         }
                       }
                     }}
@@ -928,7 +932,15 @@ export default function AirtablePage() {
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setReachoutModal(null)}>
           <div className="bg-surface border border-border/50 rounded-xl p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-bright font-semibold text-lg">Reachout Notes — {reachoutModal.company}</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-bright font-semibold text-lg">Reachout Notes — {reachoutModal.company}</h3>
+                {reachoutModal.stage && <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold ${
+                  reachoutModal.stage === 'BO' ? 'bg-sky-500/20 text-sky-300' :
+                  reachoutModal.stage === 'BORO' ? 'bg-violet-500/20 text-violet-300' :
+                  reachoutModal.stage === 'BORO-SM' ? 'bg-emerald-500/20 text-emerald-300' :
+                  'bg-white/10 text-white/50'
+                }`}>{reachoutModal.stage}</span>}
+              </div>
               <button onClick={() => setReachoutModal(null)} className="text-muted hover:text-bright text-xl">×</button>
             </div>
             {reachoutModal.loading ? (
