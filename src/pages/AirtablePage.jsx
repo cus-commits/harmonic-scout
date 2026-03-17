@@ -227,15 +227,23 @@ export default function AirtablePage() {
         ]);
         const all = [...(bo.companies||[]), ...(boro.companies||[]), ...(sm.companies||[])].filter(c => c.company && c.company.trim());
         const withNotes = all.filter(c => c.reachout_notes && c.reachout_notes.trim());
-        // Sort by most recent timestamp in notes (descending)
+        // Sort by most recent activity — check note timestamps first, fall back to created_time
         withNotes.sort((a, b) => {
-          const getLastDate = (notes) => {
-            const matches = (notes || '').match(/\[.*?·\s*([A-Za-z]+ \d+, \d{4},? [\d:]+ [AP]M)/g);
-            if (!matches || matches.length === 0) return 0;
-            const last = matches[matches.length - 1].match(/·\s*(.+)/);
-            return last ? new Date(last[1].replace(' EST', '')).getTime() || 0 : 0;
+          const getLastDate = (company) => {
+            const notes = company.reachout_notes || '';
+            // Try to find [Author · Date] timestamps
+            const matches = notes.match(/\[.*?·\s*([A-Za-z]+ \d+,?\s*\d{4}.*?)\]/g);
+            if (matches && matches.length > 0) {
+              const last = matches[matches.length - 1].match(/·\s*(.+)\]/);
+              if (last) {
+                const d = new Date(last[1].replace(' EST', '').trim());
+                if (!isNaN(d.getTime())) return d.getTime();
+              }
+            }
+            // Fall back to Airtable created_time
+            return company.created_time ? new Date(company.created_time).getTime() : 0;
           };
-          return getLastDate(b.reachout_notes) - getLastDate(a.reachout_notes);
+          return getLastDate(b) - getLastDate(a);
         });
         setAllReachouts(withNotes);
         setCompanies(withNotes);
