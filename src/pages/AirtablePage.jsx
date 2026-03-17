@@ -642,14 +642,20 @@ export default function AirtablePage() {
                       >+ Add Note</button>
                     </div>
                     <div className="space-y-1">
-                      {notes.map((line, j) => {
+                      {(() => {
+                        const hasLegacyLabel = notes.some(l => l.startsWith('--- Legacy'));
+                        const hasUndated = notes.some(l => l.trim() && !l.startsWith('[') && !l.startsWith('---'));
+                        const els = [];
+                        if (!hasLegacyLabel && hasUndated) els.push(<div key="lh" className="text-muted text-[10px] mb-1 border-b border-border/20 pb-0.5">Legacy notes (no date)</div>);
+                        notes.forEach((line, j) => {
                         const tsMatch = line.match(/^\[([^\]]+)\]\s*(.*)/);
                         if (tsMatch) {
-                          return <div key={j}><span className="text-muted text-[10px]">{tsMatch[1]}</span><p className="text-bright/80 text-sm">{tsMatch[2]}</p></div>;
-                        }
-                        if (line.startsWith('---')) return <div key={j} className="text-muted text-[10px] border-t border-border/20 pt-1 mt-1">{line}</div>;
-                        return <p key={j} className="text-bright/80 text-sm">{line}</p>;
-                      })}
+                          els.push(<div key={j}><span className="text-muted text-[10px]">{tsMatch[1]}</span><p className="text-bright/80 text-sm">{tsMatch[2]}</p></div>);
+                        } else if (line.startsWith('---')) { els.push(<div key={j} className="text-muted text-[10px] border-t border-border/20 pt-1 mt-1">{line}</div>);
+                        } else if (line.trim()) { els.push(<p key={j} className="text-bright/80 text-sm">{line}</p>); }
+                        });
+                        return els;
+                      })()}
                     </div>
                   </div>
                 );
@@ -966,15 +972,26 @@ export default function AirtablePage() {
             ) : (
               <>
                 <div className="text-bright/80 text-sm leading-relaxed mb-4 p-3 bg-ink/30 rounded-lg border border-border/20 min-h-[60px]">
-                  {reachoutModal.notes ? reachoutModal.notes.split('\n').map((line, i) => {
-                    const tsMatch = line.match(/^\[([^\]]+)\]\s*(.*)/);
-                    if (tsMatch) {
-                      return <div key={i} className="mb-2"><span className="text-muted text-[10px] block">{tsMatch[1]}</span><span>{tsMatch[2]}</span></div>;
-                    }
-                    if (line.startsWith('---')) return <div key={i} className="text-muted text-[10px] my-2 border-t border-border/20 pt-1">{line}</div>;
-                    if (line.trim()) return <div key={i}>{line}</div>;
-                    return null;
-                  }) : <span className="text-muted italic">No reachout notes yet.</span>}
+                  {reachoutModal.notes ? (() => {
+                    const lines = reachoutModal.notes.split('\n');
+                    const hasAnyTimestamp = lines.some(l => /^\[.*·.*\]/.test(l));
+                    const hasLegacyLabel = lines.some(l => l.startsWith('--- Legacy'));
+                    const hasUndatedContent = lines.some(l => l.trim() && !l.startsWith('[') && !l.startsWith('---'));
+                    const showLegacyHeader = !hasLegacyLabel && hasUndatedContent;
+                    const elements = [];
+                    if (showLegacyHeader) elements.push(<div key="legacy-hdr" className="text-muted text-[10px] mb-2 border-b border-border/20 pb-1">Legacy notes (no date)</div>);
+                    lines.forEach((line, i) => {
+                      const tsMatch = line.match(/^\[([^\]]+)\]\s*(.*)/);
+                      if (tsMatch) {
+                        elements.push(<div key={i} className="mb-2"><span className="text-muted text-[10px] block">{tsMatch[1]}</span><span>{tsMatch[2]}</span></div>);
+                      } else if (line.startsWith('---')) {
+                        elements.push(<div key={i} className="text-muted text-[10px] my-2 border-t border-border/20 pt-1">{line}</div>);
+                      } else if (line.trim()) {
+                        elements.push(<div key={i}>{line}</div>);
+                      }
+                    });
+                    return elements;
+                  })() : <span className="text-muted italic">No reachout notes yet.</span>}
                 </div>
                 <div className="border-t border-border/30 pt-3">
                   <textarea
