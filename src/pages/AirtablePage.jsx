@@ -881,8 +881,16 @@ export default function AirtablePage() {
               <p className="text-muted text-sm">Loading...</p>
             ) : (
               <>
-                <div className="text-bright/80 text-sm whitespace-pre-wrap leading-relaxed mb-4 p-3 bg-ink/30 rounded-lg border border-border/20 min-h-[60px]">
-                  {reachoutModal.notes || <span className="text-muted italic">No reachout notes yet.</span>}
+                <div className="text-bright/80 text-sm leading-relaxed mb-4 p-3 bg-ink/30 rounded-lg border border-border/20 min-h-[60px]">
+                  {reachoutModal.notes ? reachoutModal.notes.split('\n').map((line, i) => {
+                    const tsMatch = line.match(/^\[([^\]]+)\]\s*(.*)/);
+                    if (tsMatch) {
+                      return <div key={i} className="mb-2"><span className="text-muted text-[10px] block">{tsMatch[1]}</span><span>{tsMatch[2]}</span></div>;
+                    }
+                    if (line.startsWith('---')) return <div key={i} className="text-muted text-[10px] my-2 border-t border-border/20 pt-1">{line}</div>;
+                    if (line.trim()) return <div key={i}>{line}</div>;
+                    return null;
+                  }) : <span className="text-muted italic">No reachout notes yet.</span>}
                 </div>
                 <div className="border-t border-border/30 pt-3">
                   <textarea
