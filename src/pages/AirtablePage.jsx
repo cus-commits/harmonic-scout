@@ -211,16 +211,30 @@ export default function AirtablePage() {
     setTwitterChecking(false);
   };
 
-  const stages = ['BO', 'BORO', 'BORO-SM', 'Warm'];
-  const stageLabels = { 'BO': 'BO', 'BORO': 'BORO', 'BORO-SM': '🏆 SM', 'Warm': 'Warm' };
+  const stages = ['BO', 'BORO', 'BORO-SM', 'Warm', 'Reachouts'];
+  const stageLabels = { 'BO': 'BO', 'BORO': 'BORO', 'BORO-SM': '🏆 SM', 'Warm': 'Warm', 'Reachouts': '📞 Reachouts' };
+  const [allReachouts, setAllReachouts] = useState([]);
 
   const fetchCompanies = async (stage, silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const url = `${API_BASE}/api/airtable/companies?limit=200${stage ? `&stage=${encodeURIComponent(stage)}` : ''}`;
-      const r = await fetch(url);
-      const data = await r.json();
-      setCompanies((data.companies || []).filter(c => c.company && c.company.trim()));
+      if (stage === 'Reachouts') {
+        // Fetch all 3 pipeline stages and combine companies with reachout notes
+        const [bo, boro, sm] = await Promise.all([
+          fetch(`${API_BASE}/api/airtable/companies?stage=BO&limit=200`).then(r => r.json()),
+          fetch(`${API_BASE}/api/airtable/companies?stage=BORO&limit=200`).then(r => r.json()),
+          fetch(`${API_BASE}/api/airtable/companies?stage=BORO-SM&limit=200`).then(r => r.json()),
+        ]);
+        const all = [...(bo.companies||[]), ...(boro.companies||[]), ...(sm.companies||[])].filter(c => c.company && c.company.trim());
+        const withNotes = all.filter(c => c.reachout_notes && c.reachout_notes.trim());
+        setAllReachouts(withNotes);
+        setCompanies(withNotes);
+      } else {
+        const url = `${API_BASE}/api/airtable/companies?limit=200${stage ? `&stage=${encodeURIComponent(stage)}` : ''}`;
+        const r = await fetch(url);
+        const data = await r.json();
+        setCompanies((data.companies || []).filter(c => c.company && c.company.trim()));
+      }
       setLastRefresh(new Date());
     } catch (e) { console.error('Airtable fetch error:', e); }
     if (!silent) setLoading(false);
@@ -580,6 +594,46 @@ export default function AirtablePage() {
       {loading ? (
         <div className="flex justify-center py-12">
           <div className="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : activeStage === 'Reachouts' ? (
+        <div>
+          {filtered.length === 0 ? (
+            <p className="text-muted/35 text-xs text-center py-8">No reachout notes found across pipeline</p>
+          ) : (
+            <div className="space-y-3">
+              {filtered.map((c, i) => {
+                const notes = (c.reachout_notes || '').split('\n').filter(l => l.trim());
+                return (
+                  <div key={i} className="bg-surface/50 border border-border/25 rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-bright font-semibold text-sm">{c.company}</span>
+                        <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold ${
+                          c.crm_stage === 'BO' ? 'bg-sky-500/20 text-sky-300' :
+                          c.crm_stage === 'BORO' ? 'bg-violet-500/20 text-violet-300' :
+                          'bg-emerald-500/20 text-emerald-300'
+                        }`}>{c.crm_stage}</span>
+                      </div>
+                      <button
+                        onClick={() => setReachoutModal({ company: c.company, notes: c.reachout_notes || '', loading: false })}
+                        className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 hover:bg-amber-500/30"
+                      >+ Add Note</button>
+                    </div>
+                    <div className="space-y-1">
+                      {notes.map((line, j) => {
+                        const tsMatch = line.match(/^\[([^\]]+)\]\s*(.*)/);
+                        if (tsMatch) {
+                          return <div key={j}><span className="text-muted text-[10px]">{tsMatch[1]}</span><p className="text-bright/80 text-sm">{tsMatch[2]}</p></div>;
+                        }
+                        if (line.startsWith('---')) return <div key={j} className="text-muted text-[10px] border-t border-border/20 pt-1 mt-1">{line}</div>;
+                        return <p key={j} className="text-bright/80 text-sm">{line}</p>;
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       ) : filtered.length === 0 ? (
         <p className="text-muted/35 text-xs text-center py-8">No companies</p>
