@@ -1019,69 +1019,49 @@ export default function AirtablePage() {
             {reachoutModal.loading ? (
               <p className="text-muted text-sm">Loading...</p>
             ) : (
-              <>
-                <div className="text-bright/80 text-sm leading-relaxed mb-4 p-3 bg-ink/30 rounded-lg border border-border/20 min-h-[60px]">
-                  {reachoutModal.notes ? (() => {
-                    const lines = reachoutModal.notes.split('\n');
-                    const fullText = reachoutModal.notes;
-                    const hasLegacyLabel = lines.some(l => l.startsWith('--- Legacy'));
-                    // Check if notes contain ANY date reference — brackets, parens, or inline
-                    const hasAnyDate = /\[.*·.*\]|\(\d{1,2}\/\d{1,2}\/\d{2,4}\)|\(\w+ \d{1,2},? \d{4}\)|\d{1,2}\/\d{1,2}\/\d{2,4}/.test(fullText);
-                    const showLegacyHeader = !hasLegacyLabel && !hasAnyDate && fullText.trim().length > 0;
-                    const elements = [];
-                    if (showLegacyHeader) elements.push(<div key="legacy-hdr" className="text-muted text-[10px] mb-2 border-b border-border/20 pb-1">Legacy notes (no date)</div>);
-                    lines.forEach((line, i) => {
-                      const tsMatch = line.match(/^\[([^\]]+)\]\s*(.*)/);
-                      if (tsMatch) {
-                        elements.push(<div key={i} className="mb-2"><span className="text-muted text-[10px] block">{tsMatch[1]}</span><span>{tsMatch[2]}</span></div>);
-                      } else if (line.startsWith('---')) {
-                        elements.push(<div key={i} className="text-muted text-[10px] my-2 border-t border-border/20 pt-1">{line}</div>);
-                      } else if (line.trim()) {
-                        elements.push(<div key={i}>{line}</div>);
+              <div className="space-y-0">
+                {reachoutModal.notes ? (() => {
+                  // Parse notes into structured entries with author, date, and content
+                  const rawLines = reachoutModal.notes.split('\n').filter(l => l.trim() && !l.startsWith('--- Legacy') && !l.startsWith('--- New'));
+                  const entries = [];
+                  let currentEntry = null;
+
+                  rawLines.forEach(line => {
+                    const bracketMatch = line.match(/^\[([^·]+)·\s*(.+?)\]\s*(.*)/);
+                    if (bracketMatch) {
+                      if (currentEntry) entries.push(currentEntry);
+                      currentEntry = { author: bracketMatch[1].trim(), date: bracketMatch[2].trim(), text: bracketMatch[3] || '' };
+                    } else if (line.startsWith('---')) {
+                      // skip dividers
+                    } else {
+                      // Check for inline date like (3/17/2026)
+                      const inlineDateMatch = line.match(/\((\d{1,2}\/\d{1,2}\/\d{2,4})\)/);
+                      if (currentEntry) {
+                        currentEntry.text += (currentEntry.text ? '\n' : '') + line;
+                      } else {
+                        entries.push({ author: '', date: inlineDateMatch ? inlineDateMatch[1] : '', text: line });
                       }
-                    });
-                    return elements;
-                  })() : <span className="text-muted italic">No reachout notes yet.</span>}
-                </div>
-                <div className="border-t border-border/30 pt-3">
-                  <textarea
-                    id="reachout-new-note"
-                    placeholder="Add a reachout note..."
-                    className="w-full bg-ink/50 border border-border/30 rounded-lg p-3 text-bright text-sm resize-none focus:outline-none focus:border-accent/50"
-                    rows={2}
-                  />
-                  <div className="flex justify-end mt-2">
-                    <button
-                      onClick={async () => {
-                        const noteEl = document.getElementById('reachout-new-note');
-                        const note = noteEl?.value?.trim();
-                        if (!note) return;
-                        const crmName = localStorage.getItem('crm_identity') || 'Unknown';
-                        const API_BASE = import.meta.env.VITE_API_URL || 'https://pigeon-api.up.railway.app';
-                        try {
-                          const resp = await fetch(`${API_BASE}/api/airtable/save-reachout-note`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ company: reachoutModal.company, author: crmName, note })
-                          });
-                          const data = await resp.json();
-                          if (data.success) {
-                            setReachoutModal(prev => ({ ...prev, notes: data.notes }));
-                            noteEl.value = '';
-                          } else {
-                            alert('Failed to save: ' + (data.error || 'Unknown error'));
-                          }
-                        } catch(err) {
-                          alert('Error: ' + err.message);
-                        }
-                      }}
-                      className="px-4 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 text-sm font-medium transition-colors"
-                    >
-                      Save Note
-                    </button>
-                  </div>
-                </div>
-              </>
+                    }
+                  });
+                  if (currentEntry) entries.push(currentEntry);
+
+                  // Reverse so newest is at top
+                  entries.reverse();
+
+                  if (entries.length === 0) return <p className="text-muted italic text-sm p-3">No reachout notes yet.</p>;
+
+                  return entries.map((e, i) => (
+                    <div key={i} className="flex gap-3 py-2.5 border-b border-border/10 last:border-0">
+                      <div className="w-[90px] flex-shrink-0 text-right">
+                        {e.date && <p className="text-[10px] text-muted/60 font-mono">{e.date.replace(' EST', '')}</p>}
+                        {e.author && <p className="text-[9px] text-amber-400/50 font-medium">{e.author}</p>}
+                        {!e.date && !e.author && <p className="text-[9px] text-red-400/40 italic">No date</p>}
+                      </div>
+                      <p className="flex-1 text-sm text-bright/80 leading-relaxed">{e.text}</p>
+                    </div>
+                  ));
+                })() : <p className="text-muted italic text-sm p-3">No reachout notes yet.</p>}
+              </div>
             )}
           </div>
         </div>
