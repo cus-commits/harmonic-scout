@@ -102,23 +102,42 @@ function loadTopPicks(personId) {
   } catch { return []; }
 }
 
+function trimCompanyForStorage(c) {
+  // Strip heavy fields to reduce localStorage size
+  if (!c) return c;
+  const { founders, executives, prior_companies, founder_prior_companies, employee_highlights, highlights, investors, lead_investors, ...light } = c;
+  if (light.description && light.description.length > 300) light.description = light.description.slice(0, 300);
+  return light;
+}
+
 function saveTopPick(personId, company, scanMeta) {
   const picks = loadTopPicks(personId);
   const exists = picks.findIndex(p => p.company?.name === company.name);
   const entry = {
-    company,
+    company: trimCompanyForStorage(company),
     addedAt: Date.now(),
-    // Use the specific saved search name if available, otherwise the profile name
     scanName: company._sourceCategory || company._sourceSearchName || scanMeta?.profileName || 'Scan',
     profileName: scanMeta?.profileName || 'Scan',
     scanMode: scanMeta?.scanMode || 'keywords',
-    analysis: scanMeta?.analysis || null,
+    analysis: (scanMeta?.analysis || '').slice(0, 1000), // Cap analysis at 1KB
     score: company._score || null,
-    allWinners: scanMeta?.allWinners || [],
+    allWinners: (scanMeta?.allWinners || []).slice(0, 10).map(w => ({ name: w.name, _score: w._score })), // Only names+scores, max 10
   };
   if (exists >= 0) picks[exists] = entry;
   else picks.unshift(entry);
-  localStorage.setItem(`autoscan_toppicks_${personId}`, JSON.stringify(picks.slice(0, TOP_PICKS_MAX * 3)));
+  const trimmed = picks.slice(0, TOP_PICKS_MAX);
+  try {
+    localStorage.setItem(`autoscan_toppicks_${personId}`, JSON.stringify(trimmed));
+  } catch (e) {
+    // Still too big — trim more aggressively
+    console.warn('[TopPicks] localStorage full, trimming to 10');
+    try {
+      localStorage.setItem(`autoscan_toppicks_${personId}`, JSON.stringify(trimmed.slice(0, 10).map(p => ({ ...p, analysis: null, allWinners: [] }))));
+    } catch (e2) {
+      console.error('[TopPicks] Cannot save — clearing old data');
+      localStorage.removeItem(`autoscan_toppicks_${personId}`);
+    }
+  }
 }
 
 function autoSaveTopPicks(personId, results, analysis, profileName, scanMode) {
