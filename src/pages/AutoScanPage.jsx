@@ -1461,7 +1461,9 @@ function ResultsPanel({ currentResults, dismissedSet, addFavorite, isFavorited, 
     if (!aIsStealth && bIsStealth) return -1;
     const scoreA = a._score || a.score || 0;
     const scoreB = b._score || b.score || 0;
-    return scoreB - scoreA;
+    if (scoreB !== scoreA) return scoreB - scoreA;
+    // Same score — newest first
+    return (b.addedAt || 0) - (a.addedAt || 0);
   });
 
   const shownResults = visible.slice(0, showCount);
