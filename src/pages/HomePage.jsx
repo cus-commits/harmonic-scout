@@ -15,6 +15,10 @@ export default function HomePage({ addFavorite, isFavorited }) {
   const [voting, setVoting] = useState(null);
   const [expandedCompany, setExpandedCompany] = useState(null);
   const [showScanPicker, setShowScanPicker] = useState(false);
+  const [fundingAlerts, setFundingAlerts] = useState([]);
+  const [hiddenAlerts, setHiddenAlerts] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('hidden_funding_alerts') || '[]'); } catch { return []; }
+  });
   const user = typeof window !== 'undefined' ? localStorage.getItem('crm_user') || '' : '';
 
   // Fetch all BO + BORO + SM companies, filter to ones user hasn't voted on
@@ -50,6 +54,21 @@ export default function HomePage({ addFavorite, isFavorited }) {
     };
     fetchPending();
   }, [user]);
+
+  // Fetch funding round alerts
+  useEffect(() => {
+    fetch(`${API_BASE}/api/alerts/funding-rounds`).then(r => r.json()).then(d => {
+      setFundingAlerts(d.alerts || []);
+    }).catch(() => {});
+  }, []);
+
+  const hideAlert = (company) => {
+    const updated = [...hiddenAlerts, company];
+    setHiddenAlerts(updated);
+    localStorage.setItem('hidden_funding_alerts', JSON.stringify(updated));
+  };
+
+  const visibleAlerts = fundingAlerts.filter(a => !hiddenAlerts.includes(a.company));
 
   const handleVote = async (company, vote) => {
     setVoting(`${company.company}-${vote}`);
@@ -147,6 +166,37 @@ export default function HomePage({ addFavorite, isFavorited }) {
           </div>
         </div>
       </div>
+
+      {/* Funding round alerts */}
+      {visibleAlerts.length > 0 && (
+        <div className="mb-4 p-3 bg-emerald-500/5 border border-emerald-400/15 rounded-xl">
+          <p className="text-[10px] text-emerald-400/70 font-bold uppercase tracking-wider mb-2">💰 Recent Funding Rounds — Pipeline Companies</p>
+          <div className="space-y-1.5">
+            {visibleAlerts.map((a, i) => (
+              <div key={i} className="flex items-center gap-3 px-2.5 py-2 rounded-lg bg-surface/30 border border-border/10">
+                {a.logo && <img src={a.logo} alt="" className="w-6 h-6 rounded bg-ink/50 object-contain flex-shrink-0" onError={e => { e.target.style.display='none'; }} />}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-semibold text-bright">{a.company}</span>
+                    <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-bold ${
+                      a.stage === 'BO' ? 'bg-sky-500/20 text-sky-300' :
+                      a.stage === 'BORO' ? 'bg-violet-500/20 text-violet-300' :
+                      'bg-emerald-500/20 text-emerald-300'
+                    }`}>{a.stage}</span>
+                  </div>
+                  <p className="text-[10px] text-muted/50">
+                    {a.round.replace(/_/g, ' ')}
+                    {a.amount && ` · $${a.amount >= 1e6 ? (a.amount/1e6).toFixed(1) + 'M' : (a.amount/1e3).toFixed(0) + 'K'}`}
+                    {a.totalFunding && ` · Total: ${a.totalFunding}`}
+                    <span className="text-muted/30 ml-1.5">{a.date}</span>
+                  </p>
+                </div>
+                <button onClick={() => hideAlert(a.company)} className="text-muted/25 hover:text-muted/60 text-sm flex-shrink-0" title="Hide this alert">×</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Pending votes section */}
       {!user ? (

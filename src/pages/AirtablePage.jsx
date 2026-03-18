@@ -621,39 +621,65 @@ export default function AirtablePage() {
         </div>
       ) : activeStage === 'Reachouts' ? (
         <div>
-          {/* Missing reachouts this month (BORO/BORO-SM only) */}
+          {/* Missing reachouts — BORO-SM: 2 weeks, BORO: 1 month */}
           {(() => {
-            const now = new Date();
-            const thisMonth = now.getMonth();
-            const thisYear = now.getFullYear();
+            const now = Date.now();
+            const TWO_WEEKS = 14 * 86400000;
+            const ONE_MONTH = 30 * 86400000;
             const allBoroSmCompanies = allReachouts || [];
-            // Companies with reachout notes that have a date THIS month
-            const reachedThisMonth = new Set();
-            allBoroSmCompanies.forEach(c => {
-              const notes = c.reachout_notes || '';
-              const dateMatches = notes.match(/\(\d{1,2}\/\d{1,2}\/\d{2,4}\)|\[.*?·\s*([A-Za-z]+ \d+,?\s*\d{4})/g) || [];
+
+            // Get last reachout date for each company
+            function getLastReachoutDate(notes) {
+              let latest = null;
+              const dateMatches = (notes || '').match(/\(\d{1,2}\/\d{1,2}\/\d{2,4}\)|\[.*?·\s*([A-Za-z]+ \d+,?\s*\d{4}[^]*?)\]/g) || [];
               for (const dm of dateMatches) {
                 try {
                   const cleaned = dm.replace(/[\[\]()]/g, '').replace(/.*·\s*/, '').replace(' EST', '').trim();
                   const d = new Date(cleaned);
-                  if (d.getMonth() === thisMonth && d.getFullYear() === thisYear) { reachedThisMonth.add(c.company); break; }
+                  if (!isNaN(d.getTime()) && (!latest || d > latest)) latest = d;
                 } catch(e) {}
               }
+              return latest;
+            }
+
+            const missingSM = [];
+            const missingBORO = [];
+            allBoroSmCompanies.forEach(c => {
+              const lastDate = getLastReachoutDate(c.reachout_notes);
+              const elapsed = lastDate ? now - lastDate.getTime() : Infinity;
+              if (c.crm_stage === 'BORO-SM' && elapsed > TWO_WEEKS) missingSM.push(c);
+              else if (c.crm_stage === 'BORO' && elapsed > ONE_MONTH) missingBORO.push(c);
             });
-            // Missing = ALL BORO/SM companies NOT reached this month
-            const missing = allBoroSmCompanies.filter(c => !reachedThisMonth.has(c.company));
-            if (missing.length === 0) return null;
+
+            if (missingSM.length === 0 && missingBORO.length === 0) return null;
             return (
-              <div className="mb-3 p-2.5 bg-red-500/5 border border-red-400/15 rounded-xl">
-                <p className="text-[9px] text-red-400/70 font-bold uppercase tracking-wider mb-1.5">⚠ Missing reachouts this month ({missing.length})</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {missing.map((c, i) => (
-                    <button key={i} onClick={() => setReachoutModal({ company: c.company, stage: c.crm_stage, notes: c.reachout_notes || '', loading: false })}
-                      className={`text-[9px] px-2 py-0.5 rounded-full border ${c.crm_stage === 'BORO-SM' ? 'border-emerald-400/20 text-emerald-300/70' : 'border-violet-400/20 text-violet-300/70'} hover:bg-white/5`}>
-                      {c.company}
-                    </button>
-                  ))}
-                </div>
+              <div className="mb-3 space-y-2">
+                {missingSM.length > 0 && (
+                  <div className="p-2.5 bg-red-500/5 border border-red-400/15 rounded-xl">
+                    <p className="text-[9px] text-red-400/70 font-bold uppercase tracking-wider mb-1.5">⚠ 🏆 SM — No reachout in 2+ weeks ({missingSM.length})</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {missingSM.map((c, i) => (
+                        <button key={i} onClick={() => setReachoutModal({ company: c.company, stage: c.crm_stage, notes: c.reachout_notes || '', loading: false })}
+                          className="text-[9px] px-2 py-0.5 rounded-full border border-emerald-400/20 text-emerald-300/70 hover:bg-white/5">
+                          {c.company}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {missingBORO.length > 0 && (
+                  <div className="p-2.5 bg-amber-500/5 border border-amber-400/15 rounded-xl">
+                    <p className="text-[9px] text-amber-400/70 font-bold uppercase tracking-wider mb-1.5">⚠ BORO — No reachout in 1+ month ({missingBORO.length})</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {missingBORO.map((c, i) => (
+                        <button key={i} onClick={() => setReachoutModal({ company: c.company, stage: c.crm_stage, notes: c.reachout_notes || '', loading: false })}
+                          className="text-[9px] px-2 py-0.5 rounded-full border border-violet-400/20 text-violet-300/70 hover:bg-white/5">
+                          {c.company}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })()}
