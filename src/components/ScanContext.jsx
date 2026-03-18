@@ -213,8 +213,8 @@ export function ScanProvider({ children }) {
               } catch (e) {}
             }
           }
-          // Reconnect to genuinely active scans — only if backend has progress info
-          if (status.status === 'scanning' && status.startedAt && status.progress && (now - status.startedAt) < 10 * 60 * 1000) {
+          // Reconnect to ALL active scans (any user) — show cross-user scan visibility
+          if (status.status === 'scanning' && status.startedAt && (now - status.startedAt) < 15 * 60 * 1000) {
             console.log(`[ScanRecovery] Reconnecting to active scan for ${personId}: "${status.progress}" (${Math.round((now - status.startedAt)/60000)}min ago)`);
             setActiveScans(prev => ({ ...prev, [personId]: { 
               status: 'scanning', 
@@ -348,17 +348,47 @@ export function ScanProvider({ children }) {
       
       // Find the data line — skip SSE comments (lines starting with :)
       const dataLine = text.split('\n').filter(l => l.startsWith('data: ')).pop(); // Use LAST data line
-      if (!dataLine) {
-        console.error('[Scan] No data line found in response:', text.slice(0, 500));
-        throw new Error('No data received from scan');
-      }
-      
+
       let data;
-      try {
-        data = JSON.parse(dataLine.slice(6));
-      } catch (parseErr) {
-        console.error('[Scan] Failed to parse data:', dataLine.slice(0, 200));
-        throw new Error('Failed to parse scan results');
+      if (dataLine) {
+        try {
+          data = JSON.parse(dataLine.slice(6));
+        } catch (parseErr) {
+          console.error('[Scan] Failed to parse data:', dataLine.slice(0, 200));
+        }
+      }
+
+      // Recovery: if stream ended without data, poll server for results
+      if (!data) {
+        console.log('[Scan] Stream ended without data — polling server for results...');
+        setActiveScans(prev => ({ ...prev, [personId]: { ...prev[personId], progress: 'Recovering results...' } }));
+        // Poll status until done (max 5 min)
+        for (let attempt = 0; attempt < 60; attempt++) {
+          await new Promise(r => setTimeout(r, 5000));
+          try {
+            const statusRes = await fetch(`${API_BASE}/api/autoscan/status`);
+            const status = await statusRes.json();
+            const personStatus = status[personId];
+            if (personStatus?.progress) {
+              setActiveScans(prev => ({ ...prev, [personId]: { ...prev[personId], progress: personStatus.progress } }));
+            }
+            if (personStatus?.status === 'done') {
+              // Fetch the results
+              const resultsRes = await fetch(`${API_BASE}/api/autoscan/last-results/${personId}`);
+              data = await resultsRes.json();
+              if (data && !data.error) {
+                console.log('[Scan] Recovered results from server:', (data.results||[]).length, 'companies');
+                break;
+              }
+            }
+            if (!personStatus || personStatus.status === 'error') {
+              throw new Error(personStatus?.error || 'Scan failed on server');
+            }
+          } catch(pollErr) {
+            if (attempt >= 59) throw new Error('Scan timed out — check server logs');
+          }
+        }
+        if (!data) throw new Error('Could not recover scan results');
       }
       
       if (data.error) throw new Error(data.error);
