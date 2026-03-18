@@ -226,6 +226,8 @@ export default function AirtablePage() {
           fetch(`${API_BASE}/api/airtable/companies?stage=BORO-SM&limit=200`).then(r => r.json()),
         ]);
         const all = [...(bo.companies||[]), ...(boro.companies||[]), ...(sm.companies||[])].filter(c => c.company && c.company.trim());
+        // Store all BORO/SM for missing reachouts calculation
+        setAllReachouts(all.filter(c => c.crm_stage === 'BORO' || c.crm_stage === 'BORO-SM'));
         const withNotes = all.filter(c => c.reachout_notes && c.reachout_notes.trim());
         // Sort by most recent activity — check note timestamps first, fall back to created_time
         withNotes.sort((a, b) => {
@@ -619,45 +621,91 @@ export default function AirtablePage() {
         </div>
       ) : activeStage === 'Reachouts' ? (
         <div>
+          {/* Missing reachouts this month (BORO/BORO-SM only) */}
+          {(() => {
+            const now = new Date();
+            const thisMonth = now.getMonth();
+            const thisYear = now.getFullYear();
+            const allBoroSmCompanies = allReachouts || [];
+            // Companies with reachout notes that have a date THIS month
+            const reachedThisMonth = new Set();
+            allBoroSmCompanies.forEach(c => {
+              const notes = c.reachout_notes || '';
+              const dateMatches = notes.match(/\(\d{1,2}\/\d{1,2}\/\d{2,4}\)|\[.*?·\s*([A-Za-z]+ \d+,?\s*\d{4})/g) || [];
+              for (const dm of dateMatches) {
+                try {
+                  const cleaned = dm.replace(/[\[\]()]/g, '').replace(/.*·\s*/, '').replace(' EST', '').trim();
+                  const d = new Date(cleaned);
+                  if (d.getMonth() === thisMonth && d.getFullYear() === thisYear) { reachedThisMonth.add(c.company); break; }
+                } catch(e) {}
+              }
+            });
+            // Missing = ALL BORO/SM companies NOT reached this month
+            const missing = allBoroSmCompanies.filter(c => !reachedThisMonth.has(c.company));
+            if (missing.length === 0) return null;
+            return (
+              <div className="mb-3 p-2.5 bg-red-500/5 border border-red-400/15 rounded-xl">
+                <p className="text-[9px] text-red-400/70 font-bold uppercase tracking-wider mb-1.5">⚠ Missing reachouts this month ({missing.length})</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {missing.map((c, i) => (
+                    <button key={i} onClick={() => setReachoutModal({ company: c.company, stage: c.crm_stage, notes: c.reachout_notes || '', loading: false })}
+                      className={`text-[9px] px-2 py-0.5 rounded-full border ${c.crm_stage === 'BORO-SM' ? 'border-emerald-400/20 text-emerald-300/70' : 'border-violet-400/20 text-violet-300/70'} hover:bg-white/5`}>
+                      {c.company}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Reachout history list with date/time column */}
           {filtered.length === 0 ? (
             <p className="text-muted/35 text-xs text-center py-8">No reachout notes found across pipeline</p>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-1.5">
+              {/* Header */}
+              <div className="flex items-center gap-3 px-3 py-1.5 text-[9px] text-muted/30 uppercase tracking-wider font-bold border-b border-border/15">
+                <span className="w-[90px]">Last Contact</span>
+                <span className="flex-1">Company</span>
+                <span className="w-[50px] text-center">Stage</span>
+                <span className="w-[60px] text-right">Action</span>
+              </div>
               {filtered.map((c, i) => {
-                const notes = (c.reachout_notes || '').split('\n').filter(l => l.trim());
+                const notes = c.reachout_notes || '';
+                // Extract most recent date
+                const dateMatches = notes.match(/\(\d{1,2}\/\d{1,2}\/\d{2,4}\)|\[.*?·\s*([A-Za-z]+ \d+,?\s*\d{4}[^]]*?)\]/g) || [];
+                let lastDate = null;
+                let lastDateStr = 'No date';
+                for (const dm of dateMatches) {
+                  try {
+                    const cleaned = dm.replace(/[\[\]()]/g, '').replace(/.*·\s*/, '').replace(' EST', '').trim();
+                    const d = new Date(cleaned);
+                    if (!isNaN(d.getTime()) && (!lastDate || d > lastDate)) { lastDate = d; }
+                  } catch(e) {}
+                }
+                if (lastDate) {
+                  lastDateStr = lastDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                  const timeStr = lastDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                  if (timeStr !== '12:00 AM') lastDateStr += ' ' + timeStr;
+                }
+                // Get first line of notes as preview
+                const firstLine = notes.split('\n').filter(l => l.trim() && !l.startsWith('---'))[0] || '';
+                const preview = firstLine.replace(/^\[.*?\]\s*/, '').slice(0, 80);
+
                 return (
-                  <div key={i} className="bg-surface/50 border border-border/25 rounded-xl p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-bright font-semibold text-sm">{c.company}</span>
-                        <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold ${
-                          c.crm_stage === 'BO' ? 'bg-sky-500/20 text-sky-300' :
-                          c.crm_stage === 'BORO' ? 'bg-violet-500/20 text-violet-300' :
-                          'bg-emerald-500/20 text-emerald-300'
-                        }`}>{c.crm_stage}</span>
-                      </div>
-                      <button
-                        onClick={() => setReachoutModal({ company: c.company, stage: c.crm_stage, notes: c.reachout_notes || '', loading: false })}
-                        className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 hover:bg-amber-500/30"
-                      >+ Add Note</button>
+                  <div key={i} className="flex items-center gap-3 px-3 py-2 rounded-lg border border-border/10 bg-surface/30 hover:bg-surface/50 transition-colors">
+                    <span className={`w-[90px] text-[10px] font-mono flex-shrink-0 ${lastDate ? 'text-bright/60' : 'text-red-400/50'}`}>{lastDateStr}</span>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-xs font-semibold text-bright">{c.company}</span>
+                      <p className="text-[10px] text-muted/40 truncate">{preview}</p>
                     </div>
-                    <div className="space-y-1">
-                      {(() => {
-                        const fullText = (c.reachout_notes || '');
-                        const hasLegacyLabel = notes.some(l => l.startsWith('--- Legacy'));
-                        const hasAnyDate = /\[.*·.*\]|\(\d{1,2}\/\d{1,2}\/\d{2,4}\)|\(\w+ \d{1,2},? \d{4}\)|\d{1,2}\/\d{1,2}\/\d{2,4}/.test(fullText);
-                        const els = [];
-                        if (!hasLegacyLabel && !hasAnyDate && fullText.trim().length > 0) els.push(<div key="lh" className="text-muted text-[10px] mb-1 border-b border-border/20 pb-0.5">Legacy notes (no date)</div>);
-                        notes.forEach((line, j) => {
-                        const tsMatch = line.match(/^\[([^\]]+)\]\s*(.*)/);
-                        if (tsMatch) {
-                          els.push(<div key={j}><span className="text-muted text-[10px]">{tsMatch[1]}</span><p className="text-bright/80 text-sm">{tsMatch[2]}</p></div>);
-                        } else if (line.startsWith('---')) { els.push(<div key={j} className="text-muted text-[10px] border-t border-border/20 pt-1 mt-1">{line}</div>);
-                        } else if (line.trim()) { els.push(<p key={j} className="text-bright/80 text-sm">{line}</p>); }
-                        });
-                        return els;
-                      })()}
-                    </div>
+                    <span className={`w-[50px] text-center text-[8px] px-1.5 py-0.5 rounded-full font-bold ${
+                      c.crm_stage === 'BO' ? 'bg-sky-500/20 text-sky-300' :
+                      c.crm_stage === 'BORO' ? 'bg-violet-500/20 text-violet-300' :
+                      'bg-emerald-500/20 text-emerald-300'
+                    }`}>{c.crm_stage}</span>
+                    <button onClick={() => setReachoutModal({ company: c.company, stage: c.crm_stage, notes: c.reachout_notes || '', loading: false })}
+                      className="w-[60px] text-right text-[9px] text-amber-400/70 hover:text-amber-300">View →</button>
                   </div>
                 );
               })}
