@@ -229,23 +229,36 @@ export default function AirtablePage() {
         // Store all BORO/SM for missing reachouts calculation
         setAllReachouts(all.filter(c => c.crm_stage === 'BORO' || c.crm_stage === 'BORO-SM'));
         const withNotes = all.filter(c => c.reachout_notes && c.reachout_notes.trim());
-        // Sort by most recent activity — check note timestamps first, fall back to created_time
+        // Sort: entries with actual dates first (newest up), legacy/no-date at bottom
         withNotes.sort((a, b) => {
           const getLastDate = (company) => {
             const notes = company.reachout_notes || '';
-            // Try to find [Author · Date] timestamps
-            const matches = notes.match(/\[.*?·\s*([A-Za-z]+ \d+,?\s*\d{4}.*?)\]/g);
-            if (matches && matches.length > 0) {
-              const last = matches[matches.length - 1].match(/·\s*(.+)\]/);
-              if (last) {
-                const d = new Date(last[1].replace(' EST', '').trim());
-                if (!isNaN(d.getTime())) return d.getTime();
-              }
+            let latest = null;
+            // Check [Author · Date] brackets
+            const bracketMatches = notes.match(/\[.*?·\s*([A-Za-z]+ \d+,?\s*\d{4}.*?)\]/g) || [];
+            for (const m of bracketMatches) {
+              const dateStr = m.match(/·\s*(.+)\]/);
+              if (dateStr) { const d = new Date(dateStr[1].replace(' EST','').trim()); if (!isNaN(d.getTime()) && (!latest || d > latest)) latest = d; }
             }
-            // Fall back to Airtable created_time
-            return company.created_time ? new Date(company.created_time).getTime() : 0;
+            // Check (M/D/YYYY) inline dates
+            const inlineMatches = notes.match(/\(\d{1,2}\/\d{1,2}\/\d{2,4}\)/g) || [];
+            for (const m of inlineMatches) {
+              const d = new Date(m.replace(/[()]/g, ''));
+              if (!isNaN(d.getTime()) && (!latest || d > latest)) latest = d;
+            }
+            return latest ? latest.getTime() : -1; // -1 = no date found
           };
-          return getLastDate(b) - getLastDate(a);
+          const dateA = getLastDate(a);
+          const dateB = getLastDate(b);
+          // Both have dates: sort newest first
+          if (dateA > 0 && dateB > 0) return dateB - dateA;
+          // One has date, other doesn't: dated first
+          if (dateA > 0 && dateB <= 0) return -1;
+          if (dateB > 0 && dateA <= 0) return 1;
+          // Neither has dates: sort by created_time
+          const ctA = a.created_time ? new Date(a.created_time).getTime() : 0;
+          const ctB = b.created_time ? new Date(b.created_time).getTime() : 0;
+          return ctB - ctA;
         });
         setAllReachouts(withNotes);
         setCompanies(withNotes);
