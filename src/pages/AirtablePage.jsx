@@ -838,13 +838,13 @@ export default function AirtablePage() {
                     </div>
 
                     {/* Actions: H + Similar + Enrich + Note + Stage */}
-                    <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                    <div className="flex items-center gap-1.5 md:gap-3 flex-wrap pt-1 md:justify-center">
                       {hd?.harmonic_id && (
                         <a href={`/company/${hd.harmonic_id}`} className="text-[8px] px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-400 border border-pink-400/15 hover:bg-pink-500/20 font-bold" title="Company Card">H</a>
                       )}
                       <FindSimilar companyName={c.company} companyId={null} />
                       {enrichAvailable[c.company] && <button onClick={() => handleEnrich(c)} disabled={enriching === c.company} className="text-[9px] text-amber-400 font-bold animate-pulse">⚡</button>}
-                      <div className="ml-auto flex items-center gap-1.5">
+                      <div className="ml-auto flex items-center gap-1.5 md:gap-3">
                         <button onClick={() => { setNoteModal({ company: c.company, existing: c.notes || '' }); setNoteText(''); }}
                           className="text-[10px] opacity-30 hover:opacity-60" title="Add note">📝</button>
                         <select value={c.crm_stage} onChange={(e) => handleStageChange(c, e.target.value)} disabled={changingStage === c.company}
