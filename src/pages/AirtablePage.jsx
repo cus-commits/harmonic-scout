@@ -643,10 +643,11 @@ export default function AirtablePage() {
                     </div>
                     <div className="space-y-1">
                       {(() => {
+                        const fullText = (c.reachout_notes || '');
                         const hasLegacyLabel = notes.some(l => l.startsWith('--- Legacy'));
-                        const hasUndated = notes.some(l => l.trim() && !l.startsWith('[') && !l.startsWith('---'));
+                        const hasAnyDate = /\[.*·.*\]|\(\d{1,2}\/\d{1,2}\/\d{2,4}\)|\(\w+ \d{1,2},? \d{4}\)|\d{1,2}\/\d{1,2}\/\d{2,4}/.test(fullText);
                         const els = [];
-                        if (!hasLegacyLabel && hasUndated) els.push(<div key="lh" className="text-muted text-[10px] mb-1 border-b border-border/20 pb-0.5">Legacy notes (no date)</div>);
+                        if (!hasLegacyLabel && !hasAnyDate && fullText.trim().length > 0) els.push(<div key="lh" className="text-muted text-[10px] mb-1 border-b border-border/20 pb-0.5">Legacy notes (no date)</div>);
                         notes.forEach((line, j) => {
                         const tsMatch = line.match(/^\[([^\]]+)\]\s*(.*)/);
                         if (tsMatch) {
@@ -974,10 +975,11 @@ export default function AirtablePage() {
                 <div className="text-bright/80 text-sm leading-relaxed mb-4 p-3 bg-ink/30 rounded-lg border border-border/20 min-h-[60px]">
                   {reachoutModal.notes ? (() => {
                     const lines = reachoutModal.notes.split('\n');
-                    const hasAnyTimestamp = lines.some(l => /^\[.*·.*\]/.test(l));
+                    const fullText = reachoutModal.notes;
                     const hasLegacyLabel = lines.some(l => l.startsWith('--- Legacy'));
-                    const hasUndatedContent = lines.some(l => l.trim() && !l.startsWith('[') && !l.startsWith('---'));
-                    const showLegacyHeader = !hasLegacyLabel && hasUndatedContent;
+                    // Check if notes contain ANY date reference — brackets, parens, or inline
+                    const hasAnyDate = /\[.*·.*\]|\(\d{1,2}\/\d{1,2}\/\d{2,4}\)|\(\w+ \d{1,2},? \d{4}\)|\d{1,2}\/\d{1,2}\/\d{2,4}/.test(fullText);
+                    const showLegacyHeader = !hasLegacyLabel && !hasAnyDate && fullText.trim().length > 0;
                     const elements = [];
                     if (showLegacyHeader) elements.push(<div key="legacy-hdr" className="text-muted text-[10px] mb-2 border-b border-border/20 pb-1">Legacy notes (no date)</div>);
                     lines.forEach((line, i) => {
