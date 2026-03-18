@@ -186,9 +186,12 @@ export default function HomePage({ addFavorite, isFavorited }) {
                   </div>
                   <p className="text-[10px] text-muted/50">
                     {a.round.replace(/_/g, ' ')}
-                    {a.amount && ` · $${a.amount >= 1e6 ? (a.amount/1e6).toFixed(1) + 'M' : (a.amount/1e3).toFixed(0) + 'K'}`}
+                    {a.amount && ` · $${a.amount >= 1e6 ? (a.amount/1e6).toFixed(1) + 'M' : a.amount >= 1e3 ? (a.amount/1e3).toFixed(0) + 'K' : a.amount}`}
                     {a.totalFunding && ` · Total: ${a.totalFunding}`}
-                    <span className="text-muted/30 ml-1.5">{a.date}</span>
+                    <span className="text-bright/40 font-medium ml-1.5">{(() => {
+                      const d = Math.round((Date.now() - new Date(a.date).getTime()) / 86400000);
+                      return d === 0 ? 'today' : d === 1 ? '1d ago' : d + 'd ago';
+                    })()}</span>
                   </p>
                 </div>
                 <button onClick={() => hideAlert(a.company)} className="text-muted/25 hover:text-muted/60 text-sm flex-shrink-0" title="Hide this alert">×</button>
