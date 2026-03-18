@@ -533,36 +533,84 @@ function ScanResultCard({ company, onFavorite, isFavorited, onDismiss }) {
 
 function HistoryPanel({ personId }) {
   const { loadHistory, setScanResults } = useScan();
-  const history = loadHistory(personId);
+  const localHistory = loadHistory(personId);
+  const [serverHistory, setServerHistory] = useState([]);
+  const [userFilters, setUserFilters] = useState({});
   const [expandedIdx, setExpandedIdx] = useState(null);
   const [winnersIdx, setWinnersIdx] = useState(null);
 
-  if (history.length === 0) return <p className="text-muted/40 text-xs text-center py-4">No scan history yet</p>;
+  // Fetch server-side history (all users)
+  useEffect(() => {
+    fetch(`${API_BASE}/api/autoscan/history`).then(r => r.json()).then(d => {
+      const hist = d.history || [];
+      setServerHistory(hist);
+      // Init all users as visible
+      const users = {};
+      hist.forEach(h => { if (h.personId) users[h.personId] = true; });
+      setUserFilters(users);
+    }).catch(() => {});
+  }, []);
+
+  // Merge: server history + local history (dedup by timestamp)
+  const allHistory = [...serverHistory];
+  const serverTimestamps = new Set(serverHistory.map(h => h.timestamp));
+  localHistory.forEach(h => {
+    if (!serverTimestamps.has(h.timestamp)) {
+      allHistory.push({ ...h, personId: personId, profileName: h.profileName, funnel: h.results?.funnel || {}, topCompanies: [], totalResults: (h.results?.results || []).length, timestamp: h.timestamp, _isLocal: true, _localResults: h.results });
+    }
+  });
+  allHistory.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+  // Apply user filters
+  const allUsers = [...new Set(allHistory.map(h => h.personId).filter(Boolean))];
+  const history = allHistory.filter(h => !h.personId || userFilters[h.personId] !== false);
+
+  const toggleUser = (uid) => setUserFilters(prev => ({ ...prev, [uid]: prev[uid] === false ? true : false }));
+
+  if (history.length === 0 && allHistory.length === 0) return <p className="text-muted/40 text-xs text-center py-4">No scan history yet</p>;
   return (
-    <div className="space-y-2 max-h-[500px] overflow-y-auto">
+    <div>
+      {/* User filter toggles */}
+      {allUsers.length > 1 && (
+        <div className="flex items-center gap-1.5 mb-2">
+          <span className="text-[9px] text-muted/30 mr-1">Filter:</span>
+          {allUsers.map(uid => (
+            <button key={uid} onClick={() => toggleUser(uid)}
+              className={`text-[9px] px-2 py-0.5 rounded-full border transition-all ${userFilters[uid] !== false ? 'bg-sky-500/15 border-sky-400/25 text-sky-300' : 'border-border/15 text-muted/25 hover:text-muted/50'}`}>
+              {uid}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="space-y-2 max-h-[500px] overflow-y-auto">
       {history.map((h, i) => {
         const isExpanded = expandedIdx === i;
         const isWinners = winnersIdx === i;
-        const results = h.results || {};
+        const results = h._localResults || h.results || {};
         const analysis = results.analysis || '';
         const companies = results.results || [];
-        const funnel = results.funnel || {};
+        const funnel = h.funnel || results.funnel || {};
         const meta = results.savedSearchMeta || null;
-        const winners = companies.filter(c => (c._score || c.score || 0) >= 6).sort((a, b) => (b._score || b.score || 0) - (a._score || a.score || 0));
+        const topCos = h.topCompanies || [];
+        const winners = topCos.length > 0 ? topCos.filter(c => c.score >= 6) : companies.filter(c => (c._score || c.score || 0) >= 6).sort((a, b) => (b._score || b.score || 0) - (a._score || a.score || 0));
 
         return (
           <div key={i} className="border border-border/15 rounded-xl overflow-hidden">
             <div className="flex items-center gap-2 px-3 py-2.5 hover:bg-sky-500/[0.03] transition-colors">
               <button onClick={() => { setExpandedIdx(isExpanded ? null : i); setWinnersIdx(null); }} className="flex-1 text-left min-w-0">
-                <p className="text-xs font-medium text-bright/80 truncate">{h.profileName || 'Scan'}</p>
+                <p className="text-xs font-medium text-bright/80 truncate">
+                  {h.personId && h.personId !== personId && <span className="text-[9px] text-sky-400/60 mr-1">[{h.personId}]</span>}
+                  {h.profileName || 'Scan'}
+                  {h.totalResults > 0 && <span className="text-[9px] text-muted/30 ml-1">({h.totalResults} results)</span>}
+                </p>
                 <p className="text-[10px] text-muted/40">
                   {new Date(h.timestamp).toLocaleDateString()} {new Date(h.timestamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}
                   {meta?.totalBeforeDedup > 0 && ` · ${meta.totalBeforeDedup} found`}
                 </p>
-                {(funnel.enriched > 0 || funnel.sonnetPassed > 0 || meta?.freshCount > 0) && (
+                {(funnel.totalUrns > 0 || funnel.sonnetPassed > 0 || funnel.preFiltered > 0) && (
                   <p className="text-[9px] text-muted/30 mt-0.5">
-                    {meta?.freshCount > 0 && `${meta.freshCount} new`}
-                    {funnel.enriched > 0 && ` → ${funnel.enriched} enriched`}
+                    {funnel.totalUrns > 0 && `${funnel.totalUrns} URNs`}
+                    {funnel.newCompanies > 0 && ` → ${funnel.newCompanies} new`}
                     {funnel.preFiltered > 0 && ` → ${funnel.preFiltered} filtered`}
                     {funnel.sonnetPassed > 0 && ` → ${funnel.sonnetPassed} Sonnet`}
                     {funnel.opusScored > 0 && ` → ${funnel.opusScored} Opus`}
@@ -624,6 +672,7 @@ function HistoryPanel({ personId }) {
           </div>
         );
       })}
+    </div>
     </div>
   );
 }
@@ -2033,7 +2082,7 @@ export default function AutoScanPage({ addFavorite, isFavorited }) {
           {showHistory && (
             <div className="bg-ink/20 border border-border/15 rounded-xl p-3">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-[10px] text-muted/40 uppercase tracking-wider font-bold">Scan History — {activePerson?.name || activeTab}</p>
+                <p className="text-[10px] text-muted/40 uppercase tracking-wider font-bold">Scan History — All Users</p>
                 <p className="text-[9px] text-muted/30">Click 🧠 Logic to see Opus reasoning</p>
               </div>
               <HistoryPanel personId={activeTab} />
