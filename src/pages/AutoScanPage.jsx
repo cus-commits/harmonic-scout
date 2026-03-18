@@ -1889,6 +1889,7 @@ export default function AutoScanPage({ addFavorite, isFavorited }) {
                 className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-all min-w-[70px] ${
                   isActive ? 'bg-sky-500/10 border border-sky-400/20' : 'hover:bg-white/5 border border-transparent'
                 } ${disabled ? 'opacity-40' : ''}`}>
+                {isBusy && <span className="text-[8px] text-amber-400 font-bold animate-pulse mb-0.5">🔍 Scanning...</span>}
                 <span className="text-4xl leading-none">{t.emoji}</span>
                 <span className={`text-[10px] font-bold ${isActive ? 'text-sky-300' : disabled ? 'text-red-400/60' : 'text-muted/50'}`}>{t.name}</span>
                 {hasResults && !isBusy && <span className="min-w-[18px] h-[16px] px-1 rounded-full bg-sky-500 text-white text-[8px] font-bold flex items-center justify-center">{scanResults[t.id].results.length}</span>}
