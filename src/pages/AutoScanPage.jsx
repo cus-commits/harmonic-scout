@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useScan } from '../components/ScanContext';
 import FindSimilar from '../components/FindSimilar';
@@ -483,7 +483,7 @@ function WebGrowthBadge({ company }) {
   ));
 }
 
-function ScanResultCard({ company, onFavorite, isFavorited, onDismiss }) {
+function ScanResultCard({ company, onFavorite, isFavorited, onDismiss, onShowLogic }) {
   const stage = stageFmt(company.funding_stage);
   const total = moneyFmt(company.funding_total);
   const webUrl = company.website ? (company.website.startsWith('http') ? company.website : `https://${company.website}`) : null;
@@ -505,6 +505,14 @@ function ScanResultCard({ company, onFavorite, isFavorited, onDismiss }) {
             {company.socials?.linkedin && <a href={company.socials.linkedin} target="_blank" rel="noopener" className="text-[9px] px-1.5 py-0.5 rounded-md bg-surface/40 border border-border/20 text-muted/50 hover:text-sky-400 font-medium">💼</a>}
           </div>
         </div>
+        {(company._score || company.score) > 0 && (
+          <span className={`flex-shrink-0 text-[10px] px-2 py-0.5 rounded-full font-bold border ${
+            (company._score||company.score) >= 8 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/25' :
+            (company._score||company.score) >= 6 ? 'bg-sky-500/20 text-sky-300 border-sky-400/25' :
+            'bg-muted/10 text-muted/60 border-border/20'
+          }`}>{company._score||company.score}/10</span>
+        )}
+        {onShowLogic && <button onClick={() => onShowLogic(company.name)} className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400 border border-violet-400/15 hover:bg-violet-500/20 font-medium" title="View scoring logic">🧠</button>}
         <button onClick={() => !isFavorited && onFavorite({...company})} className={`flex-shrink-0 text-base ${isFavorited ? 'text-sky-400' : 'text-muted/40 hover:text-sky-400'}`}>{isFavorited ? '★' : '☆'}</button>
         {onDismiss && <UnvettedRemoveMenu company={company} onHide={(c) => onDismiss(c)} onBackburn={(c) => { onDismiss(c); try { fetch(`${API_BASE}/api/vetting/backburn`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ companyName: c.name, personId: localStorage.getItem('crm_user') || '' }) }); } catch(e){} }} />}
       </div>
@@ -1489,6 +1497,34 @@ function SavedSearchSelector({ activeProfile, onSaveProfile }) {
 function ResultsPanel({ currentResults, dismissedSet, addFavorite, isFavorited, dismissCompany, activeTab }) {
   const [tab, setTab] = useState('results');
   const [showCount, setShowCount] = useState(50);
+  const logicRef = useRef(null);
+  const [highlightName, setHighlightName] = useState(null);
+
+  const showLogicForCompany = (companyName) => {
+    setTab('logic');
+    setHighlightName(companyName.toLowerCase());
+    // Scroll to the company in the analysis after render
+    setTimeout(() => {
+      if (logicRef.current) {
+        const el = logicRef.current;
+        const text = el.textContent || '';
+        const idx = text.toLowerCase().indexOf(companyName.toLowerCase());
+        if (idx >= 0) {
+          // Find the nearest element containing the name
+          const allEls = el.querySelectorAll('strong, b, h1, h2, h3, h4, p, div, span');
+          for (const child of allEls) {
+            if (child.textContent.toLowerCase().includes(companyName.toLowerCase())) {
+              child.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              child.style.background = 'rgba(139, 92, 246, 0.2)';
+              child.style.borderRadius = '4px';
+              setTimeout(() => { child.style.background = ''; }, 4000);
+              break;
+            }
+          }
+        }
+      }
+    }, 200);
+  };
 
   // Safety: if currentResults is malformed, show error
   if (!currentResults || typeof currentResults !== 'object') {
@@ -1576,7 +1612,7 @@ function ResultsPanel({ currentResults, dismissedSet, addFavorite, isFavorited, 
               <p className="text-[11px] text-muted/40">{visible.length} companies · sorted by score · showing {shownResults.length}</p>
               {shownResults.map(c => {
                 try {
-                  return <ScanResultCard key={c.name} company={c} onFavorite={addFavorite} isFavorited={isFavorited ? isFavorited(c.name) : false} onDismiss={(co) => dismissCompany(activeTab, co)} />;
+                  return <ScanResultCard key={c.name} company={c} onFavorite={addFavorite} isFavorited={isFavorited ? isFavorited(c.name) : false} onDismiss={(co) => dismissCompany(activeTab, co)} onShowLogic={hasAnalysis ? showLogicForCompany : null} />;
                 } catch (e) {
                   return <div key={c.name} className="text-red-400/60 text-xs p-2">Error rendering {c.name}: {e.message}</div>;
                 }
@@ -1598,7 +1634,7 @@ function ResultsPanel({ currentResults, dismissedSet, addFavorite, isFavorited, 
 
       {/* Logic tab — full Opus analysis */}
       {tab === 'logic' && hasAnalysis && (
-        <div className="bg-violet-500/[0.03] border border-violet-400/12 rounded-xl p-4 space-y-3 max-h-[80vh] overflow-y-auto">
+        <div ref={logicRef} className="bg-violet-500/[0.03] border border-violet-400/12 rounded-xl p-4 space-y-3 max-h-[80vh] overflow-y-auto">
           <div className="flex items-center justify-between">
             <p className="text-[10px] text-violet-400/50 uppercase tracking-widest font-bold">Full Opus Analysis</p>
             <button onClick={() => {
