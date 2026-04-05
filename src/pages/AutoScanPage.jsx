@@ -1522,9 +1522,9 @@ function SavedSearchSelector({ activeProfile, onSaveProfile }) {
 // Results panel with Results + Logic tabs
 function ResultsPanel({ currentResults, dismissedSet, addFavorite, isFavorited, dismissCompany, activeTab }) {
   const [tab, setTab] = useState('results');
-  const [showCount, setShowCount] = useState(null); // null = auto (show winners only initially)
+  const [showCount, setShowCount] = useState(10);
   const prevResultsRef = useRef(currentResults);
-  if (currentResults !== prevResultsRef.current) { prevResultsRef.current = currentResults; if (showCount !== null) setShowCount(null); }
+  if (currentResults !== prevResultsRef.current) { prevResultsRef.current = currentResults; if (showCount !== 10) setShowCount(10); }
   const logicRef = useRef(null);
   const [highlightName, setHighlightName] = useState(null);
 
@@ -1579,11 +1579,8 @@ function ResultsPanel({ currentResults, dismissedSet, addFavorite, isFavorited, 
     return (b.addedAt || 0) - (a.addedAt || 0);
   });
 
-  // Auto-calculate initial show count: show winners (score ≥ 6) initially, minimum 10
-  const winnersCount = visible.filter(c => (c._score || c.score || 0) >= 6).length;
-  const effectiveShowCount = showCount !== null ? showCount : Math.max(winnersCount, Math.min(visible.length, 10));
-  const shownResults = visible.slice(0, effectiveShowCount);
-  const hasMore = visible.length > effectiveShowCount;
+  const shownResults = visible.slice(0, showCount);
+  const hasMore = visible.length > showCount;
 
   const hasAnalysis = currentResults.analysis && typeof currentResults.analysis === 'string' && currentResults.analysis.length > 50;
 
@@ -1640,7 +1637,7 @@ function ResultsPanel({ currentResults, dismissedSet, addFavorite, isFavorited, 
         <div>
           {visible.length > 0 ? (
             <div className="space-y-2.5">
-              <p className="text-[11px] text-muted/40">{visible.length} companies · sorted by score · showing {shownResults.length}{winnersCount > 0 && showCount === null ? ` (${winnersCount} winners)` : ''}</p>
+              <p className="text-[11px] text-muted/40">{visible.length} companies · sorted by score · showing {shownResults.length}</p>
               {shownResults.map(c => {
                 try {
                   return <ScanResultCard key={c.name} company={c} onFavorite={addFavorite} isFavorited={isFavorited ? isFavorited(c.name) : false} onDismiss={(co) => dismissCompany(activeTab, co)} onShowLogic={hasAnalysis ? showLogicForCompany : null} />;
@@ -1649,9 +1646,9 @@ function ResultsPanel({ currentResults, dismissedSet, addFavorite, isFavorited, 
                 }
               })}
               {hasMore && (
-                <button onClick={() => setShowCount(prev => (prev !== null ? prev : effectiveShowCount) + 15)}
+                <button onClick={() => setShowCount(prev => prev + 15)}
                   className="w-full py-3 rounded-xl border border-sky-400/15 bg-sky-500/[0.04] text-sky-400/60 text-xs font-medium hover:text-sky-300 hover:border-sky-400/25 transition-all">
-                  Load More ({visible.length - effectiveShowCount} remaining)
+                  Load More ({visible.length - showCount} remaining)
                 </button>
               )}
             </div>
