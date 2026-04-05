@@ -546,6 +546,7 @@ function HistoryPanel({ personId }) {
   const [userFilters, setUserFilters] = useState({});
   const [expandedIdx, setExpandedIdx] = useState(null);
   const [winnersIdx, setWinnersIdx] = useState(null);
+  const [winnersShowCount, setWinnersShowCount] = useState({});
 
   // Fetch server-side history (all users)
   useEffect(() => {
@@ -600,7 +601,14 @@ function HistoryPanel({ personId }) {
         const funnel = h.funnel || results.funnel || {};
         const meta = results.savedSearchMeta || null;
         const topCos = h.topCompanies || [];
-        const winners = topCos.length > 0 ? topCos.filter(c => c.score >= 6) : companies.filter(c => (c._score || c.score || 0) >= 6).sort((a, b) => (b._score || b.score || 0) - (a._score || a.score || 0));
+        // All scored companies sorted by score (winners = score ≥ 6, but we show all scored progressively)
+        const allScored = topCos.length > 0
+          ? topCos.filter(c => (c.score || 0) > 0).sort((a, b) => (b.score || 0) - (a.score || 0))
+          : companies.filter(c => (c._score || c.score || 0) > 0).sort((a, b) => (b._score || b.score || 0) - (a._score || a.score || 0));
+        const winners = allScored.filter(c => (c._score || c.score || 0) >= 6);
+        const currentWinnersCount = winnersShowCount[i] || winners.length || Math.min(allScored.length, 10);
+        const visibleScored = allScored.slice(0, currentWinnersCount);
+        const hasMoreScored = allScored.length > currentWinnersCount;
 
         return (
           <div key={i} className="border border-border/15 rounded-xl overflow-hidden">
@@ -626,12 +634,12 @@ function HistoryPanel({ personId }) {
                 )}
               </button>
               <div className="flex items-center gap-1.5 flex-shrink-0">
-                {winners.length > 0 && (
+                {allScored.length > 0 && (
                   <button onClick={() => { setWinnersIdx(isWinners ? null : i); setExpandedIdx(null); }}
                     className={`text-[9px] px-2 py-1 rounded-lg border transition-all font-bold ${
                       isWinners ? 'bg-sky-500/15 border-sky-400/30 text-sky-300' : 'border-sky-400/25 text-sky-400/70 hover:text-sky-300 hover:border-sky-400/40'
                     }`}>
-                    🏆 Winners ({winners.length})
+                    🏆 {winners.length > 0 ? `Winners (${winners.length})` : `Scored (${allScored.length})`}
                   </button>
                 )}
                 <button onClick={() => setScanResults(prev => ({ ...prev, [personId]: results }))}
@@ -647,22 +655,40 @@ function HistoryPanel({ personId }) {
               </div>
             </div>
 
-            {isWinners && winners.length > 0 && (
+            {isWinners && allScored.length > 0 && (
               <div className="border-t border-sky-400/10 px-3 py-3 bg-sky-500/[0.02] space-y-2">
-                <p className="text-[9px] uppercase tracking-widest text-sky-400/45 font-bold">🏆 Winners — Sent to DD ({winners.length})</p>
-                {winners.map((c, wi) => (
-                  <div key={wi} className="flex items-center gap-3 px-3 py-2 rounded-lg border border-border/10 bg-surface/30">
-                    {c.logo_url && <img src={c.logo_url} alt="" className="w-7 h-7 rounded-md bg-ink/50 object-contain flex-shrink-0" onError={e => { e.target.style.display='none'; }} />}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-bold text-bright">{c.name}</span>
-                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-400/20 font-bold">★ {c._score || c.score}/10</span>
+                <p className="text-[9px] uppercase tracking-widest text-sky-400/45 font-bold">
+                  {winners.length > 0 ? `🏆 Winners — Sent to DD (${winners.length})` : '📊 Scored Companies'}
+                  {allScored.length > winners.length && <span className="text-muted/30 font-normal ml-1">· {allScored.length} total scored</span>}
+                </p>
+                {visibleScored.map((c, wi) => {
+                  const score = c._score || c.score || 0;
+                  const isWinner = score >= 6;
+                  return (
+                    <div key={wi} className={`flex items-center gap-3 px-3 py-2 rounded-lg border ${isWinner ? 'border-border/10 bg-surface/30' : 'border-border/8 bg-surface/15'}`}>
+                      {c.logo_url && <img src={c.logo_url} alt="" className="w-7 h-7 rounded-md bg-ink/50 object-contain flex-shrink-0" onError={e => { e.target.style.display='none'; }} />}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[11px] font-bold ${isWinner ? 'text-bright' : 'text-bright/60'}`}>{c.name}</span>
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold border ${
+                            score >= 7 ? 'bg-emerald-500/15 text-emerald-400 border-emerald-400/20' :
+                            score >= 6 ? 'bg-sky-500/15 text-sky-400 border-sky-400/20' :
+                            score >= 4 ? 'bg-amber-500/15 text-amber-400 border-amber-400/20' :
+                            'bg-muted/10 text-muted/50 border-border/15'
+                          }`}>★ {score}/10</span>
+                        </div>
+                        {c.description && <p className="text-[9px] text-muted/45 line-clamp-1 mt-0.5">{c.description}</p>}
                       </div>
-                      {c.description && <p className="text-[9px] text-muted/45 line-clamp-1 mt-0.5">{c.description}</p>}
+                      {c.id && typeof c.id === 'number' && <a href={`/company/${c.id}`} className="text-[8px] px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-400 border border-pink-400/15 font-bold">H</a>}
                     </div>
-                    {c.id && typeof c.id === 'number' && <a href={`/company/${c.id}`} className="text-[8px] px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-400 border border-pink-400/15 font-bold">H</a>}
-                  </div>
-                ))}
+                  );
+                })}
+                {hasMoreScored && (
+                  <button onClick={() => setWinnersShowCount(prev => ({ ...prev, [i]: currentWinnersCount + 15 }))}
+                    className="w-full py-2.5 rounded-xl border border-sky-400/15 bg-sky-500/[0.04] text-sky-400/60 text-[10px] font-medium hover:text-sky-300 hover:border-sky-400/25 transition-all">
+                    Load More ({allScored.length - currentWinnersCount} remaining)
+                  </button>
+                )}
               </div>
             )}
 
