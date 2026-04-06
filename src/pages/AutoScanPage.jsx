@@ -544,6 +544,7 @@ function HistoryPanel({ personId }) {
   const localHistory = loadHistory(personId);
   const [serverHistory, setServerHistory] = useState([]);
   const [userFilters, setUserFilters] = useState({});
+  const [loadingResults, setLoadingResults] = useState(null); // index of entry being loaded
   const [expandedIdx, setExpandedIdx] = useState(null);
   const [winnersIdx, setWinnersIdx] = useState(null);
   const [winnersShowCount, setWinnersShowCount] = useState({});
@@ -596,7 +597,7 @@ function HistoryPanel({ personId }) {
         const isExpanded = expandedIdx === i;
         const isWinners = winnersIdx === i;
         const results = h._localResults || h.results || {};
-        const analysis = results.analysis || '';
+        const analysis = results.analysis || h.analysis || '';
         const companies = results.results || [];
         const funnel = h.funnel || results.funnel || {};
         const meta = results.savedSearchMeta || null;
@@ -642,9 +643,28 @@ function HistoryPanel({ personId }) {
                     🏆 {winners.length > 0 ? `Winners (${winners.length})` : `Scored (${allScored.length})`}
                   </button>
                 )}
-                <button onClick={() => setScanResults(prev => ({ ...prev, [personId]: results }))}
+                <button onClick={async () => {
+                  // If we have local results with companies, use them directly
+                  if (companies.length > 0) {
+                    setScanResults(prev => ({ ...prev, [personId]: { ...results, analysis } }));
+                    return;
+                  }
+                  // Otherwise fetch from server (last-results for this person)
+                  setLoadingResults(i);
+                  try {
+                    const pid = h.personId || personId;
+                    const r = await fetch(`${API_BASE}/api/autoscan/last-results/${pid}`);
+                    if (r.ok) {
+                      const data = await r.json();
+                      if (data.results && !data.error) {
+                        setScanResults(prev => ({ ...prev, [personId]: data }));
+                      }
+                    }
+                  } catch (e) {}
+                  setLoadingResults(null);
+                }}
                   className="text-[9px] px-2 py-1 rounded-lg border border-sky-400/20 text-sky-400/60 hover:text-sky-300 hover:border-sky-400/30 transition-all font-medium">
-                  Load
+                  {loadingResults === i ? '...' : 'Load Results'}
                 </button>
                 <button onClick={() => { setExpandedIdx(isExpanded ? null : i); setWinnersIdx(null); }}
                   className={`text-[9px] px-2 py-1 rounded-lg border transition-all font-medium ${
