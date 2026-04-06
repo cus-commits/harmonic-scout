@@ -52,10 +52,11 @@ function moneyFmt(n) {
 
 function StageBadge({ stage }) {
   const colors = {
-    'Warm': 'bg-amber-500/20 text-amber-300 border-amber-400/30',
-    'BO': 'bg-sky-500/20 text-sky-300 border-sky-400/30',
-    'BORO': 'bg-violet-500/20 text-violet-300 border-violet-400/30',
-    'BORO-SM': 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30',
+    'Website Applications': 'bg-white/10 text-white/60 border-white/20',
+    'Warm': 'bg-orange-500/20 text-orange-300 border-orange-400/30',
+    'BO': 'bg-green-800/30 text-green-400 border-green-700/40',
+    'BORO': 'bg-green-600/25 text-green-300 border-green-500/35',
+    'BORO-SM': 'bg-lime-500/25 text-lime-300 border-lime-400/35',
     'Backburn': 'bg-red-500/15 text-red-400/70 border-red-400/20',
   };
   const label = stage === 'BORO-SM' ? '🏆SM' : stage || '—';
@@ -213,8 +214,8 @@ export default function AirtablePage() {
     setTwitterChecking(false);
   };
 
-  const stages = ['BO', 'BORO', 'BORO-SM', 'Warm'];
-  const stageLabels = { 'BO': 'BO', 'BORO': 'BORO', 'BORO-SM': '🏆 SM', 'Warm': 'Warm' };
+  const stages = ['BO', 'BORO', 'BORO-SM', 'Website Applications', 'Warm'];
+  const stageLabels = { 'BO': 'BO', 'BORO': 'BORO', 'BORO-SM': '🏆 SM', 'Website Applications': 'Applications', 'Warm': 'Warm' };
   const [allReachouts, setAllReachouts] = useState([]);
 
   const fetchCompanies = async (stage, silent = false) => {
@@ -583,17 +584,27 @@ export default function AirtablePage() {
 
       {/* Stage tabs */}
       <div className="flex gap-2 mb-3">
-        {stages.map(s => (
+        {stages.map(s => {
+          const tabColors = {
+            'BO': { active: 'bg-green-900/40 text-green-400 border border-green-700/50', inactive: 'text-green-400/40 hover:text-green-400/70' },
+            'BORO': { active: 'bg-green-700/30 text-green-300 border border-green-500/40', inactive: 'text-green-300/40 hover:text-green-300/70' },
+            'BORO-SM': { active: 'bg-lime-600/25 text-lime-300 border border-lime-400/40', inactive: 'text-lime-300/40 hover:text-lime-300/70' },
+            'Website Applications': { active: 'bg-white/10 text-white border border-white/15', inactive: 'text-white/30 hover:text-white/50' },
+            'Warm': { active: 'bg-orange-500/25 text-orange-300 border border-orange-400/40', inactive: 'text-orange-300/35 hover:text-orange-300/60' },
+          };
+          const tc = tabColors[s] || tabColors['Website Applications'];
+          return (
           <button key={s} onClick={() => setActiveStage(s)}
             className={`text-[11px] px-5 py-2 rounded-full font-bold transition-all whitespace-nowrap ${
-              activeStage === s ? 'bg-white/10 text-white border border-white/15'
-              : s === 'Warm' ? 'text-white/25 hover:text-white/50 ml-auto border border-transparent'
-              : 'text-white/35 hover:text-white/60 border border-transparent'
+              s === 'Website Applications' ? 'ml-auto' : ''
+            } ${
+              activeStage === s ? tc.active
+              : `${tc.inactive} border border-transparent`
             }`}>
             {stageLabels[s]}
-            <span className="ml-1 text-white/25">{stageCounts[s] || ''}</span>
+            <span className="ml-1 opacity-50">{stageCounts[s] || ''}</span>
           </button>
-        ))}
+        );})}
       </div>
 
       {/* Pending votes notification */}
@@ -1104,6 +1115,13 @@ export default function AirtablePage() {
                   reachoutModal.stage === 'BORO-SM' ? 'bg-emerald-500/20 text-emerald-300' :
                   'bg-white/10 text-white/50'
                 }`}>{reachoutModal.stage}</span>}
+                {fundingData[reachoutModal.company]?.harmonic_id && (
+                  <a href={`/company/${fundingData[reachoutModal.company].harmonic_id}`}
+                    className="text-[9px] px-2 py-0.5 rounded bg-pink-500/10 text-pink-400 border border-pink-400/15 hover:bg-pink-500/20 font-bold no-underline"
+                    title="Harmonic Company Card">
+                    H
+                  </a>
+                )}
               </div>
               <button onClick={() => setReachoutModal(null)} className="text-muted hover:text-bright text-xl">×</button>
             </div>
@@ -1112,43 +1130,84 @@ export default function AirtablePage() {
             ) : (
               <div className="space-y-0">
                 {reachoutModal.notes ? (() => {
-                  // Parse notes into structured entries with author, date, and content
-                  const rawLines = reachoutModal.notes.split('\n').filter(l => l.trim() && !l.startsWith('--- Legacy') && !l.startsWith('--- New'));
+                  const raw = reachoutModal.notes.replace(/--- Legacy[^\n]*/g, '').replace(/--- New[^\n]*/g, '').replace(/---/g, '').trim();
                   const entries = [];
-                  let currentEntry = null;
 
-                  rawLines.forEach(line => {
-                    const bracketMatch = line.match(/^\[([^·]+)·\s*(.+?)\]\s*(.*)/);
-                    if (bracketMatch) {
-                      if (currentEntry) entries.push(currentEntry);
-                      currentEntry = { author: bracketMatch[1].trim(), date: bracketMatch[2].trim(), text: bracketMatch[3] || '' };
-                    } else if (line.startsWith('---')) {
-                      // skip dividers
-                    } else {
-                      // Check for inline date like (3/17/2026)
-                      const inlineDateMatch = line.match(/\((\d{1,2}\/\d{1,2}\/\d{2,4})\)/);
-                      if (currentEntry) {
-                        currentEntry.text += (currentEntry.text ? '\n' : '') + line;
-                      } else {
-                        entries.push({ author: '', date: inlineDateMatch ? inlineDateMatch[1] : '', text: line });
-                      }
+                  // Handle two formats:
+                  // 1. [Author · Date] content (date at start, text after)
+                  // 2. Text content (M/D/YYYY) (date at END of note text)
+
+                  // First, extract all [Author · Date] entries
+                  // Split on bracket entries, then handle remaining text with inline dates
+                  const bracketPattern = /\[([^·]+)·\s*(.+?)\]\s*/g;
+                  let lastIdx = 0;
+                  let match;
+                  const segments = [];
+
+                  // Collect bracket-format entries and the text between them
+                  while ((match = bracketPattern.exec(raw)) !== null) {
+                    if (match.index > lastIdx) {
+                      segments.push({ type: 'text', content: raw.slice(lastIdx, match.index).trim() });
+                    }
+                    // Find text after bracket until next bracket or end
+                    const afterStart = bracketPattern.lastIndex;
+                    const nextBracket = raw.indexOf('[', afterStart);
+                    const nextInline = raw.slice(afterStart).search(/\(\d{1,2}\/\d{1,2}\/\d{2,4}\)/);
+                    let endPos = raw.length;
+                    if (nextBracket > -1) endPos = Math.min(endPos, nextBracket);
+                    // For bracket entries, grab text until next entry
+                    const content = raw.slice(afterStart, endPos).trim();
+                    segments.push({ type: 'bracket', author: match[1].trim(), date: match[2].trim(), content });
+                    lastIdx = endPos;
+                  }
+                  if (lastIdx < raw.length) {
+                    segments.push({ type: 'text', content: raw.slice(lastIdx).trim() });
+                  }
+
+                  // Process segments
+                  segments.forEach(seg => {
+                    if (seg.type === 'bracket') {
+                      entries.push({ author: seg.author, date: seg.date, text: seg.content });
+                    } else if (seg.content) {
+                      // Split inline-dated text: "text (M/D/YYYY) text (M/D/YYYY)"
+                      // Dates appear at the END of each note, so split AFTER each date
+                      const inlineParts = seg.content.split(/(?<=\(\d{1,2}\/\d{1,2}\/\d{2,4}\))\s*/);
+                      inlineParts.forEach(part => {
+                        const trimmed = part.trim();
+                        if (!trimmed) return;
+                        const dateMatch = trimmed.match(/\((\d{1,2}\/\d{1,2}\/\d{2,4})\)\s*$/);
+                        if (dateMatch) {
+                          const noteText = trimmed.slice(0, dateMatch.index).trim();
+                          entries.push({ author: '', date: dateMatch[1], text: noteText || '(no details)' });
+                        } else if (trimmed.length > 2) {
+                          entries.push({ author: '', date: '', text: trimmed });
+                        }
+                      });
                     }
                   });
-                  if (currentEntry) entries.push(currentEntry);
 
-                  // Reverse so newest is at top
-                  entries.reverse();
+                  // Sort by date descending (newest first)
+                  entries.sort((a, b) => {
+                    if (!a.date && !b.date) return 0;
+                    if (!a.date) return 1;
+                    if (!b.date) return -1;
+                    const parseDate = (d) => {
+                      // Handle "Mar 17, 2026 2:30 PM" and "3/17/2026" formats
+                      const ts = new Date(d.replace(' EST', ''));
+                      return isNaN(ts) ? 0 : ts.getTime();
+                    };
+                    return parseDate(b.date) - parseDate(a.date);
+                  });
 
                   if (entries.length === 0) return <p className="text-muted italic text-sm p-3">No reachout notes yet.</p>;
 
                   return entries.map((e, i) => (
-                    <div key={i} className="flex gap-3 py-2.5 border-b border-border/10 last:border-0">
-                      <div className="w-[90px] flex-shrink-0 text-right">
-                        {e.date && <p className="text-[10px] text-muted/60 font-mono">{e.date.replace(' EST', '')}</p>}
-                        {e.author && <p className="text-[9px] text-amber-400/50 font-medium">{e.author}</p>}
-                        {!e.date && !e.author && <p className="text-[9px] text-red-400/40 italic">No date</p>}
+                    <div key={i} className="py-3 border-b border-border/20 last:border-0">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="text-[11px] font-mono font-semibold text-sky-400/80">{e.date ? e.date.replace(' EST', '') : 'No date'}</span>
+                        {e.author && <span className="text-[10px] text-amber-400/60 font-medium">— {e.author}</span>}
                       </div>
-                      <p className="flex-1 text-sm text-bright/80 leading-relaxed">{e.text}</p>
+                      <p className="text-sm text-bright/80 leading-relaxed whitespace-pre-wrap">{e.text}</p>
                     </div>
                   ));
                 })() : <p className="text-muted italic text-sm p-3">No reachout notes yet.</p>}
