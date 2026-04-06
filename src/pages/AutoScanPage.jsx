@@ -548,6 +548,7 @@ function HistoryPanel({ personId }) {
   const [expandedIdx, setExpandedIdx] = useState(null);
   const [winnersIdx, setWinnersIdx] = useState(null);
   const [winnersShowCount, setWinnersShowCount] = useState({});
+  const [confirmLoad, setConfirmLoad] = useState(null); // index of entry awaiting confirmation
 
   // Fetch server-side history (all users)
   useEffect(() => {
@@ -643,29 +644,53 @@ function HistoryPanel({ personId }) {
                     🏆 {winners.length > 0 ? `Winners (${winners.length})` : `Scored (${allScored.length})`}
                   </button>
                 )}
-                <button onClick={async () => {
-                  // If we have local results with companies, use them directly
-                  if (companies.length > 0) {
-                    setScanResults(prev => ({ ...prev, [personId]: { ...results, analysis } }));
-                    return;
-                  }
-                  // Otherwise fetch from server (last-results for this person)
-                  setLoadingResults(i);
-                  try {
-                    const pid = h.personId || personId;
-                    const r = await fetch(`${API_BASE}/api/autoscan/last-results/${pid}`);
-                    if (r.ok) {
-                      const data = await r.json();
-                      if (data.results && !data.error) {
-                        setScanResults(prev => ({ ...prev, [personId]: data }));
+                {confirmLoad === i ? (
+                  <div className="flex items-center gap-1.5 bg-sky-500/8 border border-sky-400/20 rounded-lg px-2 py-1">
+                    <span className="text-[8px] text-sky-300/70">
+                      Load {h.totalResults || topCos.length || '?'} results{winners.length > 0 ? `, ${winners.length} winners` : allScored.length > 0 ? `, ${allScored.length} scored` : ''}?
+                    </span>
+                    <button onClick={async () => {
+                      setConfirmLoad(null);
+                      // If we have local results with companies, use them directly
+                      if (companies.length > 0) {
+                        setScanResults(prev => ({ ...prev, [personId]: { ...results, analysis } }));
+                        return;
                       }
-                    }
-                  } catch (e) {}
-                  setLoadingResults(null);
-                }}
-                  className="text-[9px] px-2 py-1 rounded-lg border border-sky-400/20 text-sky-400/60 hover:text-sky-300 hover:border-sky-400/30 transition-all font-medium">
-                  {loadingResults === i ? '...' : 'Load Results'}
-                </button>
+                      // Try fetching from server (last-results for this person)
+                      setLoadingResults(i);
+                      try {
+                        const pid = h.personId || personId;
+                        const r = await fetch(`${API_BASE}/api/autoscan/last-results/${pid}`);
+                        if (r.ok) {
+                          const data = await r.json();
+                          if (data.results && !data.error) {
+                            setScanResults(prev => ({ ...prev, [personId]: data }));
+                            setLoadingResults(null);
+                            return;
+                          }
+                        }
+                      } catch (e) {}
+                      // Fallback: reconstruct from topCompanies in history entry
+                      if (topCos.length > 0) {
+                        const reconstructed = topCos.map(c => ({ ...c, _score: c.score || 0 }));
+                        setScanResults(prev => ({ ...prev, [personId]: { results: reconstructed, analysis: analysis || '', funnel } }));
+                      }
+                      setLoadingResults(null);
+                    }}
+                      className="text-[8px] px-1.5 py-0.5 rounded bg-sky-500/20 border border-sky-400/30 text-sky-300 font-bold hover:bg-sky-500/30 transition-all">
+                      Yes
+                    </button>
+                    <button onClick={() => setConfirmLoad(null)}
+                      className="text-[8px] px-1.5 py-0.5 rounded border border-border/20 text-muted/50 hover:text-muted/70 transition-all">
+                      No
+                    </button>
+                  </div>
+                ) : (
+                  <button onClick={() => setConfirmLoad(i)}
+                    className="text-[9px] px-2 py-1 rounded-lg border border-sky-400/20 text-sky-400/60 hover:text-sky-300 hover:border-sky-400/30 transition-all font-medium">
+                    {loadingResults === i ? '...' : 'Load Results'}
+                  </button>
+                )}
                 <button onClick={() => { setExpandedIdx(isExpanded ? null : i); setWinnersIdx(null); }}
                   className={`text-[9px] px-2 py-1 rounded-lg border transition-all font-medium ${
                     isExpanded ? 'bg-violet-500/10 border-violet-400/25 text-violet-300' : 'border-border/15 text-muted/40 hover:text-violet-300 hover:border-violet-400/20'
