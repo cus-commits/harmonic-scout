@@ -396,7 +396,7 @@ function ScanAnalysisPanel({ analysis, companies }) {
   );
 }
 
-function AnalysisWithLinks({ text, companies }) {
+function AnalysisWithLinks({ text, companies, scoredCompanies }) {
   if (!text || typeof text !== 'string') return null;
   // Build a map of company name (lowercase) → website URL
   const urlMap = {};
@@ -406,43 +406,70 @@ function AnalysisWithLinks({ text, companies }) {
       urlMap[(c.name || '').toLowerCase()] = url;
     }
   }
+  // Build a map of company name (lowercase) → score for pass/fail highlighting
+  const scoreMap = {};
+  for (const c of (scoredCompanies || companies || [])) {
+    const score = c._score || c.score || 0;
+    if (score > 0) scoreMap[(c.name || '').toLowerCase()] = score;
+  }
 
-  // Parse the analysis text: find **CompanyName** patterns and make them links
-  const parts = [];
-  let remaining = text;
-  const boldRegex = /\*\*([^*]+)\*\*/g;
-  let match;
-  let lastIdx = 0;
-
-  while ((match = boldRegex.exec(text)) !== null) {
-    // Add text before this match
-    if (match.index > lastIdx) {
-      parts.push({ type: 'text', content: text.slice(lastIdx, match.index) });
+  // Highlight inline PASS/CUT lines from Sonnet pre-filter
+  // Format: "CompanyName — PASS — reason" or "CompanyName — CUT — reason"
+  const highlightLine = (lineText) => {
+    if (/[—\-–]\s*PASS\s*[—\-–]/i.test(lineText)) {
+      return 'text-emerald-400/80 bg-emerald-500/8 rounded px-1 -mx-1';
     }
-    const name = match[1];
-    const url = urlMap[name.toLowerCase()];
-    parts.push({ type: 'bold', name, url });
-    lastIdx = match.index + match[0].length;
-  }
-  // Remaining text
-  if (lastIdx < text.length) {
-    parts.push({ type: 'text', content: text.slice(lastIdx) });
-  }
+    if (/[—\-–]\s*CUT\s*[—\-–]/i.test(lineText)) {
+      return 'text-red-400/60 bg-red-500/5 rounded px-1 -mx-1';
+    }
+    return null;
+  };
+
+  // Split text into lines, process each line for highlighting
+  const lines = text.split('\n');
 
   return (
     <div className="text-xs text-bright/70 leading-relaxed whitespace-pre-wrap">
-      {parts.map((part, i) => {
-        if (part.type === 'text') return <span key={i}>{part.content}</span>;
+      {lines.map((line, li) => {
+        const lineHighlight = highlightLine(line);
+
+        // Parse **bold** patterns within this line
+        const parts = [];
+        const boldRegex = /\*\*([^*]+)\*\*/g;
+        let match;
+        let lastIdx = 0;
+        while ((match = boldRegex.exec(line)) !== null) {
+          if (match.index > lastIdx) parts.push({ type: 'text', content: line.slice(lastIdx, match.index) });
+          const name = match[1];
+          const url = urlMap[name.toLowerCase()];
+          const score = scoreMap[name.toLowerCase()] || 0;
+          parts.push({ type: 'bold', name, url, score });
+          lastIdx = match.index + match[0].length;
+        }
+        if (lastIdx < line.length) parts.push({ type: 'text', content: line.slice(lastIdx) });
+        if (parts.length === 0) parts.push({ type: 'text', content: line });
+
         return (
-          <span key={i} className="inline-flex items-center gap-1">
-            <strong className="text-bright font-bold">{part.name}</strong>
-            {part.url && (
-              <a href={part.url} target="_blank" rel="noopener"
-                className="inline-flex items-center text-[9px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-400/30 hover:bg-sky-500/20 hover:text-sky-300 transition-all font-medium no-underline"
-                onClick={e => e.stopPropagation()}>
-                🌐
-              </a>
-            )}
+          <span key={li} className={lineHighlight || undefined}>
+            {parts.map((part, i) => {
+              if (part.type === 'text') return <span key={i}>{part.content}</span>;
+              // Color bold company names: green if passed (score >= 6), red if scored but failed, default otherwise
+              const nameColor = part.score >= 6 ? 'text-emerald-400 font-bold' : part.score > 0 ? 'text-red-400/80 font-bold' : 'text-bright font-bold';
+              return (
+                <span key={i} className="inline-flex items-center gap-1">
+                  <strong className={nameColor}>{part.name}</strong>
+                  {part.score > 0 && <span className={`text-[8px] ${part.score >= 6 ? 'text-emerald-400/60' : 'text-red-400/50'}`}>({part.score}/10)</span>}
+                  {part.url && (
+                    <a href={part.url} target="_blank" rel="noopener"
+                      className="inline-flex items-center text-[9px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-400/30 hover:bg-sky-500/20 hover:text-sky-300 transition-all font-medium no-underline"
+                      onClick={e => e.stopPropagation()}>
+                      🌐
+                    </a>
+                  )}
+                </span>
+              );
+            })}
+            {li < lines.length - 1 && '\n'}
           </span>
         );
       })}
@@ -740,7 +767,7 @@ function HistoryPanel({ personId }) {
             {isExpanded && analysis && (
               <div className="border-t border-border/10 px-3 py-3 bg-violet-500/[0.02]">
                 <p className="text-[9px] uppercase tracking-widest text-violet-400/45 font-bold mb-2">Opus Scoring Logic</p>
-                <AnalysisWithLinks text={analysis} companies={companies} />
+                <AnalysisWithLinks text={analysis} companies={companies} scoredCompanies={topCos} />
               </div>
             )}
             {isExpanded && !analysis && (
