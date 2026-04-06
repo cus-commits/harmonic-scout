@@ -1269,7 +1269,7 @@ function VettingPanel({ team, addFavorite, isFavorited }) {
 
 // ---- Main Page ----
 
-function ScanProgressPanel({ scanStatus, effectiveScanMode, onCancel }) {
+function ScanProgressPanel({ scanStatus, effectiveScanMode, onCancel, profileName, savedSearchNames }) {
   const [tick, setTick] = useState(0);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [feed, setFeed] = useState([]);
@@ -1363,6 +1363,17 @@ function ScanProgressPanel({ scanStatus, effectiveScanMode, onCancel }) {
 
   return (
     <div className="bg-ink/30 border border-sky-400/15 rounded-xl overflow-hidden">
+      {/* Search context header */}
+      {(profileName || (savedSearchNames && savedSearchNames.length > 0)) && (
+        <div className="px-4 pt-3 pb-1 border-b border-sky-400/10">
+          <p className="text-[11px] text-sky-400/70 font-medium truncate">
+            {profileName && <span>{profileName}</span>}
+            {savedSearchNames && savedSearchNames.length > 0 && (
+              <span className="text-muted/50 ml-1">— {savedSearchNames.join(', ')}</span>
+            )}
+          </p>
+        </div>
+      )}
       {/* Main progress header */}
       <div className="p-4 space-y-3">
         <div className="flex items-center gap-3">
@@ -1731,9 +1742,14 @@ export default function AutoScanPage({ addFavorite, isFavorited }) {
     // Clear the URL param
     setSearchParams({});
   };
-  const [activeTab, setActiveTab] = useState(team[0].id);
+  const [activeTab, setActiveTab] = useState(() => {
+    try { const saved = localStorage.getItem('autoscan_activeTab'); if (saved && team.some(t => t.id === saved)) return saved; } catch {}
+    return team[0].id;
+  });
   const [allProfiles, setAllProfiles] = useState(() => { const p = {}; team.forEach(t => { p[t.id] = loadProfiles(t.id); }); return p; });
-  const [activeProfileIdx, setActiveProfileIdx] = useState(0);
+  const [activeProfileIdx, setActiveProfileIdx] = useState(() => {
+    try { const saved = parseInt(localStorage.getItem('autoscan_activeProfileIdx') || '0'); return isNaN(saved) ? 0 : saved; } catch { return 0; }
+  });
   const [editing, setEditing] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showTopPicks, setShowTopPicks] = useState(false);
@@ -1777,7 +1793,8 @@ export default function AutoScanPage({ addFavorite, isFavorited }) {
   const isRestrictedUser = crmUserLower === 'dean' || crmUserLower === 'brett';
   const canEdit = !isRestrictedUser || crmUserLower === activeTab;
 
-  useEffect(() => { setActiveProfileIdx(0); setEditing(false); setShowHistory(false); setShowTopPicks(false); setShowVetting(false); }, [activeTab]);
+  useEffect(() => { localStorage.setItem('autoscan_activeTab', activeTab); setActiveProfileIdx(0); setEditing(false); setShowHistory(false); setShowTopPicks(false); setShowVetting(false); }, [activeTab]);
+  useEffect(() => { localStorage.setItem('autoscan_activeProfileIdx', String(activeProfileIdx)); }, [activeProfileIdx]);
 
   const handleSaveProfile = (profile) => {
     const updated = [...personProfiles];
@@ -2375,7 +2392,7 @@ export default function AutoScanPage({ addFavorite, isFavorited }) {
 
           {/* Scanning indicator */}
           {isScanning && (
-            <ScanProgressPanel scanStatus={scanStatus} effectiveScanMode={effectiveScanMode} onCancel={() => cancelScan(activeTab)} />
+            <ScanProgressPanel scanStatus={scanStatus} effectiveScanMode={effectiveScanMode} onCancel={() => cancelScan(activeTab)} profileName={activeProfile?.name} savedSearchNames={activeProfile?.savedSearchIds?.map(s => s.name)} />
           )}
         </div>
       ) : (
