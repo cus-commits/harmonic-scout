@@ -80,7 +80,7 @@ function saveToHistory(personId, profileName, results) {
   // Trim results to prevent localStorage overflow (keep analysis + funnel + top 100 companies)
   const trimmed = {
     ...results,
-    results: (results.results || []).slice(0, 100), // Keep top 100 by score
+    results: (results.results || []).slice(0, 300), // Keep top 300 by score
   };
   history.unshift({ profileName, results: trimmed, timestamp: Date.now() });
   try {
@@ -119,7 +119,7 @@ function saveTopPick(personId, company, scanMeta) {
     scanName: company._sourceCategory || company._sourceSearchName || scanMeta?.profileName || 'Scan',
     profileName: scanMeta?.profileName || 'Scan',
     scanMode: scanMeta?.scanMode || 'keywords',
-    analysis: (scanMeta?.analysis || '').slice(0, 1000), // Cap analysis at 1KB
+    analysis: (scanMeta?.analysis || '').slice(0, 5000), // Cap analysis at 5KB
     score: company._score || null,
     allWinners: (scanMeta?.allWinners || []).slice(0, 10).map(w => ({ name: w.name, _score: w._score })), // Only names+scores, max 10
   };
@@ -321,26 +321,32 @@ export function ScanProvider({ children }) {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let fullText = '';
-      
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        fullText += chunk;
-        
-        // Parse SSE progress comments (lines starting with ': ')
-        const lines = chunk.split('\n');
-        for (const line of lines) {
-          if (line.startsWith(': ') && line.length > 2) {
-            const progressMsg = line.slice(2).trim();
-            if (progressMsg && progressMsg !== 'keepalive') {
-              setActiveScans(prev => ({
-                ...prev,
-                [personId]: { ...prev[personId], status: 'scanning', progress: progressMsg }
-              }));
+      let streamError = false;
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value, { stream: true });
+          fullText += chunk;
+
+          // Parse SSE progress comments (lines starting with ': ')
+          const lines = chunk.split('\n');
+          for (const line of lines) {
+            if (line.startsWith(': ') && line.length > 2) {
+              const progressMsg = line.slice(2).trim();
+              if (progressMsg && progressMsg !== 'keepalive') {
+                setActiveScans(prev => ({
+                  ...prev,
+                  [personId]: { ...prev[personId], status: 'scanning', progress: progressMsg }
+                }));
+              }
             }
           }
         }
+      } catch (streamErr) {
+        console.warn(`[Scan] Stream interrupted for ${personId}: ${streamErr.message} — will poll for results`);
+        streamError = true;
       }
 
       const text = fullText;
@@ -358,8 +364,8 @@ export function ScanProvider({ children }) {
         }
       }
 
-      // Recovery: if stream ended without data, poll server for results
-      if (!data) {
+      // Recovery: if stream ended without data or stream errored, poll server for results
+      if (!data || streamError) {
         console.log('[Scan] Stream ended without data — polling server for results...');
         setActiveScans(prev => ({ ...prev, [personId]: { ...prev[personId], progress: 'Recovering results...' } }));
         // Poll status until done (max 5 min)
