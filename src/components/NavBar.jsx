@@ -681,22 +681,31 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
         {/* Main tabs */}
         {tabs.map((tab) => {
           const active = location.pathname === tab.path;
+          const isCrm = tab.path === '/airtable';
           return (
-            <button key={tab.path} onClick={() => { navigate(tab.path); setShowApps(false); }}
-              className={`group relative flex flex-col items-center gap-0 px-1.5 py-1 transition-all duration-200 min-w-0 ${
-                active ? 'text-accent' : 'text-muted hover:text-bright'
-              }`}>
-              {active && <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-accent" />}
-              <div className={`relative transition-all duration-200 ${active ? 'drop-shadow-[0_0_6px_rgba(80,227,194,0.5)]' : ''}`}>
-                <tab.icon active={active} />
-                {tab.badge > 0 && (
-                  <span className="absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 rounded-full bg-accent text-ink text-[9px] font-bold flex items-center justify-center">
-                    {tab.badge}
-                  </span>
-                )}
-              </div>
-              <span className="text-[8px] font-medium tracking-wide uppercase leading-tight">{tab.label}</span>
-            </button>
+            <React.Fragment key={tab.path}>
+              <button onClick={() => { navigate(tab.path); setShowApps(false); }}
+                className={`group relative flex flex-col items-center gap-0 px-1.5 py-1 transition-all duration-200 min-w-0 ${
+                  active ? 'text-accent' : 'text-muted hover:text-bright'
+                }`}>
+                {active && <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-accent" />}
+                <div className={`relative transition-all duration-200 ${active ? 'drop-shadow-[0_0_6px_rgba(80,227,194,0.5)]' : ''}`}>
+                  <tab.icon active={active} />
+                  {tab.badge > 0 && (
+                    <span className="absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 rounded-full bg-accent text-ink text-[9px] font-bold flex items-center justify-center">
+                      {tab.badge}
+                    </span>
+                  )}
+                </div>
+                <span className="text-[8px] font-medium tracking-wide uppercase leading-tight">{tab.label}</span>
+              </button>
+              {isCrm && !crmRestricted && pendingCount > 0 && (
+                <button onClick={() => navigate('/airtable')}
+                  className="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-400/20 animate-pulse hover:bg-amber-500/15 transition-all">
+                  <span className="text-[9px] text-amber-300 font-medium whitespace-nowrap">🗳️ {pendingCount} {pendingCount === 1 ? 'vote' : 'votes'}</span>
+                </button>
+              )}
+            </React.Fragment>
           );
         })}
 
@@ -710,15 +719,6 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
         {/* Gorn + Identity */}
         <div className="flex-shrink-0 flex items-center gap-1.5 px-1.5 relative group" style={{ fontSize: '115%' }}>
           <img src="/gorn.png" alt="" className="w-7 h-7 rounded opacity-20" />
-          {!crmRestricted && pendingCount > 0 && (
-            <>
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full animate-pulse" />
-              <div className="hidden group-hover:block absolute bottom-full right-0 mb-2 w-48 bg-[#1a1d2e] border border-amber-400/25 rounded-lg px-3 py-2 shadow-xl z-[60]">
-                <p className="text-[10px] text-amber-300 font-medium">🗳️ {pendingCount} {pendingCount === 1 ? 'company needs' : 'companies need'} your vote!</p>
-                <p className="text-[8px] text-muted/40 mt-0.5">Go to CRM to review</p>
-              </div>
-            </>
-          )}
           <CrmIdentity />
         </div>
         {/* Daxos logo */}
