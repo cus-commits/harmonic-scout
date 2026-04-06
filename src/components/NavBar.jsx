@@ -699,12 +699,6 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
                 </div>
                 <span className="text-[8px] font-medium tracking-wide uppercase leading-tight">{tab.label}</span>
               </button>
-              {isCrm && !crmRestricted && pendingCount > 0 && (
-                <button onClick={() => navigate('/airtable')}
-                  className="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-400/20 animate-pulse hover:bg-amber-500/15 transition-all">
-                  <span className="text-[9px] text-amber-300 font-medium whitespace-nowrap">🗳️ {pendingCount} {pendingCount === 1 ? 'vote' : 'votes'}</span>
-                </button>
-              )}
             </React.Fragment>
           );
         })}
@@ -726,6 +720,14 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
           <img src="/dc-logo.svg" alt="daxos.capital" className="h-6" />
         </a>
       </div>
+      {/* Top-right vote alert */}
+      {!crmRestricted && pendingCount > 0 && (
+        <button onClick={() => navigate('/airtable')}
+          className="fixed top-3 right-3 z-[60] flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/15 border border-amber-400/25 hover:bg-amber-500/20 transition-all shadow-lg shadow-black/30">
+          <span className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
+          <span className="text-[10px] text-amber-300 font-medium">🗳️ {pendingCount} {pendingCount === 1 ? 'company needs' : 'companies need'} your vote</span>
+        </button>
+      )}
     </nav>
   );
 }

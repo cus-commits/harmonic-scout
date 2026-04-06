@@ -292,7 +292,7 @@ export default function AirtablePage() {
           fetch(`${API_BASE}/api/airtable/companies?stage=BORO-SM&limit=200`).then(r => r.json()),
         ]);
         const now = Date.now();
-        const TWO_WEEKS = 14 * 86400000;
+        const ONE_WEEK = 7 * 86400000;
         const ONE_MONTH = 30 * 86400000;
         const getLastDate = (notes) => {
           let latest = null;
@@ -301,7 +301,7 @@ export default function AirtablePage() {
           }
           return latest;
         };
-        const missingSM = (sm.companies||[]).filter(c => { const d = getLastDate(c.reachout_notes); return !d || now - d.getTime() > TWO_WEEKS; });
+        const missingSM = (sm.companies||[]).filter(c => { const d = getLastDate(c.reachout_notes); return !d || now - d.getTime() > ONE_WEEK; });
         const missingBORO = (boro.companies||[]).filter(c => { const d = getLastDate(c.reachout_notes); return !d || now - d.getTime() > ONE_MONTH; });
         if (missingSM.length > 0 || missingBORO.length > 0) {
           setSerenaMissing({ sm: missingSM.map(c => c.company), boro: missingBORO.map(c => c.company) });
@@ -672,7 +672,7 @@ export default function AirtablePage() {
           <p className="text-[11px] text-red-300/80 font-bold mb-2">📞 Serena — Reachout reminders</p>
           {serenaMissing.sm.length > 0 && (
             <div className="mb-1.5">
-              <p className="text-[9px] text-emerald-400/70 font-bold uppercase tracking-wider">🏆 SM — Not reached in 2+ weeks ({serenaMissing.sm.length})</p>
+              <p className="text-[9px] text-emerald-400/70 font-bold uppercase tracking-wider">🏆 SM — Not reached in 1+ week ({serenaMissing.sm.length})</p>
               <p className="text-[10px] text-bright/50 mt-0.5">{serenaMissing.sm.join(' · ')}</p>
             </div>
           )}
@@ -700,7 +700,7 @@ export default function AirtablePage() {
           {/* Missing reachouts — BORO-SM: 2 weeks, BORO: 1 month */}
           {(() => {
             const now = Date.now();
-            const TWO_WEEKS = 14 * 86400000;
+            const ONE_WEEK = 7 * 86400000;
             const ONE_MONTH = 30 * 86400000;
             const allBoroSmCompanies = allReachouts || [];
 
@@ -723,7 +723,7 @@ export default function AirtablePage() {
             allBoroSmCompanies.forEach(c => {
               const lastDate = getLastReachoutDate(c.reachout_notes);
               const elapsed = lastDate ? now - lastDate.getTime() : Infinity;
-              if (c.crm_stage === 'BORO-SM' && elapsed > TWO_WEEKS) missingSM.push(c);
+              if (c.crm_stage === 'BORO-SM' && elapsed > ONE_WEEK) missingSM.push(c);
               else if (c.crm_stage === 'BORO' && elapsed > ONE_MONTH) missingBORO.push(c);
             });
 
@@ -732,7 +732,7 @@ export default function AirtablePage() {
               <div className="mb-3 space-y-2">
                 {missingSM.length > 0 && (
                   <div className="p-2.5 bg-red-500/5 border border-red-400/15 rounded-xl">
-                    <p className="text-[9px] text-red-400/70 font-bold uppercase tracking-wider mb-1.5">⚠ 🏆 SM — No reachout in 2+ weeks ({missingSM.length})</p>
+                    <p className="text-[9px] text-red-400/70 font-bold uppercase tracking-wider mb-1.5">⚠ 🏆 SM — No reachout in 1+ week ({missingSM.length})</p>
                     <div className="flex flex-wrap gap-1.5">
                       {missingSM.map((c, i) => (
                         <button key={i} onClick={() => setReachoutModal({ company: c.company, stage: c.crm_stage, notes: c.reachout_notes || '', loading: false })}
