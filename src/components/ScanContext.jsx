@@ -368,6 +368,7 @@ export function ScanProvider({ children }) {
       if (!data || streamError) {
         console.log('[Scan] Stream ended without data — polling server for results...');
         setActiveScans(prev => ({ ...prev, [personId]: { ...prev[personId], progress: 'Recovering results...' } }));
+        let idleCount = 0;
         // Poll status until done (max 5 min)
         for (let attempt = 0; attempt < 60; attempt++) {
           await new Promise(r => setTimeout(r, 5000));
@@ -387,10 +388,31 @@ export function ScanProvider({ children }) {
                 break;
               }
             }
-            if (!personStatus || personStatus.status === 'error') {
+            // If status is idle or missing, the scan may have been cleared — check for cached results
+            if (!personStatus || personStatus.status === 'idle') {
+              idleCount++;
+              // Try fetching cached results in case scan finished but status was cleared
+              try {
+                const resultsRes = await fetch(`${API_BASE}/api/autoscan/last-results/${personId}`);
+                const cached = await resultsRes.json();
+                if (cached && !cached.error && cached.results?.length > 0) {
+                  console.log('[Scan] Found cached results after status cleared:', cached.results.length, 'companies');
+                  data = cached;
+                  break;
+                }
+              } catch (e) { /* no cached results */ }
+              // If idle for 3+ consecutive polls, scan is dead — stop waiting
+              if (idleCount >= 3) {
+                throw new Error('Scan ended without results — the server may have timed out. Try again.');
+              }
+            } else {
+              idleCount = 0; // reset if status is scanning/done/etc
+            }
+            if (personStatus?.status === 'error') {
               throw new Error(personStatus?.error || 'Scan failed on server');
             }
           } catch(pollErr) {
+            if (pollErr.message && !pollErr.message.includes('Scan timed out')) throw pollErr;
             if (attempt >= 59) throw new Error('Scan timed out — check server logs');
           }
         }
