@@ -70,6 +70,7 @@ function ScanProgress({ status, onCancel }) {
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [feed, setFeed] = useState([]);
   const [hideFeed, setHideFeed] = useState(false);
+  const [etaTarget, setEtaTarget] = useState(null);
 
   useEffect(() => {
     const t = setInterval(() => setTick(v => v + 1), 1000);
@@ -81,7 +82,43 @@ function ScanProgress({ status, onCancel }) {
     const msg = status?.progress || '';
     if (!msg || msg === 'keepalive' || msg === lastMsg.current) return;
     lastMsg.current = msg;
-    setFeed(prev => [{ msg, ts: Date.now(), id: Date.now() }, ...prev].slice(0, 50));
+    setFeed(prev => [{ msg, ts: Date.now(), id: Date.now() }, ...prev].slice(0, 80));
+  }, [status?.progress]);
+
+  // ETA calculation based on progress messages
+  useEffect(() => {
+    const msg = status?.progress || '';
+    if (!msg || msg === 'keepalive') return;
+
+    let estSeconds = null;
+    const preBatch = msg.match(/[Pp]re-screen batch (\d+)\/(\d+)/);
+    const scoreBatch = msg.match(/[Ss]coring batch (\d+)\/(\d+)/);
+    const deepBatch = msg.match(/[Oo]pus.*batch (\d+)\/(\d+)|deep batch (\d+)\/(\d+)/i);
+    const enriching = msg.match(/[Ee]nriching (\d+)/);
+    const fetching = msg.match(/\[(\d+)\/(\d+)\] Fetching/);
+
+    if (deepBatch) {
+      const cur = parseInt(deepBatch[1] || deepBatch[3]);
+      const total = parseInt(deepBatch[2] || deepBatch[4]);
+      estSeconds = (total - cur) * 55;
+    } else if (scoreBatch) {
+      const remaining = parseInt(scoreBatch[2]) - parseInt(scoreBatch[1]);
+      estSeconds = remaining * 35 + 120; // + time for deep phase
+    } else if (enriching) {
+      estSeconds = 60 + 300; // enrichment + scoring + deep
+    } else if (msg.includes('Pre-screen complete') || msg.includes('pre-screen complete')) {
+      estSeconds = 300;
+    } else if (preBatch) {
+      const remaining = parseInt(preBatch[2]) - parseInt(preBatch[1]);
+      estSeconds = remaining * 25 + 400;
+    } else if (fetching) {
+      const remaining = parseInt(fetching[2]) - parseInt(fetching[1]);
+      estSeconds = remaining * 8 + 600;
+    } else if (msg.includes('Fetching all') || msg.includes('Starting')) {
+      estSeconds = 900;
+    }
+
+    if (estSeconds !== null) setEtaTarget(Date.now() + estSeconds * 1000);
   }, [status?.progress]);
 
   const elapsed = status?.startedAt ? Math.floor((Date.now() - status.startedAt) / 1000) : 0;
@@ -89,16 +126,21 @@ function ScanProgress({ status, onCancel }) {
   const mins = Math.floor((elapsed % 3600) / 60);
   const secs = elapsed % 60;
 
+  const etaRemaining = etaTarget ? Math.max(0, Math.floor((etaTarget - Date.now()) / 1000)) : null;
+  const etaMins = etaRemaining !== null ? Math.floor(etaRemaining / 60) : 0;
+  const etaSecs = etaRemaining !== null ? etaRemaining % 60 : 0;
+  const showEta = etaRemaining !== null && etaRemaining > 0;
+
   const progress = status?.progress || '';
   const stats = status?.stats || {};
   const tierInfo = status?.tier || {};
 
   let stage = 'fetch';
   if (progress.includes('Opus') || progress.includes('deep')) stage = 'opus';
-  else if (progress.includes('Sonnet scoring') || progress.includes('scoring batch')) stage = 'screen';
+  else if (progress.includes('Sonnet scoring') || progress.includes('scoring batch') || progress.includes('Scoring batch')) stage = 'screen';
   else if (progress.includes('Enriching') || progress.includes('Enriched') || progress.includes('Filtered')) stage = 'enrich';
   else if (progress.includes('Pre-screen') || progress.includes('pre-screen') || progress.includes('Screening')) stage = 'prescreen';
-  else if (progress.includes('Fetching') || progress.includes('fetched') || progress.includes('search')) stage = 'fetch';
+  else if (progress.includes('Fetching') || progress.includes('fetched') || progress.includes('search') || progress.includes('Starting')) stage = 'fetch';
 
   const stages = [
     { id: 'fetch', emoji: '📡', label: 'Fetching', color: 'text-sky-400' },
@@ -108,10 +150,15 @@ function ScanProgress({ status, onCancel }) {
     { id: 'opus', emoji: '🧠', label: 'Deep Analysis', color: 'text-emerald-400' },
   ];
 
+  // Parse feed for company highlights (scored companies)
+  const companyHighlights = feed
+    .filter(f => f.msg.match(/[🌟🏆⭐📊📉✅] .+ — \d+\/10/) || f.msg.match(/[🌟🏆⭐] .+/))
+    .slice(0, 6);
+
   return (
     <div className="bg-ink/30 border border-sky-400/15 rounded-xl overflow-hidden">
       <div className="p-4 space-y-3">
-        {/* Tier badge + timer */}
+        {/* Tier badge + timer + ETA */}
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 border-2 border-sky-400 border-t-transparent rounded-full animate-spin flex-shrink-0" />
           <div className="flex-1 min-w-0">
@@ -119,11 +166,18 @@ function ScanProgress({ status, onCancel }) {
               <p className="text-sm text-bright/70 font-medium">{progress || 'Starting scan agent...'}</p>
               {tierInfo.name && <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-muted/50">{tierInfo.name}</span>}
             </div>
-            <p className="text-[10px] text-muted/40 mt-0.5">Scan runs in background — safe to close tab or refresh</p>
+            <p className="text-[10px] text-muted/40 mt-0.5">
+              {showEta ? `~${etaMins}m ${String(etaSecs).padStart(2, '0')}s remaining` : 'Scan runs in background — safe to close tab or refresh'}
+            </p>
           </div>
-          <span className="text-[11px] font-mono text-sky-400/60 flex-shrink-0">
-            {hours > 0 ? `${hours}h ${String(mins).padStart(2, '0')}m` : `${mins}:${String(secs).padStart(2, '0')}`}
-          </span>
+          <div className="text-right flex-shrink-0">
+            <span className="text-[11px] font-mono text-sky-400/60">
+              {hours > 0 ? `${hours}h ${String(mins).padStart(2, '0')}m` : `${mins}:${String(secs).padStart(2, '0')}`}
+            </span>
+            {showEta && (
+              <p className="text-[9px] font-mono text-amber-400/50 mt-0.5">~{etaMins}m {String(etaSecs).padStart(2, '0')}s left</p>
+            )}
+          </div>
         </div>
 
         {/* Stage pipeline */}
@@ -146,7 +200,7 @@ function ScanProgress({ status, onCancel }) {
           })}
         </div>
 
-        {/* Live stats */}
+        {/* Live stats funnel */}
         {(stats.savedSearches > 0 || stats.totalCompanies > 0) && (
           <div className="flex gap-2 text-[10px] text-muted/40 flex-wrap">
             {stats.savedSearches > 0 && <span>Ⓗ {stats.savedSearches} searches</span>}
@@ -154,6 +208,45 @@ function ScanProgress({ status, onCancel }) {
             {stats.sonnetPassed > 0 && <span className="text-violet-300/60">→ {stats.sonnetPassed} pre-screened</span>}
             {stats.enriched > 0 && <span className="text-amber-300/60">→ {stats.enriched} enriched</span>}
             {stats.deepScored > 0 && <span className="text-emerald-300/60">→ {stats.deepScored} deep-scored</span>}
+          </div>
+        )}
+
+        {/* Live company highlights — scored companies appearing in real-time */}
+        {companyHighlights.length > 0 && (
+          <div className="bg-white/[0.02] rounded-lg p-2.5 space-y-1.5">
+            <p className="text-[8px] uppercase tracking-widest text-muted/25 font-bold">Latest Companies</p>
+            {companyHighlights.map(f => {
+              const scoreMatch = f.msg.match(/(.+?) — (\d+)\/10/);
+              const name = scoreMatch ? scoreMatch[1].replace(/^[🌟🏆⭐📊📉📋✅❌]\s*/, '').trim() : null;
+              const score = scoreMatch ? parseInt(scoreMatch[2]) : null;
+              const rest = f.msg.split(' — ').slice(1).join(' — ');
+              const isPass = f.msg.startsWith('✅');
+              const isCut = f.msg.startsWith('❌');
+
+              if (score !== null) {
+                const barColor = score >= 9 ? 'bg-emerald-400' : score >= 7 ? 'bg-sky-400' : score >= 5 ? 'bg-amber-400' : 'bg-red-400/50';
+                return (
+                  <div key={f.id} className="flex items-center gap-2">
+                    <div className="w-16 h-1.5 rounded-full bg-white/5 overflow-hidden flex-shrink-0">
+                      <div className={`h-full rounded-full ${barColor} transition-all`} style={{ width: `${score * 10}%` }} />
+                    </div>
+                    <span className="text-[10px] text-bright/60 font-medium truncate">{name}</span>
+                    <span className={`text-[10px] font-bold flex-shrink-0 ${score >= 7 ? 'text-emerald-400/70' : 'text-muted/40'}`}>{score}/10</span>
+                  </div>
+                );
+              } else if (isPass || isCut) {
+                const compName = f.msg.replace(/^[✅❌]\s*/, '').split(' — ')[0].trim();
+                const reason = f.msg.split(' — ').slice(1).join(' — ').trim();
+                return (
+                  <div key={f.id} className="flex items-center gap-2 text-[10px]">
+                    <span>{isPass ? '✅' : '❌'}</span>
+                    <span className={`font-medium truncate ${isPass ? 'text-emerald-400/60' : 'text-muted/30'}`}>{compName}</span>
+                    {reason && <span className="text-muted/25 truncate text-[9px]">{reason}</span>}
+                  </div>
+                );
+              }
+              return null;
+            })}
           </div>
         )}
 
@@ -180,16 +273,16 @@ function ScanProgress({ status, onCancel }) {
         </div>
       </div>
 
-      {/* Live feed */}
+      {/* Full live feed — collapsible */}
       {feed.length > 0 && (
         <div className="border-t border-border/10 bg-black/20">
           <button onClick={() => setHideFeed(!hideFeed)}
             className="w-full flex items-center justify-between px-4 py-2 hover:bg-white/[0.02] transition-colors">
-            <span className="text-[8px] uppercase tracking-widest text-muted/25 font-bold">Live Feed ({feed.length})</span>
+            <span className="text-[8px] uppercase tracking-widest text-muted/25 font-bold">Full Feed ({feed.length})</span>
             <span className="text-[9px] text-muted/30">{hideFeed ? '▸ Show' : '▾ Hide'}</span>
           </button>
           {!hideFeed && (
-            <div className="px-4 pb-3 max-h-[250px] overflow-y-auto">
+            <div className="px-4 pb-3 max-h-[300px] overflow-y-auto">
               <div className="space-y-1">
                 {feed.map((f, i) => (
                   <div key={f.id} className={`text-[10px] leading-relaxed transition-opacity duration-500 ${i === 0 ? 'text-bright/60' : i < 3 ? 'text-muted/45' : 'text-muted/25'}`}>
