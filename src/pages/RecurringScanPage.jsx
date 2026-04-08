@@ -655,6 +655,7 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
   };
 
   const isRunning = scanning || status?.status === 'scanning';
+  const isInterrupted = status?.status === 'interrupted';
   const crmUser = localStorage.getItem('crm_user') || 'Mark';
 
   // Determine what results to show
@@ -690,6 +691,29 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
       {/* ---- SCAN TAB ---- */}
       {pageTab === 'scan' && (
         <>
+          {/* Interrupted banner */}
+          {isInterrupted && (
+            <div className="mb-4 bg-amber-500/8 border border-amber-400/20 rounded-xl p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-amber-300/80 text-sm font-medium">⚠️ Previous scan was interrupted</p>
+                  <p className="text-[10px] text-muted/40 mt-1">{status?.progress || 'Server restarted while scan was running'}</p>
+                  {status?.stats && (
+                    <div className="flex gap-2 text-[9px] text-muted/30 mt-1.5 flex-wrap">
+                      {status.stats.totalCompanies > 0 && <span>{status.stats.totalCompanies} companies found</span>}
+                      {status.stats.sonnetPassed > 0 && <span>· {status.stats.sonnetPassed} pre-screened</span>}
+                      {status.stats.deepScored > 0 && <span>· {status.stats.deepScored} deep-scored</span>}
+                    </div>
+                  )}
+                </div>
+                <button onClick={() => { fetch(`${API_BASE}/api/recurring-scan/cancel`, { method: 'POST' }); fetchStatus(); }}
+                  className="text-[10px] px-3 py-1.5 rounded-lg border border-amber-400/25 text-amber-400/60 hover:text-amber-300 font-medium flex-shrink-0">
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Progress panel — always shows when running (even on refresh) */}
           {isRunning && (
             <div className="mb-6">
