@@ -7,6 +7,14 @@ const API_BASE = import.meta.env?.VITE_API_URL || 'https://pigeon-api.up.railway
 const VOTER_MAP = { 'Joe': 'Joe C', 'Mark': 'Mark', 'Carlo': 'Carlo', 'Jake': 'Jake', 'Liam': 'Liam' };
 const getAirtableVoter = (u) => VOTER_MAP[u] || u;
 
+function moneyFmt(val) {
+  if (!val) return '';
+  if (val >= 1e9) return `$${(val / 1e9).toFixed(1)}B`;
+  if (val >= 1e6) return `$${(val / 1e6).toFixed(1)}M`;
+  if (val >= 1e3) return `$${(val / 1e3).toFixed(0)}K`;
+  return `$${val}`;
+}
+
 export default function HomePage({ addFavorite, isFavorited }) {
   const navigate = useNavigate();
   const [pending, setPending] = useState([]);
@@ -16,6 +24,7 @@ export default function HomePage({ addFavorite, isFavorited }) {
   const [expandedCompany, setExpandedCompany] = useState(null);
   const [showScanPicker, setShowScanPicker] = useState(false);
   const [fundingAlerts, setFundingAlerts] = useState([]);
+  const [scanWinners, setScanWinners] = useState([]);
   const [hiddenAlerts, setHiddenAlerts] = useState(() => {
     try { return JSON.parse(localStorage.getItem('hidden_funding_alerts') || '[]'); } catch { return []; }
   });
@@ -59,6 +68,29 @@ export default function HomePage({ addFavorite, isFavorited }) {
   useEffect(() => {
     fetch(`${API_BASE}/api/alerts/funding-rounds`).then(r => r.json()).then(d => {
       setFundingAlerts(d.alerts || []);
+    }).catch(() => {});
+  }, []);
+
+  // Fetch scan winners from last 3 recurring scans — top 2 from latest, top 3 from next two
+  useEffect(() => {
+    fetch(`${API_BASE}/api/recurring-scan/history`).then(r => r.json()).then(history => {
+      if (!Array.isArray(history) || history.length === 0) return;
+      const winners = [];
+      const seen = new Set();
+      const caps = [2, 3, 3]; // top 2 from scan 1, top 3 from scan 2, top 3 from scan 3
+      for (let i = 0; i < Math.min(history.length, 3); i++) {
+        const scan = history[i];
+        const sorted = (scan.results || []).filter(r => r.score >= 6).sort((a, b) => (b.score || 0) - (a.score || 0));
+        let added = 0;
+        for (const r of sorted) {
+          if (added >= caps[i] || winners.length >= 8) break;
+          if (seen.has(r.name?.toLowerCase())) continue;
+          seen.add(r.name?.toLowerCase());
+          winners.push({ ...r, _scanDate: scan.timestamp, _tierName: scan.tier?.name || 'Scan' });
+          added++;
+        }
+      }
+      setScanWinners(winners);
     }).catch(() => {});
   }, []);
 
@@ -197,6 +229,61 @@ export default function HomePage({ addFavorite, isFavorited }) {
                 <button onClick={() => hideAlert(a.company)} className="text-muted/25 hover:text-muted/60 text-sm flex-shrink-0" title="Hide this alert">×</button>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Scan Winners */}
+      {scanWinners.length > 0 && (
+        <div className="mb-5 p-3.5 bg-violet-500/5 border border-violet-400/15 rounded-xl">
+          <div className="flex items-center justify-between mb-2.5">
+            <p className="text-[10px] text-violet-400/70 font-bold uppercase tracking-wider">🏆 Scan Winners</p>
+            <button onClick={() => navigate('/recurring')} className="text-[9px] text-violet-400/50 hover:text-violet-300 font-medium">View All →</button>
+          </div>
+          <div className="space-y-1.5">
+            {scanWinners.map((r, i) => {
+              const card = r.card || {};
+              const webUrl = card.website ? (card.website.startsWith('http') ? card.website : `https://${card.website}`) : null;
+              const scoreColor = r.score >= 9 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
+                : r.score >= 7 ? 'bg-sky-500/20 text-sky-300 border-sky-400/30'
+                : 'bg-amber-500/15 text-amber-300/70 border-amber-400/25';
+              const rankColor = i === 0 ? 'text-amber-400' : i < 3 ? 'text-sky-400/70' : 'text-muted/40';
+              const isFav = isFavorited ? isFavorited(r.name) : false;
+
+              return (
+                <div key={r.name} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg bg-surface/30 border border-border/10">
+                  <span className={`text-[11px] font-bold w-5 text-center flex-shrink-0 ${rankColor}`}>#{i + 1}</span>
+                  {card.logo_url ? (
+                    <img src={card.logo_url} alt="" className="w-7 h-7 rounded-md bg-ink/50 flex-shrink-0" onError={e => { e.target.style.display='none'; }} />
+                  ) : (
+                    <div className="w-7 h-7 rounded-md bg-violet-500/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-violet-400 font-bold text-[10px]">{(r.name || '?')[0]}</span>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-bright truncate">{r.name}</span>
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded-md border font-bold ${scoreColor}`}>{r.score}/10</span>
+                      {webUrl && <a href={webUrl} target="_blank" rel="noopener" onClick={e => e.stopPropagation()} className="text-blue-400 text-[9px] hover:text-blue-300 flex-shrink-0">🌐</a>}
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      {card.funding_total > 0 && <span className="text-[9px] text-sky-400/50">💰 {moneyFmt(card.funding_total)}</span>}
+                      {card.funding_stage && <span className="text-[9px] text-muted/30">{card.funding_stage}</span>}
+                      {r._sourceSearch && <span className="text-[9px] text-muted/25 truncate">· {r._sourceSearch}</span>}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <button onClick={() => addFavorite && addFavorite({ ...card, name: r.name, _score: r.score })}
+                      className={`text-[9px] px-2 py-0.5 rounded border font-bold ${
+                        isFav ? 'bg-pink-500/15 border-pink-400/40 text-pink-400' : 'border-pink-400/20 text-pink-400/50 hover:text-pink-400'
+                      }`}>
+                      {isFav ? '❤️' : '🤍'}
+                    </button>
+                    <CrmButton company={{ ...card, name: r.name }} />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
