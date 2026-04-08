@@ -183,11 +183,14 @@ export default function FavoritesPage({ favorites, removeFavorite, addFavorite, 
 
                 {/* Links */}
                 <div className="flex gap-2">
-                  {company.website && (
-                    <a href={company.website.startsWith('http') ? company.website : `https://${company.website}`} target="_blank" rel="noopener" className="text-[10px] text-accent hover:underline">
-                      🌐 Website
-                    </a>
-                  )}
+                  {company.website && (() => {
+                    const ws = typeof company.website === 'object' ? (company.website?.url || '') : (company.website || '');
+                    return ws ? (
+                      <a href={ws.startsWith('http') ? ws : `https://${ws}`} target="_blank" rel="noopener" className="text-[10px] text-accent hover:underline">
+                        🌐 Website
+                      </a>
+                    ) : null;
+                  })()}
                   {company.socials?.linkedin && (
                     <a href={company.socials.linkedin} target="_blank" rel="noopener" className="text-[10px] text-accent hover:underline">
                       💼 LinkedIn

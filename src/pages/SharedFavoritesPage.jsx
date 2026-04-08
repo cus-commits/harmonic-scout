@@ -187,7 +187,8 @@ function TeamCard({ item, crmUser, onVote, votingOn, addFavorite, isFavorited })
 
   const stage = c.funding_stage ? (typeof c.funding_stage === 'string' ? c.funding_stage : '').replace(/_/g,' ').replace(/\b\w/g, ch => ch.toUpperCase()).replace('Pre Seed','Preseed') : '';
   const total = moneyFmt(c.funding_total);
-  const webUrl = c.website ? (c.website.startsWith('http') ? c.website : `https://${c.website}`) : null;
+  const rawWebsite = typeof c.website === 'object' ? (c.website?.url || '') : (c.website || '');
+  const webUrl = rawWebsite ? (rawWebsite.startsWith('http') ? rawWebsite : `https://${rawWebsite}`) : null;
   const votes = item.votes || {};
   const inVotes = Object.entries(votes).filter(([,v]) => v === 'in');
   const outVotes = Object.entries(votes).filter(([,v]) => v === 'out');

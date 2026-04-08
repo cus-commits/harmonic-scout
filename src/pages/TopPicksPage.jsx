@@ -296,7 +296,7 @@ function VettingCard({ company, onHide, onBackburn, addFavorite, isFavorited }) 
 export default function TopPicksPage({ addFavorite, isFavorited }) {
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all'); // all, daily, weekly, voted, unvoted, savedSearch
+  const [sortBy, setSortBy] = useState('recent'); // recent, rating, sector
   const [batchStatus, setBatchStatus] = useState({});
   const [promoting, setPromoting] = useState(false);
 
@@ -415,25 +415,29 @@ export default function TopPicksPage({ addFavorite, isFavorited }) {
 
   const [showBackburn, setShowBackburn] = useState(false);
 
-  // Filter: exclude dismissed/backburned AND hidden-for-me
+  // Filter: exclude dismissed/backburned AND hidden-for-me, then sort
   const filtered = companies.filter(c => {
     if (c.dismissed || c.backburned) return false;
     if (crmUser && (c.hiddenBy || []).includes(crmUser)) return false;
-    if (filter === 'daily') return c.source?.includes('daily') && !c.source?.includes('savedSearch');
-    if (filter === 'weekly') return c.source?.includes('weekly');
-    if (filter === 'savedSearch') return c.source?.includes('savedSearch');
-    if (filter === 'voted') return Object.keys(c.votes || {}).length > 0;
-    if (filter === 'unvoted') return Object.keys(c.votes || {}).length === 0;
     return true;
+  }).sort((a, b) => {
+    if (sortBy === 'rating') return (b._score || 0) - (a._score || 0);
+    if (sortBy === 'sector') {
+      const descA = ((a.description || '') + ' ' + (a._analysis || '')).toLowerCase();
+      const descB = ((b.description || '') + ' ' + (b._analysis || '')).toLowerCase();
+      const sectorOrder = ['crypto', 'fintech', 'ai', 'robotics', 'gaming', 'saas'];
+      const getSector = (d) => { for (let i = 0; i < sectorOrder.length; i++) if (d.includes(sectorOrder[i])) return i; return sectorOrder.length; };
+      const diff = getSector(descA) - getSector(descB);
+      return diff !== 0 ? diff : (b._score || 0) - (a._score || 0);
+    }
+    // 'recent' — most recently added first
+    return (b.addedAt || 0) - (a.addedAt || 0);
   });
 
   const backburned = companies.filter(c => c.dismissed || c.backburned);
 
   // Stats
-  const dailyCount = companies.filter(c => !c.dismissed && c.source?.includes('daily') && !c.source?.includes('savedSearch')).length;
-  const weeklyCount = companies.filter(c => !c.dismissed && c.source?.includes('weekly')).length;
-  const savedSearchCount = companies.filter(c => !c.dismissed && c.source?.includes('savedSearch')).length;
-  const unvotedCount = companies.filter(c => !c.dismissed && Object.keys(c.votes || {}).length === 0).length;
+  const scanAgentCount = companies.filter(c => !c.dismissed && (c.source?.includes('scan-agent') || c.source?.includes('recurring-scan'))).length;
   const totalBatch2 = Object.values(batchStatus).reduce((sum, b) => sum + (b.batch2Count || 0), 0);
 
   return (
@@ -486,25 +490,20 @@ export default function TopPicksPage({ addFavorite, isFavorited }) {
       {/* Stats */}
       <div className="flex items-center gap-3 mb-4 text-[10px]">
         <span className="text-muted/40">{companies.filter(c => !c.dismissed).length} in pipeline</span>
-        {savedSearchCount > 0 && <span className="text-amber-400/65 flex flex-col items-center leading-none"><span className="text-sm font-bold">{savedSearchCount}</span><span className="text-[8px]">∞ Saved Search</span></span>}
-        {dailyCount > 0 && <span className="text-sky-400/65">📅 {dailyCount} daily</span>}
-        {weeklyCount > 0 && <span className="text-purple-400/50">📆 {weeklyCount} weekly</span>}
-        {unvotedCount > 0 && <span className="text-amber-400/50">⏳ {unvotedCount} unvoted</span>}
+        {scanAgentCount > 0 && <span className="text-emerald-400/65">🔬 {scanAgentCount} from Scan Agent</span>}
       </div>
 
-      {/* Filter tabs */}
-      <div className="flex gap-1 mb-4 overflow-x-auto pb-1">
+      {/* Sort options */}
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-[10px] text-muted/40 font-medium">Sort by:</span>
         {[
-          { key: 'all', label: 'All' },
-          { key: 'unvoted', label: 'Needs Votes' },
-          { key: 'savedSearch', label: 'Ⓗ Saved Search' },
-          { key: 'daily', label: '📅 Daily' },
-          { key: 'weekly', label: '📆 Weekly' },
-          { key: 'voted', label: 'Voted' },
+          { key: 'recent', label: '🕐 Most Recent' },
+          { key: 'rating', label: '⭐ Highest Rating' },
+          { key: 'sector', label: '🏷️ Sector' },
         ].map(f => (
-          <button key={f.key} onClick={() => setFilter(f.key)}
+          <button key={f.key} onClick={() => setSortBy(f.key)}
             className={`text-[11px] px-3 py-1.5 rounded-lg border whitespace-nowrap transition-all ${
-              filter === f.key ? 'bg-sky-500/12 border-sky-400/30 text-sky-300 font-medium' : 'border-border/20 text-muted/50 hover:border-border/40'
+              sortBy === f.key ? 'bg-sky-500/12 border-sky-400/30 text-sky-300 font-medium' : 'border-border/20 text-muted/50 hover:border-border/40'
             }`}>
             {f.label}
           </button>
