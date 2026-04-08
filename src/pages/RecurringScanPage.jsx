@@ -961,6 +961,28 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
     if (hScreensRef.current) hScreensRef.current.scrollBy({ left: dir * 200, behavior: 'smooth' });
   };
 
+  const clearFilters = () => {
+    setSelectedTier('standard');
+    setIncludePortcos(false);
+    setCrmStages([]);
+    setKeywords('');
+    setExcludeKeywords('');
+    setSectors([]);
+    setStages([]);
+    setGeos([]);
+    setModels([]);
+    setSignals([]);
+    setMaxRaised('');
+    setMaxValuation('');
+    setFoundedAfter('');
+    setMinTeam('');
+    setMaxTeam('');
+    setNotes('');
+    setSelectedSearchIds(null);
+    setSelectedPortcos(null);
+    setExpandedFilters({});
+  };
+
   const renamePreset = (id, newName) => {
     const updated = presets.map(p => p.id === id ? { ...p, name: newName } : p);
     setPresets(updated);
@@ -1216,93 +1238,106 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                       className="text-[10px] text-sky-400/60 hover:text-sky-300 font-medium">← Back to live scans</button>
                   )}
 
-                  {/* H Screens Profiles (from team members) */}
-                  {hScreensProfiles.length > 0 && (
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <p className="text-[10px] text-muted/50 uppercase tracking-widest font-bold">H Screens Profiles</p>
-                        {hScreensProfiles.length > 4 && (
-                          <div className="flex gap-1">
-                            <button onClick={() => scrollHScreens(-1)} className="text-[10px] px-1.5 py-0.5 rounded border border-border/20 text-muted/40 hover:text-muted/60">◀</button>
-                            <button onClick={() => scrollHScreens(1)} className="text-[10px] px-1.5 py-0.5 rounded border border-border/20 text-muted/40 hover:text-muted/60">▶</button>
-                          </div>
-                        )}
-                      </div>
-                      <div ref={hScreensRef} className="flex gap-2 overflow-x-auto scrollbar-hide pb-1" style={{ scrollBehavior: 'smooth' }}>
-                        {hScreensProfiles.map((p, i) => (
-                          <button key={`${p._ownerId}-${p.id || i}`} onClick={() => applyHScreensProfile(p)}
-                            className="flex-shrink-0 text-[10px] px-3 py-2 rounded-lg border border-sky-400/20 bg-sky-500/8 text-sky-300/70 hover:bg-sky-500/15 hover:text-sky-300 transition-all font-medium whitespace-nowrap">
-                            <span className="text-[9px] text-sky-400/40 mr-1">{p._owner}</span>
-                            {p.name || 'Main Scan'}
-                            {p.sectors?.length > 0 && <span className="text-[8px] text-muted/30 ml-1.5">{p.sectors.length} sectors</span>}
-                          </button>
-                        ))}
-                      </div>
-                      <p className="text-[9px] text-muted/25">Click to auto-fill all filters from an H Screens profile</p>
-                    </div>
-                  )}
+                  {/* Saved Scans — current user first, then others via scroll */}
+                  {(() => {
+                    const currentUser = (localStorage.getItem('crm_user') || 'Mark').toLowerCase();
+                    // Current user's saved scans + H Screens profiles
+                    const myPresets = presets.filter(p => !p.user || p.user.toLowerCase() === currentUser);
+                    const myHScreens = hScreensProfiles.filter(p => p._ownerId === currentUser);
+                    const othersPresets = presets.filter(p => p.user && p.user.toLowerCase() !== currentUser);
+                    const othersHScreens = hScreensProfiles.filter(p => p._ownerId !== currentUser);
+                    // Ordered: my saved scans → my H Screens → others' saved scans → others' H Screens
+                    const allItems = [
+                      ...myPresets.map(p => ({ ...p, _type: 'preset', _mine: true })),
+                      ...myHScreens.map((p, i) => ({ ...p, _type: 'hscreen', _mine: true, _key: `hs-${p._ownerId}-${p.id || i}` })),
+                      ...othersPresets.map(p => ({ ...p, _type: 'preset', _mine: false })),
+                      ...othersHScreens.map((p, i) => ({ ...p, _type: 'hscreen', _mine: false, _key: `hs-${p._ownerId}-${p.id || i}` })),
+                    ];
+                    const myCount = myPresets.length + myHScreens.length;
 
-                  {/* Saved Scans */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <p className="text-[10px] text-muted/50 uppercase tracking-widest font-bold">Saved Scans</p>
-                      <div className="flex gap-1.5 items-center">
-                        {presets.length > 3 && (
-                          <>
+                    return (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <p className="text-[10px] text-muted/50 uppercase tracking-widest font-bold">Saved Scans</p>
+                          <div className="flex gap-1.5 items-center">
                             <button onClick={() => scrollPresets(-1)} className="text-[10px] px-1.5 py-0.5 rounded border border-border/20 text-muted/40 hover:text-muted/60">◀</button>
                             <button onClick={() => scrollPresets(1)} className="text-[10px] px-1.5 py-0.5 rounded border border-border/20 text-muted/40 hover:text-muted/60">▶</button>
-                          </>
-                        )}
-                        <button onClick={() => setEditMode(!editMode)}
-                          className={`text-[9px] px-2 py-0.5 rounded border font-medium transition-all ${
-                            editMode ? 'bg-amber-500/15 border-amber-400/30 text-amber-300' : 'border-border/20 text-muted/40 hover:text-muted/60'
-                          }`}>
-                          {editMode ? 'Done' : 'Edit'}
-                        </button>
-                      </div>
-                    </div>
-                    <div ref={presetContainerRef} className="flex gap-2 overflow-x-auto scrollbar-hide pb-1" style={{ scrollBehavior: 'smooth' }}>
-                      {presets.map(p => (
-                        <div key={p.id} className="flex-shrink-0 relative">
-                          {editMode && editingPresetId === p.id ? (
-                            <div className="flex items-center gap-1 bg-surface/60 border border-amber-400/30 rounded-lg px-2 py-1.5">
-                              <input type="text" value={editPresetName} onChange={e => setEditPresetName(e.target.value)}
-                                onKeyDown={e => { if (e.key === 'Enter') { renamePreset(p.id, editPresetName); setEditingPresetId(null); } }}
-                                className="bg-transparent text-[10px] text-bright w-24 outline-none" autoFocus />
-                              <button onClick={() => { renamePreset(p.id, editPresetName); setEditingPresetId(null); }}
-                                className="text-[9px] text-emerald-400">✓</button>
-                              <button onClick={() => { updatePresetFromCurrent(p.id); }}
-                                className="text-[9px] text-sky-400 ml-1" title="Update with current filters">↻</button>
-                              <button onClick={() => deletePreset(p.id)}
-                                className="text-[9px] text-red-400 ml-1">✕</button>
-                            </div>
-                          ) : (
-                            <button onClick={() => {
-                              if (editMode) { setEditingPresetId(p.id); setEditPresetName(p.name); }
-                              else applyPreset(p);
-                            }}
-                              className={`text-[10px] px-3 py-2 rounded-lg border font-medium whitespace-nowrap transition-all ${
-                                editMode
-                                  ? 'border-amber-400/25 bg-amber-500/8 text-amber-300/70 hover:bg-amber-500/15'
-                                  : 'border-violet-400/20 bg-violet-500/8 text-violet-300/70 hover:bg-violet-500/15 hover:text-violet-300'
+                            <button onClick={() => setEditMode(!editMode)}
+                              className={`text-[9px] px-2 py-0.5 rounded border font-medium transition-all ${
+                                editMode ? 'bg-amber-500/15 border-amber-400/30 text-amber-300' : 'border-border/20 text-muted/40 hover:text-muted/60'
                               }`}>
-                              {editMode && <span className="mr-1">✎</span>}
-                              {p.name}
-                              {!editMode && <span className="text-[8px] text-muted/30 ml-1.5">{p.sectors?.length || 0}s {p.stages?.length || 0}st</span>}
-                              {p.user && !editMode && <span className="text-[8px] text-muted/20 ml-1">· {p.user}</span>}
+                              {editMode ? 'Done' : 'Edit'}
                             </button>
+                          </div>
+                        </div>
+                        <div ref={presetContainerRef} className="flex gap-2 overflow-x-auto scrollbar-hide pb-1" style={{ scrollBehavior: 'smooth' }}>
+                          {allItems.map((item, idx) => {
+                            // Divider between mine and others
+                            const showDivider = idx === myCount && myCount > 0 && idx < allItems.length;
+
+                            return (
+                              <React.Fragment key={item._key || item.id || idx}>
+                                {showDivider && (
+                                  <div className="flex-shrink-0 flex items-center px-1">
+                                    <div className="w-px h-6 bg-border/20" />
+                                  </div>
+                                )}
+                                <div className="flex-shrink-0 relative">
+                                  {item._type === 'preset' && editMode && editingPresetId === item.id ? (
+                                    <div className="flex items-center gap-1 bg-surface/60 border border-amber-400/30 rounded-lg px-2 py-1.5">
+                                      <input type="text" value={editPresetName} onChange={e => setEditPresetName(e.target.value)}
+                                        onKeyDown={e => { if (e.key === 'Enter') { renamePreset(item.id, editPresetName); setEditingPresetId(null); } }}
+                                        className="bg-transparent text-[10px] text-bright w-24 outline-none" autoFocus />
+                                      <button onClick={() => { renamePreset(item.id, editPresetName); setEditingPresetId(null); }}
+                                        className="text-[9px] text-emerald-400">✓</button>
+                                      <button onClick={() => updatePresetFromCurrent(item.id)}
+                                        className="text-[9px] text-sky-400 ml-1" title="Update with current filters">↻</button>
+                                      <button onClick={() => deletePreset(item.id)}
+                                        className="text-[9px] text-red-400 ml-1">✕</button>
+                                    </div>
+                                  ) : (
+                                    <button onClick={() => {
+                                      if (item._type === 'preset' && editMode) { setEditingPresetId(item.id); setEditPresetName(item.name); }
+                                      else if (item._type === 'preset') applyPreset(item);
+                                      else applyHScreensProfile(item);
+                                    }}
+                                      className={`text-[10px] px-3 py-2 rounded-lg border font-medium whitespace-nowrap transition-all ${
+                                        editMode && item._type === 'preset'
+                                          ? 'border-amber-400/25 bg-amber-500/8 text-amber-300/70 hover:bg-amber-500/15'
+                                          : item._type === 'hscreen'
+                                            ? 'border-sky-400/20 bg-sky-500/8 text-sky-300/70 hover:bg-sky-500/15 hover:text-sky-300'
+                                            : 'border-violet-400/20 bg-violet-500/8 text-violet-300/70 hover:bg-violet-500/15 hover:text-violet-300'
+                                      }`}>
+                                      {editMode && item._type === 'preset' && <span className="mr-1">✎</span>}
+                                      {!item._mine && <span className="text-[8px] text-muted/30 mr-1">{item.user || item._owner}</span>}
+                                      {item.name || 'Main Scan'}
+                                      {item._type === 'hscreen' && !item._mine && <span className="text-[8px] text-sky-400/30 ml-1">H</span>}
+                                    </button>
+                                  )}
+                                </div>
+                              </React.Fragment>
+                            );
+                          })}
+                          {allItems.length === 0 && (
+                            <p className="text-[9px] text-muted/25 py-1">No saved scans yet — configure filters and click "Save Search"</p>
                           )}
                         </div>
-                      ))}
-                    </div>
-                  </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* Scan Options */}
                   <div className={`rounded-xl border border-border/15 bg-surface/30 p-4 space-y-4 transition-all ${jiggleKey ? 'animate-jiggle' : ''}`}>
                     <style>{`@keyframes jiggle { 0%,100% { transform: rotate(0); } 15% { transform: rotate(-1deg); } 30% { transform: rotate(1deg); } 45% { transform: rotate(-0.5deg); } 60% { transform: rotate(0.5deg); } }`}
                     {`.animate-jiggle { animation: jiggle 0.5s ease-in-out; }`}</style>
 
-                    <p className="text-[10px] text-muted/50 uppercase tracking-widest font-bold">Search Filters</p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] text-muted/50 uppercase tracking-widest font-bold">Search Filters</p>
+                      <button onClick={clearFilters}
+                        className="text-[9px] px-2 py-0.5 rounded border border-border/20 text-muted/40 hover:text-red-300 hover:border-red-400/30 font-medium transition-all">
+                        Clear
+                      </button>
+                    </div>
 
                     {/* Saved Search Selection */}
                     <SearchSelector
