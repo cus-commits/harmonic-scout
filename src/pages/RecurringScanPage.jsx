@@ -26,6 +26,17 @@ const CRM_STAGES = [
   { key: 'Warm', label: 'Warm', color: 'amber' },
 ];
 
+const SECTORS = ['Crypto / Web3', 'DeFi', 'NFT / Digital Assets', 'Fintech', 'Payments', 'AI / ML', 'SaaS / Enterprise', 'Gaming / Esports', 'Gambling / Betting', 'Consumer', 'Social', 'Climate / Cleantech', 'Marketplace', 'Creator Economy', 'Cybersecurity', 'Robotics / Automation', 'PropTech', 'EdTech', 'Healthcare / Biotech', 'Logistics', 'Insurance / Insurtech', 'Legal Tech', 'Media / Entertainment'];
+const STAGES = ['Pre-Seed', 'Seed', 'Series A', 'Series B', 'Series C+'];
+const GEOS = ['US Only', 'US + Canada', 'Europe', 'Asia', 'Latin America', 'MENA', 'Africa', 'Global'];
+const MODELS = ['B2C', 'B2B', 'Marketplace', 'Platform / Infra', 'API / Developer Tools', 'Protocol / Token'];
+const SIGNALS = ['Revenue / ARR traction', 'User growth signals', 'Token/protocol activity', 'Recent funding round', 'Headcount growth', 'Web traffic growth', 'YC / top accelerator', 'Notable investors', 'Open source / GitHub', 'Press / media coverage'];
+
+// Saved scan presets stored in localStorage
+const PRESETS_KEY = 'deepscan_presets';
+function loadPresets() { try { return JSON.parse(localStorage.getItem(PRESETS_KEY) || '[]'); } catch { return []; } }
+function savePresets(p) { localStorage.setItem(PRESETS_KEY, JSON.stringify(p)); }
+
 const tierColors = {
   sky:     { bg: 'bg-sky-500/10', border: 'border-sky-400/25', text: 'text-sky-300', activeBg: 'bg-sky-500/20', activeBorder: 'border-sky-400/50' },
   violet:  { bg: 'bg-violet-500/10', border: 'border-violet-400/25', text: 'text-violet-300', activeBg: 'bg-violet-500/20', activeBorder: 'border-violet-400/50' },
@@ -753,6 +764,23 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
   const [includePortcos, setIncludePortcos] = useState(false);
   const [crmStages, setCrmStages] = useState([]);
   const [keywords, setKeywords] = useState('');
+  const [excludeKeywords, setExcludeKeywords] = useState('');
+  const [sectors, setSectors] = useState([]);
+  const [stages, setStages] = useState([]);
+  const [geos, setGeos] = useState([]);
+  const [models, setModels] = useState([]);
+  const [signals, setSignals] = useState([]);
+  const [maxRaised, setMaxRaised] = useState('');
+  const [maxValuation, setMaxValuation] = useState('');
+  const [foundedAfter, setFoundedAfter] = useState('');
+  const [minTeam, setMinTeam] = useState('');
+  const [maxTeam, setMaxTeam] = useState('');
+  const [notes, setNotes] = useState('');
+  const [expandedFilters, setExpandedFilters] = useState({});
+  const [presets, setPresets] = useState(loadPresets());
+  const [jiggleKey, setJiggleKey] = useState(null);
+  const [presetScroll, setPresetScroll] = useState(0);
+  const presetContainerRef = useRef(null);
 
   // Search selection
   const [availableSearches, setAvailableSearches] = useState([]);
@@ -811,6 +839,67 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
 
   const toggleAllPortcos = () => {
     setSelectedPortcos(prev => prev === null ? new Set() : null);
+  };
+
+  const toggleFilter = (setter, value) => {
+    setter(prev => prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value]);
+  };
+
+  const toggleExpanded = (key) => {
+    setExpandedFilters(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const getCurrentConfig = () => ({
+    tier: selectedTier, includePortcos, crmStages, keywords, excludeKeywords,
+    sectors, stages, geos, models, signals,
+    maxRaised, maxValuation, foundedAfter, minTeam, maxTeam, notes,
+    selectedSearchIds: selectedSearchIds === null ? null : [...selectedSearchIds],
+    selectedPortcos: selectedPortcos === null ? null : [...selectedPortcos],
+  });
+
+  const applyPreset = (preset) => {
+    setSelectedTier(preset.tier || 'standard');
+    setIncludePortcos(preset.includePortcos || false);
+    setCrmStages(preset.crmStages || []);
+    setKeywords(preset.keywords || '');
+    setExcludeKeywords(preset.excludeKeywords || '');
+    setSectors(preset.sectors || []);
+    setStages(preset.stages || []);
+    setGeos(preset.geos || []);
+    setModels(preset.models || []);
+    setSignals(preset.signals || []);
+    setMaxRaised(preset.maxRaised || '');
+    setMaxValuation(preset.maxValuation || '');
+    setFoundedAfter(preset.foundedAfter || '');
+    setMinTeam(preset.minTeam || '');
+    setMaxTeam(preset.maxTeam || '');
+    setNotes(preset.notes || '');
+    if (preset.selectedSearchIds) setSelectedSearchIds(new Set(preset.selectedSearchIds));
+    if (preset.selectedPortcos) setSelectedPortcos(new Set(preset.selectedPortcos));
+    // Jiggle animation
+    setJiggleKey(Date.now());
+    setTimeout(() => setJiggleKey(null), 600);
+  };
+
+  const saveCurrentAsPreset = () => {
+    const name = prompt('Name this preset:');
+    if (!name) return;
+    const config = getCurrentConfig();
+    const updated = [...presets, { ...config, name, id: Date.now() }];
+    setPresets(updated);
+    savePresets(updated);
+  };
+
+  const deletePreset = (id) => {
+    const updated = presets.filter(p => p.id !== id);
+    setPresets(updated);
+    savePresets(updated);
+  };
+
+  const scrollPresets = (dir) => {
+    if (presetContainerRef.current) {
+      presetContainerRef.current.scrollBy({ left: dir * 200, behavior: 'smooth' });
+    }
   };
 
   // Poll status
@@ -882,7 +971,14 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
       const res = await fetch(`${API_BASE}/api/recurring-scan`, {
         method: 'POST',
         headers: authHeaders(),
-        body: JSON.stringify({ tier: selectedTier, includePortcos, crmStages, keywords, selectedSearches: searchesToSend, selectedPortcos: selectedPortcos === null ? null : [...selectedPortcos], user: crmUser }),
+        body: JSON.stringify({
+          tier: selectedTier, includePortcos, crmStages, keywords, excludeKeywords,
+          sectors, stages, geos, models, signals,
+          maxRaised, maxValuation, foundedAfter, minTeam, maxTeam, notes,
+          selectedSearches: searchesToSend,
+          selectedPortcos: selectedPortcos === null ? null : [...selectedPortcos],
+          user: crmUser,
+        }),
         signal: controller.signal,
       });
 
@@ -1058,9 +1154,42 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                       }, 0)} />
                   </div>
 
+                  {/* Saved Presets */}
+                  {presets.length > 0 && (
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] text-muted/50 uppercase tracking-widest font-bold">Saved Presets</p>
+                        <div className="flex gap-1">
+                          <button onClick={() => scrollPresets(-1)} className="text-[10px] px-1.5 py-0.5 rounded border border-border/20 text-muted/40 hover:text-muted/60">◀</button>
+                          <button onClick={() => scrollPresets(1)} className="text-[10px] px-1.5 py-0.5 rounded border border-border/20 text-muted/40 hover:text-muted/60">▶</button>
+                        </div>
+                      </div>
+                      <div ref={presetContainerRef} className="flex gap-2 overflow-x-auto scrollbar-hide pb-1" style={{ scrollBehavior: 'smooth' }}>
+                        {presets.map(p => (
+                          <button key={p.id} onClick={() => applyPreset(p)}
+                            className="flex-shrink-0 group relative text-[10px] px-3 py-2 rounded-lg border border-violet-400/20 bg-violet-500/8 text-violet-300/70 hover:bg-violet-500/15 hover:text-violet-300 transition-all font-medium whitespace-nowrap">
+                            {p.name}
+                            <span className="text-[8px] text-muted/30 ml-1.5">{p.sectors?.length || 0}s {p.stages?.length || 0}st</span>
+                            <span onClick={(e) => { e.stopPropagation(); deletePreset(p.id); }}
+                              className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-red-500/30 text-red-300 text-[8px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">x</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Scan Options */}
-                  <div className="rounded-xl border border-border/15 bg-surface/30 p-4 space-y-4">
-                    <p className="text-[10px] text-muted/50 uppercase tracking-widest font-bold">Search Context</p>
+                  <div className={`rounded-xl border border-border/15 bg-surface/30 p-4 space-y-4 transition-all ${jiggleKey ? 'animate-jiggle' : ''}`}>
+                    <style>{`@keyframes jiggle { 0%,100% { transform: rotate(0); } 15% { transform: rotate(-1deg); } 30% { transform: rotate(1deg); } 45% { transform: rotate(-0.5deg); } 60% { transform: rotate(0.5deg); } }`}
+                    {`.animate-jiggle { animation: jiggle 0.5s ease-in-out; }`}</style>
+
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] text-muted/50 uppercase tracking-widest font-bold">Search Filters</p>
+                      <button onClick={saveCurrentAsPreset}
+                        className="text-[9px] px-2 py-0.5 rounded border border-sky-400/20 text-sky-400/50 hover:text-sky-300 font-medium">
+                        Save as Preset
+                      </button>
+                    </div>
 
                     {/* Saved Search Selection */}
                     <SearchSelector
@@ -1069,6 +1198,139 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                       onToggle={toggleSearch}
                       onToggleAll={toggleAllSearches}
                     />
+
+                    {/* Sectors */}
+                    <div className="space-y-1.5">
+                      <button onClick={() => toggleExpanded('sectors')} className="flex items-center gap-2 w-full text-left">
+                        <span className="text-[11px] text-bright/60 font-medium">Sectors</span>
+                        {sectors.length > 0 && <span className="text-[9px] text-sky-400/60 font-bold">{sectors.length} selected</span>}
+                        <span className="text-[9px] text-muted/30 ml-auto">{expandedFilters.sectors ? '▼' : '+ Sectors'}</span>
+                      </button>
+                      {expandedFilters.sectors && (
+                        <div className="flex gap-1.5 flex-wrap">
+                          {SECTORS.map(s => (
+                            <button key={s} onClick={() => toggleFilter(setSectors, s)}
+                              className={`text-[9px] px-2 py-1 rounded-md border transition-all ${
+                                sectors.includes(s) ? 'bg-sky-500/15 border-sky-400/30 text-sky-300' : 'border-border/20 text-muted/40 hover:text-muted/60'
+                              }`}>{sectors.includes(s) ? '✓ ' : ''}{s}</button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Stages */}
+                    <div className="space-y-1.5">
+                      <button onClick={() => toggleExpanded('stages')} className="flex items-center gap-2 w-full text-left">
+                        <span className="text-[11px] text-bright/60 font-medium">Stage</span>
+                        {stages.length > 0 && <span className="text-[9px] text-violet-400/60 font-bold">{stages.length} selected</span>}
+                        <span className="text-[9px] text-muted/30 ml-auto">{expandedFilters.stages ? '▼' : '+ Stage'}</span>
+                      </button>
+                      {expandedFilters.stages && (
+                        <div className="flex gap-1.5 flex-wrap">
+                          {STAGES.map(s => (
+                            <button key={s} onClick={() => toggleFilter(setStages, s)}
+                              className={`text-[9px] px-2 py-1 rounded-md border transition-all ${
+                                stages.includes(s) ? 'bg-violet-500/15 border-violet-400/30 text-violet-300' : 'border-border/20 text-muted/40 hover:text-muted/60'
+                              }`}>{stages.includes(s) ? '✓ ' : ''}{s}</button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Geography */}
+                    <div className="space-y-1.5">
+                      <button onClick={() => toggleExpanded('geos')} className="flex items-center gap-2 w-full text-left">
+                        <span className="text-[11px] text-bright/60 font-medium">Geography</span>
+                        {geos.length > 0 && <span className="text-[9px] text-emerald-400/60 font-bold">{geos.length} selected</span>}
+                        <span className="text-[9px] text-muted/30 ml-auto">{expandedFilters.geos ? '▼' : '+ Geography'}</span>
+                      </button>
+                      {expandedFilters.geos && (
+                        <div className="flex gap-1.5 flex-wrap">
+                          {GEOS.map(g => (
+                            <button key={g} onClick={() => toggleFilter(setGeos, g)}
+                              className={`text-[9px] px-2 py-1 rounded-md border transition-all ${
+                                geos.includes(g) ? 'bg-emerald-500/15 border-emerald-400/30 text-emerald-300' : 'border-border/20 text-muted/40 hover:text-muted/60'
+                              }`}>{geos.includes(g) ? '✓ ' : ''}{g}</button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Business Model */}
+                    <div className="space-y-1.5">
+                      <button onClick={() => toggleExpanded('models')} className="flex items-center gap-2 w-full text-left">
+                        <span className="text-[11px] text-bright/60 font-medium">Business Model</span>
+                        {models.length > 0 && <span className="text-[9px] text-amber-400/60 font-bold">{models.length} selected</span>}
+                        <span className="text-[9px] text-muted/30 ml-auto">{expandedFilters.models ? '▼' : '+ Model'}</span>
+                      </button>
+                      {expandedFilters.models && (
+                        <div className="flex gap-1.5 flex-wrap">
+                          {MODELS.map(m => (
+                            <button key={m} onClick={() => toggleFilter(setModels, m)}
+                              className={`text-[9px] px-2 py-1 rounded-md border transition-all ${
+                                models.includes(m) ? 'bg-amber-500/15 border-amber-400/30 text-amber-300' : 'border-border/20 text-muted/40 hover:text-muted/60'
+                              }`}>{models.includes(m) ? '✓ ' : ''}{m}</button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Deal Signals */}
+                    <div className="space-y-1.5">
+                      <button onClick={() => toggleExpanded('signals')} className="flex items-center gap-2 w-full text-left">
+                        <span className="text-[11px] text-bright/60 font-medium">Deal Signals</span>
+                        {signals.length > 0 && <span className="text-[9px] text-pink-400/60 font-bold">{signals.length} selected</span>}
+                        <span className="text-[9px] text-muted/30 ml-auto">{expandedFilters.signals ? '▼' : '+ Signals'}</span>
+                      </button>
+                      {expandedFilters.signals && (
+                        <div className="flex gap-1.5 flex-wrap">
+                          {SIGNALS.map(s => (
+                            <button key={s} onClick={() => toggleFilter(setSignals, s)}
+                              className={`text-[9px] px-2 py-1 rounded-md border transition-all ${
+                                signals.includes(s) ? 'bg-pink-500/15 border-pink-400/30 text-pink-300' : 'border-border/20 text-muted/40 hover:text-muted/60'
+                              }`}>{signals.includes(s) ? '✓ ' : ''}{s}</button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Numeric Filters */}
+                    <div className="space-y-1.5">
+                      <button onClick={() => toggleExpanded('numerics')} className="flex items-center gap-2 w-full text-left">
+                        <span className="text-[11px] text-bright/60 font-medium">$ Raised / Team / Founded</span>
+                        {(maxRaised || maxValuation || foundedAfter || minTeam || maxTeam) && <span className="text-[9px] text-sky-400/60 font-bold">set</span>}
+                        <span className="text-[9px] text-muted/30 ml-auto">{expandedFilters.numerics ? '▼' : '+ Filters'}</span>
+                      </button>
+                      {expandedFilters.numerics && (
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[9px] text-muted/40">Max Raised</label>
+                            <input type="text" value={maxRaised} onChange={e => setMaxRaised(e.target.value)}
+                              placeholder="$5M" className="w-full bg-ink/50 border border-border/25 rounded-lg px-2 py-1.5 text-[10px] text-bright outline-none focus:border-sky-400/35 placeholder:text-white/15" />
+                          </div>
+                          <div>
+                            <label className="text-[9px] text-muted/40">Max Valuation</label>
+                            <input type="text" value={maxValuation} onChange={e => setMaxValuation(e.target.value)}
+                              placeholder="$30M" className="w-full bg-ink/50 border border-border/25 rounded-lg px-2 py-1.5 text-[10px] text-bright outline-none focus:border-sky-400/35 placeholder:text-white/15" />
+                          </div>
+                          <div>
+                            <label className="text-[9px] text-muted/40">Min Team</label>
+                            <input type="text" value={minTeam} onChange={e => setMinTeam(e.target.value)}
+                              placeholder="2" className="w-full bg-ink/50 border border-border/25 rounded-lg px-2 py-1.5 text-[10px] text-bright outline-none focus:border-sky-400/35 placeholder:text-white/15" />
+                          </div>
+                          <div>
+                            <label className="text-[9px] text-muted/40">Max Team</label>
+                            <input type="text" value={maxTeam} onChange={e => setMaxTeam(e.target.value)}
+                              placeholder="50" className="w-full bg-ink/50 border border-border/25 rounded-lg px-2 py-1.5 text-[10px] text-bright outline-none focus:border-sky-400/35 placeholder:text-white/15" />
+                          </div>
+                          <div className="col-span-2">
+                            <label className="text-[9px] text-muted/40">Founded After</label>
+                            <input type="text" value={foundedAfter} onChange={e => setFoundedAfter(e.target.value)}
+                              placeholder="2022" className="w-full bg-ink/50 border border-border/25 rounded-lg px-2 py-1.5 text-[10px] text-bright outline-none focus:border-sky-400/35 placeholder:text-white/15" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
 
                     {/* Portcos selector */}
                     <PortcoSelector
@@ -1081,46 +1343,61 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                     />
 
                     {/* CRM Stages */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] text-bright/60 font-medium">Find Similar to CRM Pipeline</span>
-                        <button onClick={toggleAllCrm}
-                          className={`text-[9px] px-2 py-0.5 rounded border transition-all font-medium ${
-                            crmStages.length === CRM_STAGES.length
-                              ? 'bg-sky-500/15 border-sky-400/30 text-sky-300'
-                              : 'border-border/20 text-muted/40 hover:text-muted/60'
-                          }`}>
-                          {crmStages.length === CRM_STAGES.length ? '✓ All' : 'Select All'}
-                        </button>
-                      </div>
-                      <div className="flex gap-2 flex-wrap">
-                        {CRM_STAGES.map(s => {
-                          const isOn = crmStages.includes(s.key);
-                          const colors = tierColors[s.color];
-                          return (
-                            <button key={s.key} onClick={() => toggleCrmStage(s.key)}
-                              className={`text-[10px] px-3 py-1.5 rounded-lg border font-bold transition-all ${
-                                isOn ? `${colors.activeBg} ${colors.activeBorder} ${colors.text}` : `${colors.bg} ${colors.border} text-muted/50 hover:text-muted/70`
-                              }`}>
-                              {isOn ? '✓ ' : ''}{s.label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <p className="text-[9px] text-muted/30">Boosts companies similar to those already in your pipeline stages</p>
+                    <div className="space-y-1.5">
+                      <button onClick={() => toggleExpanded('crm')} className="flex items-center gap-2 w-full text-left">
+                        <span className="text-[11px] text-bright/60 font-medium">CRM Pipeline Similarity</span>
+                        {crmStages.length > 0 && <span className="text-[9px] text-sky-400/60 font-bold">{crmStages.length} stages</span>}
+                        <span className="text-[9px] text-muted/30 ml-auto">{expandedFilters.crm ? '▼' : '+ CRM'}</span>
+                      </button>
+                      {expandedFilters.crm && (
+                        <div className="space-y-1.5">
+                          <div className="flex gap-2 flex-wrap">
+                            {CRM_STAGES.map(s => {
+                              const isOn = crmStages.includes(s.key);
+                              const colors = tierColors[s.color];
+                              return (
+                                <button key={s.key} onClick={() => toggleCrmStage(s.key)}
+                                  className={`text-[10px] px-3 py-1.5 rounded-lg border font-bold transition-all ${
+                                    isOn ? `${colors.activeBg} ${colors.activeBorder} ${colors.text}` : `${colors.bg} ${colors.border} text-muted/50 hover:text-muted/70`
+                                  }`}>
+                                  {isOn ? '✓ ' : ''}{s.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <p className="text-[9px] text-muted/30">Boosts companies similar to those in your pipeline</p>
+                        </div>
+                      )}
                     </div>
 
                     {/* Keywords */}
                     <div className="space-y-1.5">
                       <label className="text-[11px] text-bright/60 font-medium">Priority Keywords</label>
-                      <input
-                        type="text"
-                        value={keywords}
-                        onChange={e => setKeywords(e.target.value)}
-                        placeholder="e.g. prediction markets, AI agents, crypto exchange, stablecoin infra..."
-                        className="w-full bg-ink/50 border border-border/25 rounded-lg px-3 py-2 text-xs text-bright outline-none focus:border-sky-400/35 transition-colors placeholder:text-white/15"
-                      />
-                      <p className="text-[9px] text-muted/30">Companies matching these concepts/sectors will be scored higher</p>
+                      <input type="text" value={keywords} onChange={e => setKeywords(e.target.value)}
+                        placeholder="e.g. prediction markets, AI agents, crypto exchange..."
+                        className="w-full bg-ink/50 border border-border/25 rounded-lg px-3 py-2 text-xs text-bright outline-none focus:border-sky-400/35 transition-colors placeholder:text-white/15" />
+                    </div>
+
+                    {/* Exclude Keywords */}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] text-bright/60 font-medium">Exclude Keywords</label>
+                      <input type="text" value={excludeKeywords} onChange={e => setExcludeKeywords(e.target.value)}
+                        placeholder="e.g. consulting, NFT collection, metaverse..."
+                        className="w-full bg-ink/50 border border-border/25 rounded-lg px-3 py-2 text-xs text-bright outline-none focus:border-sky-400/35 transition-colors placeholder:text-white/15" />
+                    </div>
+
+                    {/* Notes for AI */}
+                    <div className="space-y-1.5">
+                      <button onClick={() => toggleExpanded('notes')} className="flex items-center gap-2 w-full text-left">
+                        <span className="text-[11px] text-bright/60 font-medium">Notes for AI</span>
+                        {notes && <span className="text-[9px] text-violet-400/60 font-bold">set</span>}
+                        <span className="text-[9px] text-muted/30 ml-auto">{expandedFilters.notes ? '▼' : '+ Notes'}</span>
+                      </button>
+                      {expandedFilters.notes && (
+                        <textarea value={notes} onChange={e => setNotes(e.target.value)}
+                          placeholder="Anything specific for the AI to prioritize or look for..."
+                          rows={3} className="w-full bg-ink/50 border border-border/25 rounded-lg px-3 py-2 text-xs text-bright outline-none focus:border-sky-400/35 transition-colors placeholder:text-white/15 resize-none" />
+                      )}
                     </div>
                   </div>
 
