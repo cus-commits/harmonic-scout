@@ -307,7 +307,7 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
       { path: '/', label: 'Home', icon: '🏠' },
       { path: '/autoscan', label: 'H Screens', icon: '🔮' },
       { path: '/super', label: 'Super Search', icon: '⚡' },
-      { path: '/searchagent', label: 'Deep Scan Agent', icon: '🔬' },
+      { path: '/searchagent', label: 'Scan Agent', icon: '🔬' },
       { path: '/chat', label: 'Harmonic Chat', icon: '💬' },
       { path: '/twitter', label: 'X / Twitter', icon: '𝕏' },
       { path: '/farcaster', label: 'Farcaster', icon: '🟪' },
@@ -635,7 +635,7 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
               </button>
               <button onClick={() => { navigate('/searchagent'); setShowScanMenu(false); }}
                 className={`w-full text-left px-3 py-2.5 text-xs font-medium border-t border-white/5 transition-colors ${location.pathname === '/searchagent' ? 'bg-purple-500/10 text-purple-300' : 'text-bright/70 hover:bg-white/5'}`}>
-                🔬 Deep Scan Agent
+                🔬 Scan Agent
                 <span className="block text-[9px] text-muted/40 mt-0.5">Full pipeline AI scan</span>
               </button>
             </div>

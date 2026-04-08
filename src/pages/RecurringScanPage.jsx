@@ -1155,15 +1155,35 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
   const hasRunning = runningScans.length > 0;
   const activeResults = viewingScan || results;
 
-  // Show create form when: no running scans, or user clicked "New Scan"
-  const showCreateForm = (!hasRunning && !activeResults) || showNewScan;
+  // Always show create form on scan tab
+  const showCreateForm = true;
+
+  // Dynamic company count and cost estimate
+  const selectedCompanyCount = availableSearches.reduce((sum, s) => {
+    if (selectedSearchIds !== null && !selectedSearchIds.has(s.id)) return sum;
+    return sum + (s.resultCount || 0);
+  }, 0);
+  const selectedTierObj = TIERS.find(t => t.key === selectedTier);
+  const dynamicCostEstimate = (() => {
+    if (!selectedCompanyCount || !selectedTierObj) return null;
+    const sonnetCost = 0.12, opusCost = 0.03, haikuCost = 0.02;
+    const preBatches = Math.ceil(selectedCompanyCount / (selectedTier === 'scout' ? 200 : 120));
+    const prePhase = selectedTier === 'scout' ? preBatches * haikuCost : preBatches * sonnetCost;
+    const passRate = 0.12;
+    const survivors = Math.round(selectedCompanyCount * passRate);
+    const screenBatches = Math.ceil(survivors / 50);
+    const screenPhase = screenBatches * sonnetCost;
+    const deepCount = Math.min(survivors, selectedTier === 'scout' ? 10 : selectedTier === 'standard' ? 15 : selectedTier === 'deep' ? 40 : selectedTier === 'sweep' ? 60 : 100);
+    const deepPhase = deepCount * (selectedTier === 'scout' ? sonnetCost / 15 : opusCost);
+    return Math.min(parseFloat(selectedTierObj.cost.replace('$', '')), prePhase + screenPhase + deepPhase).toFixed(2);
+  })();
 
   return (
     <div className="min-h-screen max-w-4xl mx-auto px-4 sm:px-6 pt-6 pb-20">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-xl font-bold text-bright">🔬 Deep Scan Agent</h1>
+          <h1 className="text-xl font-bold text-bright">🔬 Scan Agent</h1>
           <p className="text-[11px] text-muted/40 mt-1">AI-powered pipeline across all Harmonic saved searches</p>
         </div>
         <span className="text-[11px] text-sky-400/70 font-medium">{crmUser}</span>
@@ -1185,7 +1205,7 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
               className={`flex-1 text-[11px] py-2 rounded-md font-semibold transition-all ${
                 pageTab === 'scan' ? 'bg-sky-500/15 text-sky-300 border border-sky-400/25' : 'text-muted/50 hover:text-muted/70'
               }`}>
-              {hasRunning ? `📡 Live (${runningScans.length})` : '🚀 New Scan'}
+              {hasRunning ? `🚀 New Scan (${runningScans.length} running)` : '🚀 New Scan'}
             </button>
             <button onClick={() => setPageTab('history')}
               className={`flex-1 text-[11px] py-2 rounded-md font-semibold transition-all ${
@@ -1222,21 +1242,9 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                 </div>
               ))}
 
-              {/* "Start New Scan" button when scans are running */}
-              {hasRunning && !showNewScan && (
-                <button onClick={() => setShowNewScan(true)}
-                  className="w-full mb-4 py-3 rounded-xl border border-emerald-400/20 bg-emerald-500/[0.04] text-emerald-400/60 text-xs font-medium hover:text-emerald-300 hover:border-emerald-400/30 transition-all">
-                  + Start Another Scan
-                </button>
-              )}
-
-              {/* Create scan form */}
+              {/* Create scan form — always visible on scan tab */}
               {showCreateForm && (
                 <div className="space-y-5">
-                  {showNewScan && hasRunning && (
-                    <button onClick={() => setShowNewScan(false)}
-                      className="text-[10px] text-sky-400/60 hover:text-sky-300 font-medium">← Back to live scans</button>
-                  )}
 
                   {/* Saved Scans — current user first, then others via scroll */}
                   {(() => {
@@ -1566,10 +1574,7 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                   <div>
                     <p className="text-[10px] text-muted/50 uppercase tracking-widest font-bold mb-2">Select Scan Depth</p>
                     <TierSelector selected={selectedTier} onSelect={setSelectedTier}
-                      totalCompanies={availableSearches.reduce((sum, s) => {
-                        if (selectedSearchIds !== null && !selectedSearchIds.has(s.id)) return sum;
-                        return sum + (s.resultCount || 0);
-                      }, 0)} />
+                      totalCompanies={selectedCompanyCount} />
                   </div>
 
                   {/* Action buttons — Save above Run */}
@@ -1580,40 +1585,13 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                     </button>
                     <button onClick={startScan} disabled={selectedSearchIds !== null && selectedSearchIds.size === 0}
                       className="w-full px-6 py-3 rounded-xl bg-sky-500/15 border border-sky-400/30 text-sky-300 font-bold text-sm hover:bg-sky-500/25 hover:border-sky-400/50 transition-all active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed">
-                      Run {TIERS.find(t => t.key === selectedTier)?.name} Scan ({TIERS.find(t => t.key === selectedTier)?.cost})
+                      Run {selectedTierObj?.name} Scan {dynamicCostEstimate ? `(~$${dynamicCostEstimate})` : `(${selectedTierObj?.cost} max)`}
                     </button>
                   </div>
                 </div>
               )}
 
-              {/* Results — show latest or viewed scan */}
-              {!hasRunning && !showNewScan && activeResults && !showCreateForm && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {viewingScan && (
-                        <button onClick={() => setViewingScan(null)} className="text-[10px] text-sky-400/60 hover:text-sky-300 font-medium">← Back</button>
-                      )}
-                      <p className="text-[10px] text-muted/40">
-                        {viewingScan ? `Viewing scan from ${new Date(viewingScan.timestamp).toLocaleString()}` : `Latest scan · ${new Date(activeResults.timestamp).toLocaleString()}`}
-                      </p>
-                    </div>
-                    <button onClick={() => { setResults(null); setViewingScan(null); }}
-                      className="text-[10px] px-3 py-1 rounded-lg border border-sky-400/20 text-sky-400/60 hover:text-sky-300 font-medium">
-                      + New Scan
-                    </button>
-                  </div>
-                  <ResultsView data={activeResults} addFavorite={addFavorite} isFavorited={isFavorited} />
-                </div>
-              )}
-
-              {/* Empty state */}
-              {!hasRunning && !activeResults && !showCreateForm && (
-                <div className="bg-surface/30 border border-border/15 rounded-xl p-8 text-center mt-6">
-                  <p className="text-2xl mb-2">🔬</p>
-                  <p className="text-muted/50 text-sm">Select a tier above and start scanning</p>
-                </div>
-              )}
+              {/* Results now live in History tab */}
             </>
           )}
 
