@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CrmButton } from '../components/CrmButton';
-import { autoSaveTopPicks } from '../components/ScanContext';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://pigeon-api.up.railway.app';
 
@@ -107,13 +106,9 @@ function TierSelector({ selected, onSelect, totalCompanies }) {
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-[9px] text-muted/40">{t.ddPush} to DD</span>
-                {estCost && totalCompanies > 0 ? (
-                  <>
-                    <span className={`text-sm font-bold ${c.text}`}>~${estCost}</span>
-                    <span className="text-[9px] text-muted/30 line-through">{t.cost}</span>
-                  </>
-                ) : (
-                  <span className={`text-sm font-bold ${c.text}`}>{t.cost}</span>
+                <span className={`text-sm font-bold ${c.text}`}>{t.cost}</span>
+                {estCost && totalCompanies > 0 && (
+                  <span className="text-[8px] text-muted/30">~${estCost} est</span>
                 )}
               </div>
             </div>
@@ -493,28 +488,6 @@ function moneyFmt(val) {
   return `$${val}`;
 }
 
-function WebGrowthBadge({ company }) {
-  const t = (company.card || company).traction || company.traction || {};
-  const g30 = t.webGrowth30d;
-  const g90 = t.webGrowth90d;
-  const harmonicUrl = company.id && typeof company.id === 'number' ? `https://console.harmonic.ai/dashboard/company/${company.id}?selectedTab=TRACTION` : null;
-  const badges = [];
-  if (g30 !== null && g30 !== undefined) {
-    if (g30 >= 50) badges.push({ label: `🌐▲${Math.round(g30)}%`, period: '1mo', color: 'bg-emerald-500/15 text-emerald-400 border-emerald-400/25', url: harmonicUrl });
-    else if (g30 <= -30) badges.push({ label: `🌐▼${Math.abs(Math.round(g30))}%`, period: '1mo', color: 'bg-red-500/12 text-red-400 border-red-400/20', url: harmonicUrl });
-  }
-  if (g90 !== null && g90 !== undefined) {
-    if (g90 >= 50) badges.push({ label: `🌐▲${Math.round(g90)}%`, period: '3mo', color: 'bg-emerald-500/12 text-emerald-300/70 border-emerald-400/20', url: harmonicUrl });
-    else if (g90 <= -30) badges.push({ label: `🌐▼${Math.abs(Math.round(g90))}%`, period: '3mo', color: 'bg-red-500/10 text-red-300/70 border-red-400/15', url: harmonicUrl });
-  }
-  if (badges.length === 0) return null;
-  return badges.map((b, i) => b.url ? (
-    <a key={i} href={b.url} target="_blank" rel="noopener" className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md border hover:opacity-80 ${b.color}`} title={`${b.period} web traffic — click for Harmonic`}>{b.label} <span className="text-[7px] opacity-60">{b.period}</span></a>
-  ) : (
-    <span key={i} className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md border ${b.color}`}>{b.label} <span className="text-[7px] opacity-60">{b.period}</span></span>
-  ));
-}
-
 function ResultCard({ result, rank, addFavorite, isFavorited }) {
   const [expanded, setExpanded] = useState(false);
   const card = result.card || {};
@@ -555,7 +528,6 @@ function ResultCard({ result, rank, addFavorite, isFavorited }) {
             {card.funding_stage && <span className="text-[9px] px-1.5 py-0.5 rounded-md border bg-sky-500/8 text-sky-400/70 border-sky-500/20">{card.funding_stage}</span>}
             {card.funding_total > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-md border bg-sky-500/10 text-sky-400 border-sky-500/20">💰 {moneyFmt(card.funding_total)}</span>}
             {card.headcount > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-md border bg-surface/40 text-muted/50 border-border/20">👥 {card.headcount}</span>}
-            <WebGrowthBadge company={result} />
             {result._sourceSearch && <span className="text-[9px] px-1.5 py-0.5 rounded-md border bg-amber-500/8 text-amber-400/60 border-amber-400/15">🔍 {result._sourceSearch}</span>}
           </div>
         </div>
@@ -1151,18 +1123,7 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
       if (dataLine) {
         try {
           const data = JSON.parse(dataLine.slice(6));
-          if (!data.error && data.results) {
-            setResults(data);
-            // Save 7+/10 results to Top Picks (shared with AutoScan)
-            try {
-              const userId = (crmUser || 'mark').toLowerCase();
-              const resultsWithScores = (data.results || []).map(r => ({
-                ...r.card, name: r.name, _score: r.score || 0,
-                _sourceSearchName: r._sourceSearch || 'Scan Agent',
-              }));
-              autoSaveTopPicks(userId, resultsWithScores, '', `Scan Agent (${selectedTierObj?.name || selectedTier})`, 'deep-scan');
-            } catch (e) { console.warn('[TopPicks] Save error:', e); }
-          }
+          if (!data.error && data.results) setResults(data);
         } catch (e) {}
       }
     } catch (e) {
@@ -1200,9 +1161,7 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
   // Dynamic company count and cost estimate
   const selectedCompanyCount = availableSearches.reduce((sum, s) => {
     if (selectedSearchIds !== null && !selectedSearchIds.has(s.id)) return sum;
-    const rc = s.resultCount;
-    const count = typeof rc === 'string' ? parseInt(rc.replace(/[^0-9]/g, '')) || 0 : (rc || 0);
-    return sum + count;
+    return sum + (s.resultCount || 0);
   }, 0);
   const selectedTierObj = TIERS.find(t => t.key === selectedTier);
   const dynamicCostEstimate = (() => {

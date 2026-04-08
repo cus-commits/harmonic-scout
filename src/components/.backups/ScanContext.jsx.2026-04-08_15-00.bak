@@ -178,7 +178,6 @@ function isProfileEmpty(p) {
 
 const ScanContext = createContext(null);
 export function useScan() { return useContext(ScanContext); }
-export { autoSaveTopPicks };
 
 export function ScanProvider({ children }) {
   const [activeScans, setActiveScans] = useState({});

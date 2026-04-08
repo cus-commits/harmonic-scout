@@ -1,0 +1,2395 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useScan } from '../components/ScanContext';
+import FindSimilar from '../components/FindSimilar';
+import { CrmButton } from '../components/CrmButton';
+
+const MAX_PROFILES = 5;
+const TIMEFRAME_OPTIONS = [
+  { value: 1, label: '1d' },
+  { value: 2, label: '2d' },
+  { value: 3, label: '3d' },
+  { value: 5, label: '5d' },
+  { value: 7, label: '7d' },
+  { value: 14, label: '14d' },
+];
+const SECTORS = ['Crypto / Web3','DeFi','NFT / Digital Assets','Fintech','Payments','Consumer','Social','Gaming / Esports','Gambling / Betting','AI / ML','SaaS / Enterprise','Climate / Cleantech','Healthcare / Biotech','PropTech / Real Estate','EdTech','Food / Delivery','Logistics / Supply Chain','Cybersecurity','Robotics / Automation','Space / Aerospace','Marketplace','Creator Economy','Media / Entertainment','Insurance / Insurtech','Legal Tech'];
+const STAGES = ['Pre-Seed','Seed','Series A','Series B','Series C+','Any'];
+const GEOS = ['US Only','US + Canada','North America','Europe','Asia','Latin America','MENA','Africa','Global / No Preference'];
+const BUSINESS_MODELS = ['B2C','B2B','B2B2C','Marketplace','Platform / Infra','API / Developer Tools','Hardware','Protocol / Token','No Preference'];
+const TEAM_PREFS = ['Technical founders (eng background)','Repeat founders','Ex-FAANG / Big Tech','Domain experts (industry background)','Solo founder OK','Must have co-founders','No preference'];
+const CHECK_SIZES = ['Under $50K','$50K–$100K','$100K–$250K','$250K–$500K','$500K+','Flexible'];
+const DEAL_SIGNALS = ['Revenue / ARR traction','User growth / DAU signals','Token/protocol activity (on-chain)','Recent funding round','Headcount growth','Web traffic growth','Y Combinator / top accelerator','Notable investors already in','Open source / GitHub activity','Press / media coverage'];
+
+const DEFAULT_PROFILES = {
+  joe: { name: 'Main Scan', sectors: ['Crypto / Web3','AI / ML','Gambling / Betting','Gaming / Esports','Robotics / Automation'], stages: ['Pre-Seed','Seed'], geos: ['Global / No Preference'], models: ['B2C','Platform / Infra','Protocol / Token'], teamPrefs: ['Solo founder OK'], checkSize: ['$100K–$250K'], signals: ['User growth / DAU signals','Token/protocol activity (on-chain)','Open source / GitHub activity'], maxValuation: '$25M', maxRaised: '$5M', minHeadcount: '', maxHeadcount: '', foundedAfter: '', keywords: 'crypto infra, ai infra, gamblefi, casino, emerging tech, robotics, first-time founder, young founder', antiKeywords: '', notes: 'First-time founders, young (<25), previous exits. Most bullish on emerging tech. Val <$25M.' },
+  liam: { name: 'Main Scan', sectors: ['Crypto / Web3','AI / ML','Fintech','Payments','Space / Aerospace','Robotics / Automation'], stages: ['Pre-Seed','Seed','Series A'], geos: ['Global / No Preference'], models: ['B2B','Platform / Infra','API / Developer Tools','Hardware'], teamPrefs: ['Repeat founders','Ex-FAANG / Big Tech'], checkSize: ['$100K–$250K'], signals: ['Revenue / ARR traction','Headcount growth','Notable investors already in'], maxValuation: '', maxRaised: '', minHeadcount: '', maxHeadcount: '', foundedAfter: '', keywords: 'blockchain infra, fintech, payments, neo banking, BTC mining, military tech, sovereign AI, space, nuclear, energy, robotics, construction tech', antiKeywords: '', notes: 'Elite pedigree required: exits, top firms, Ivy League. Must show traction.' },
+  carlo: { name: 'Main Scan', sectors: ['Fintech','Crypto / Web3','Gambling / Betting','Marketplace'], stages: ['Pre-Seed'], geos: ['Global / No Preference'], models: ['B2C','B2B','Marketplace','Platform / Infra','Protocol / Token'], teamPrefs: ['No preference'], checkSize: ['$100K–$250K'], signals: ['Revenue / ARR traction','User growth / DAU signals','Recent funding round'], maxValuation: '$15M', maxRaised: '$3M', minHeadcount: '', maxHeadcount: '', foundedAfter: '', keywords: 'finance, stablecoin, fintech, gambling, marketplace, web3', antiKeywords: '', notes: 'Pre-Seed only. Val <$15M.' },
+  jake: { name: 'Main Scan', sectors: ['Crypto / Web3','DeFi','Gambling / Betting','AI / ML','Fintech'], stages: ['Pre-Seed','Seed'], geos: ['Global / No Preference'], models: ['B2C','Marketplace','Platform / Infra','API / Developer Tools'], teamPrefs: ['Repeat founders','Technical founders (eng background)'], checkSize: ['$100K–$250K'], signals: ['Revenue / ARR traction','User growth / DAU signals','Token/protocol activity (on-chain)','Open source / GitHub activity','Web traffic growth'], maxValuation: '$20M', maxRaised: '$5M', minHeadcount: '', maxHeadcount: '50', foundedAfter: '2024', keywords: 'exchange, trading platform, betting, gambling, casino, prediction market, SDK, API, dev tools, AI agent wallet, RWA, stablecoin plugin, cutting edge disruptive tech', antiKeywords: 'layer 1, L1, L2, aptos, NFT collection, metaverse, play to earn, meme coin, dating app, yield aggregator, copy trading, launchpad, governance token, quantum, AI wrapper, uniswap fork, consulting, series B', notes: 'Priority: exchanges/betting → infra/SDK → AI agent → RWA → stablecoin plugins. Founded 2024+, <$5M raised, team <50. Also: cutting edge disruptive tech <$100M.' },
+  dean: { name: 'Main Scan', sectors: ['Crypto / Web3','DeFi','Fintech','AI / ML','Consumer'], stages: ['Pre-Seed','Seed'], geos: ['Global / No Preference'], models: ['No Preference'], teamPrefs: ['No preference'], checkSize: ['$100K–$250K'], signals: ['Revenue / ARR traction','User growth / DAU signals'], maxValuation: '', maxRaised: '', minHeadcount: '', maxHeadcount: '', foundedAfter: '', keywords: '', antiKeywords: '', notes: '' },
+};
+
+function loadProfiles(personId) {
+  try {
+    const saved = localStorage.getItem(`autoscan_profiles_${personId}`);
+    if (saved) return JSON.parse(saved);
+    const old = localStorage.getItem(`autoscan_profile_${personId}`);
+    if (old) { const p = JSON.parse(old); p.name = p.name || 'Main Scan'; p.id = 'main'; const arr = [p]; localStorage.setItem(`autoscan_profiles_${personId}`, JSON.stringify(arr)); return arr; }
+    if (DEFAULT_PROFILES[personId]) { const p = { ...DEFAULT_PROFILES[personId], id: 'main', updatedAt: new Date().toISOString() }; const arr = [p]; localStorage.setItem(`autoscan_profiles_${personId}`, JSON.stringify(arr)); return arr; }
+    return [];
+  } catch { return []; }
+}
+function saveProfiles(personId, profiles) {
+  localStorage.setItem(`autoscan_profiles_${personId}`, JSON.stringify(profiles));
+  fetch(`${import.meta.env.VITE_API_URL || 'https://pigeon-api.up.railway.app'}/api/profiles/${personId}`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ profiles }),
+  }).catch(() => {});
+}
+
+function isProfileEmpty(profile) {
+  if (!profile) return true;
+  // savedSearch profiles are never "empty" if they have savedSearchIds
+  if (profile.scanMode === 'savedSearch' && profile.savedSearchIds?.length > 0) return false;
+  // Empty if no keywords AND no notes AND no anti-keywords — means user hasn't customized
+  const hasCustom = !!(profile.keywords || profile.notes || profile.antiKeywords || profile.maxValuation || profile.foundedAfter);
+  if (!hasCustom && (!profile.sectors || profile.sectors.length === 0)) return true;
+  if (!hasCustom && !profile._customized) return true; // Default profiles without customization
+  return false;
+}
+
+// ---- Components ----
+
+function ChipSelect({ options, selected, onChange, columns = 3 }) {
+  return (
+    <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
+      {options.map(opt => (
+        <button key={opt} onClick={() => onChange(selected.includes(opt) ? selected.filter(s => s !== opt) : [...selected, opt])}
+          className={`text-left text-[11px] px-2.5 py-2 rounded-lg border transition-all ${selected.includes(opt) ? 'bg-sky-500/12 border-sky-400/35 text-sky-300 font-medium' : 'bg-surface/40 border-border/25 text-muted/70 hover:border-border/50'}`}>
+          {opt}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function TextInput({ label, value, onChange, placeholder }) {
+  return (
+    <div>
+      <label className="text-[10px] text-muted/50 uppercase tracking-wider font-bold">{label}</label>
+      <input type="text" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+        className="w-full bg-ink/50 border border-border/25 rounded-lg px-3 py-2 text-xs text-bright outline-none focus:border-sky-400/35 mt-1 transition-colors placeholder:text-white/60" />
+    </div>
+  );
+}
+
+function Section({ title, children, toggleAll, allSelected }) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <h3 className="text-xs font-bold text-bright/80">{title}</h3>
+        {toggleAll && <button onClick={toggleAll} className="text-[10px] text-sky-400/60 hover:text-sky-300">{allSelected ? 'Clear' : 'All'}</button>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function TimeframePicker({ value, onChange, compact = false }) {
+  const [open, setOpen] = useState(false);
+  const current = TIMEFRAME_OPTIONS.find(o => o.value === value) || TIMEFRAME_OPTIONS[1]; // default 2d
+
+  if (compact) {
+    return (
+      <div className="relative">
+        <button onClick={() => setOpen(!open)}
+          className="text-[10px] px-2.5 py-1.5 rounded-lg border border-border/20 text-muted/50 hover:border-sky-400/25 hover:text-sky-300 transition-all flex items-center gap-1">
+          🕐 {current.label}
+          <span className="text-[8px] text-muted/30">▾</span>
+        </button>
+        {open && (
+          <div className="absolute top-full mt-1 right-0 z-50 bg-[#1a1d2e] border border-border/25 rounded-lg shadow-xl py-1 min-w-[80px]">
+            {TIMEFRAME_OPTIONS.map(o => (
+              <button key={o.value} onClick={() => { onChange(o.value); setOpen(false); }}
+                className={`w-full text-left px-3 py-1.5 text-[11px] transition-colors ${
+                  o.value === value ? 'text-sky-300 bg-sky-500/10 font-semibold' : 'text-muted/60 hover:text-bright hover:bg-white/5'
+                }`}>
+                {o.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <label className="text-[10px] text-muted/50 uppercase tracking-wider font-bold">🕐 Timeframe</label>
+      <p className="text-[10px] text-muted/35">How far back to look for new companies in keyword scans</p>
+      <div className="flex gap-1.5">
+        {TIMEFRAME_OPTIONS.map(o => (
+          <button key={o.value} onClick={() => onChange(o.value)}
+            className={`text-[11px] px-3 py-2 rounded-lg border font-medium transition-all ${
+              o.value === value ? 'bg-sky-500/12 border-sky-400/35 text-sky-300' : 'border-border/25 text-muted/60 hover:border-border/40'
+            }`}>
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ProfileEditor({ profile, onSave, onCancel, personName }) {
+  const [p, setP] = useState({ ...profile });
+  const [availableSearches, setAvailableSearches] = useState([]);
+  const [loadingSearches, setLoadingSearches] = useState(false);
+  const set = (key, val) => setP(prev => ({ ...prev, [key]: val }));
+
+  const isSavedSearchMode = p.scanMode === 'savedSearch';
+
+  // Fetch available saved searches when in savedSearch mode
+  useEffect(() => {
+    if (isSavedSearchMode && availableSearches.length === 0) {
+      setLoadingSearches(true);
+      fetch(`${import.meta.env.VITE_API_URL || 'https://pigeon-api.up.railway.app'}/api/harmonic/saved-searches`)
+        .then(r => r.json())
+        .then(data => setAvailableSearches(data.searches || []))
+        .catch(() => {})
+        .finally(() => setLoadingSearches(false));
+    }
+  }, [isSavedSearchMode]);
+
+  const toggleSavedSearch = (search) => {
+    const current = p.savedSearchIds || [];
+    const exists = current.findIndex(s => s.id === search.id);
+    if (exists >= 0) {
+      set('savedSearchIds', current.filter(s => s.id !== search.id));
+    } else {
+      set('savedSearchIds', [...current, { id: search.id, name: search.name, category: search.name }]);
+    }
+  };
+
+  const isSearchSelected = (searchId) => (p.savedSearchIds || []).some(s => s.id === searchId);
+
+  return (
+    <div className="space-y-4 pb-6">
+      <div>
+        <label className="text-[10px] text-muted/50 uppercase tracking-wider font-bold">Scan Name</label>
+        <input type="text" value={p.name || ''} onChange={e => set('name', e.target.value)} placeholder="e.g. Crypto Deep Dive"
+          className="w-full bg-ink/50 border border-border/25 rounded-lg px-3 py-2.5 text-sm text-bright font-medium outline-none focus:border-sky-400/35 mt-1 placeholder:text-white/60" />
+      </div>
+
+      {/* Scan Mode Toggle */}
+      <div className="space-y-2">
+        <label className="text-[10px] text-muted/50 uppercase tracking-wider font-bold">Scan Mode</label>
+        <div className="flex gap-2">
+          <button onClick={() => set('scanMode', 'keywords')}
+            className={`flex-1 py-2.5 rounded-lg border text-xs font-semibold transition-all ${
+              !isSavedSearchMode ? 'bg-sky-500/12 border-sky-400/35 text-sky-300' : 'border-border/25 text-muted/60 hover:border-border/40'
+            }`}>
+            🔍 Keywords
+          </button>
+          <button onClick={() => set('scanMode', 'savedSearch')}
+            className={`flex-1 py-2.5 rounded-lg border text-xs font-semibold transition-all ${
+              isSavedSearchMode ? 'bg-amber-500/12 border-amber-400/35 text-amber-300' : 'border-border/25 text-muted/60 hover:border-border/40'
+            }`}>
+            H Saved Searches
+          </button>
+        </div>
+      </div>
+
+      {isSavedSearchMode ? (
+        /* === Saved Search Mode === */
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-bright/80">Ⓗ Select Harmonic Saved Searches</h3>
+              {(p.savedSearchIds || []).length > 0 && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-400/20 font-medium">
+                  {(p.savedSearchIds || []).length} selected
+                </span>
+              )}
+            </div>
+            <p className="text-[10px] text-muted/40">These searches will be queried daily for net-new companies. Top 5-10 auto-push to DD.</p>
+          </div>
+
+          {loadingSearches ? (
+            <div className="flex justify-center py-6">
+              <div className="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : availableSearches.length === 0 ? (
+            <div className="bg-amber-500/5 border border-amber-400/15 rounded-xl p-4 text-center">
+              <p className="text-muted/50 text-xs">No saved searches found in Harmonic</p>
+              <p className="text-[10px] text-muted/35 mt-1">Create them in the Harmonic console first</p>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              {availableSearches.map(s => {
+                const selected = isSearchSelected(s.id);
+                return (
+                  <button key={s.id} onClick={() => toggleSavedSearch(s)}
+                    className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl border text-left transition-all ${
+                      selected ? 'bg-amber-500/10 border-amber-400/30' : 'border-border/20 hover:border-border/40'
+                    }`}>
+                    <div className="min-w-0 flex-1">
+                      <p className={`text-xs font-medium ${selected ? 'text-amber-300' : 'text-bright/70'}`}>{s.name}</p>
+                      <p className="text-[10px] text-muted/40">{s.count != null ? `${s.count} companies` : ''} · {s.type || 'company'}</p>
+                    </div>
+                    <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                      selected ? 'bg-amber-500 border-amber-500 text-white' : 'border-border/30'
+                    }`}>
+                      {selected && <span className="text-[10px] font-bold">✓</span>}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Per-search configuration */}
+          {(p.savedSearchIds || []).length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold text-bright/80">Per-Search Configuration</h3>
+              <p className="text-[10px] text-muted/40">Category label, priority keywords, and scoring notes for each saved search. Keywords and notes help Opus prioritize within each pool.</p>
+              {(p.savedSearchIds || []).map((s, idx) => (
+                <div key={s.id} className="bg-surface/30 border border-border/10 rounded-xl px-3.5 py-3 space-y-2">
+                  <p className="text-[11px] text-amber-300/70 font-semibold truncate">{s.name}</p>
+                  <div className="flex items-center gap-2">
+                    <label className="text-[9px] text-muted/40 uppercase tracking-wider font-bold w-16 flex-shrink-0">Label</label>
+                    <input type="text" value={s.category || ''} placeholder={s.name}
+                      onChange={e => {
+                        const updated = [...(p.savedSearchIds || [])];
+                        updated[idx] = { ...updated[idx], category: e.target.value };
+                        set('savedSearchIds', updated);
+                      }}
+                      className="flex-1 bg-ink/50 border border-border/25 rounded-lg px-2.5 py-1.5 text-[11px] text-bright outline-none focus:border-amber-400/35 placeholder:text-white/60" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label className="text-[9px] text-muted/40 uppercase tracking-wider font-bold w-16 flex-shrink-0">Keywords</label>
+                    <input type="text" value={s.keywords || ''} placeholder="e.g. robotics, energy, autonomy"
+                      onChange={e => {
+                        const updated = [...(p.savedSearchIds || [])];
+                        updated[idx] = { ...updated[idx], keywords: e.target.value };
+                        set('savedSearchIds', updated);
+                      }}
+                      className="flex-1 bg-ink/50 border border-border/25 rounded-lg px-2.5 py-1.5 text-[11px] text-bright outline-none focus:border-amber-400/35 placeholder:text-white/60" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label className="text-[9px] text-muted/40 uppercase tracking-wider font-bold w-16 flex-shrink-0">Notes</label>
+                    <input type="text" value={s.notes || ''} placeholder="e.g. looking for hardware founders"
+                      onChange={e => {
+                        const updated = [...(p.savedSearchIds || [])];
+                        updated[idx] = { ...updated[idx], notes: e.target.value };
+                        set('savedSearchIds', updated);
+                      }}
+                      className="flex-1 bg-ink/50 border border-border/25 rounded-lg px-2.5 py-1.5 text-[11px] text-bright outline-none focus:border-amber-400/35 placeholder:text-white/60" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <Section title="📝 Notes">
+            <textarea value={p.notes || ''} onChange={e => set('notes', e.target.value)} rows={3} placeholder="Any additional context for Claude's scoring..."
+              className="w-full bg-ink/50 border border-border/25 rounded-lg px-3 py-2 text-xs text-bright outline-none focus:border-sky-400/35 resize-none leading-relaxed placeholder:text-white/60" />
+          </Section>
+        </div>
+      ) : (
+        /* === Keywords Mode (existing) === */
+        <>
+          <Section title="🎯 Sectors" toggleAll={() => set('sectors', (p.sectors?.length || 0) === SECTORS.length ? [] : [...SECTORS])} allSelected={(p.sectors?.length || 0) === SECTORS.length}>
+            <ChipSelect options={SECTORS} selected={p.sectors || []} onChange={v => set('sectors', v)} columns={3} />
+          </Section>
+          <Section title="📊 Stage"><ChipSelect options={STAGES} selected={p.stages || []} onChange={v => set('stages', v)} columns={3} /></Section>
+          <Section title="🌍 Geography"><ChipSelect options={GEOS} selected={p.geos || []} onChange={v => set('geos', v)} columns={3} /></Section>
+          <Section title="💼 Business Model"><ChipSelect options={BUSINESS_MODELS} selected={p.models || []} onChange={v => set('models', v)} columns={3} /></Section>
+          <Section title="👥 Team"><ChipSelect options={TEAM_PREFS} selected={p.teamPrefs || []} onChange={v => set('teamPrefs', v)} columns={2} /></Section>
+          <Section title="💰 Check Size"><ChipSelect options={CHECK_SIZES} selected={p.checkSize || []} onChange={v => set('checkSize', v)} columns={3} /></Section>
+          <Section title="📈 Signals"><ChipSelect options={DEAL_SIGNALS} selected={p.signals || []} onChange={v => set('signals', v)} columns={2} /></Section>
+          <Section title="🔢 Numeric Filters">
+            <div className="grid grid-cols-2 gap-2">
+              <TextInput label="Max Valuation" value={p.maxValuation || ''} onChange={v => set('maxValuation', v)} placeholder="$30M" />
+              <TextInput label="Max Raised" value={p.maxRaised || ''} onChange={v => set('maxRaised', v)} placeholder="$5M" />
+              <TextInput label="Min Team" value={p.minHeadcount || ''} onChange={v => set('minHeadcount', v)} placeholder="2" />
+              <TextInput label="Max Team" value={p.maxHeadcount || ''} onChange={v => set('maxHeadcount', v)} placeholder="50" />
+              <TextInput label="Founded After" value={p.foundedAfter || ''} onChange={v => set('foundedAfter', v)} placeholder="2024" />
+            </div>
+          </Section>
+          <Section title="🔍 Keywords">
+            <TextInput label="Include" value={p.keywords || ''} onChange={v => set('keywords', v)} placeholder="betting, prediction market" />
+            <div className="mt-2"><TextInput label="Exclude" value={p.antiKeywords || ''} onChange={v => set('antiKeywords', v)} placeholder="consulting, NFT" /></div>
+          </Section>
+          <Section title="📝 Notes">
+            <textarea value={p.notes || ''} onChange={e => set('notes', e.target.value)} rows={3} placeholder="Anything specific..."
+              className="w-full bg-ink/50 border border-border/25 rounded-lg px-3 py-2 text-xs text-bright outline-none focus:border-sky-400/35 resize-none leading-relaxed placeholder:text-white/60" />
+          </Section>
+        </>
+      )}
+
+      {/* Timeframe — applies to both keyword and saved search modes */}
+      <TimeframePicker value={p.timeframeDays || 2} onChange={v => set('timeframeDays', v)} />
+
+      <div className="flex gap-2">
+        {onCancel && <button onClick={onCancel} className="py-3 px-6 rounded-xl border border-border/30 text-muted text-sm font-medium">Cancel</button>}
+        <button onClick={() => onSave({ ...p, _customized: true, updatedAt: new Date().toISOString() })}
+          className="flex-1 py-3 rounded-xl bg-sky-500 text-white font-bold text-sm active:scale-[0.98] shadow-md shadow-sky-500/20">
+          Save {personName ? `${personName}'s` : ''} Preferences
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ---- Utilities ----
+
+function moneyFmt(n) { if (!n || typeof n !== 'number') return null; if (n >= 1e9) return `$${(n/1e9).toFixed(1)}B`; if (n >= 1e6) return `$${(n/1e6).toFixed(1)}M`; if (n >= 1e3) return `$${(n/1e3).toFixed(0)}K`; return `$${n}`; }
+function stageColor(s) { const st = (s||'').toLowerCase(); if (st.includes('pre')) return 'bg-amber-500/20 text-amber-400 border-amber-500/30'; if (st.includes('seed')) return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'; return 'bg-gray-500/20 text-gray-400 border-gray-500/30'; }
+function stageFmt(s) { 
+  if (!s || typeof s !== 'string') return '';
+  const lower = s.toLowerCase();
+  if (lower === 'venture_unknown' || lower === 'venture unknown') return '';
+  return s.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase()).replace('Pre Seed','PRE SEED').replace('Seed','SEED');
+}
+
+function ScanAnalysisPanel({ analysis, companies }) {
+  const [expanded, setExpanded] = useState(false);
+
+  if (!analysis || typeof analysis !== 'string') return null;
+
+  // Count how many companies were scored, passed, cut
+  const scoreCount = (analysis.match(/Score:\s*\d+/gi) || []).length;
+  const passCount = (analysis.match(/—\s*PASS/gi) || []).length;
+  const cutCount = (analysis.match(/—\s*CUT/gi) || []).length;
+
+  return (
+    <div className="border border-violet-400/15 rounded-xl overflow-hidden"
+      style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.03) 0%, rgba(59,130,246,0.03) 100%)' }}>
+      <button onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/[0.02] transition-colors">
+        <div className="flex items-center gap-2.5">
+          <span className="text-base">🧠</span>
+          <div className="text-left">
+            <p className="text-xs font-bold text-bright/80">Claude Logic</p>
+            <p className="text-[10px] text-muted/45">
+              {scoreCount > 0 && `${scoreCount} scored`}
+              {passCount > 0 && ` · ${passCount} passed`}
+              {cutCount > 0 && ` · ${cutCount} cut`}
+              {!scoreCount && !passCount && !cutCount && 'Full scoring analysis'}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-300 border border-violet-400/20 font-medium">
+            {expanded ? 'Hide' : 'Show'}
+          </span>
+          <span className={`text-muted/40 text-xs transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}>▾</span>
+        </div>
+      </button>
+      {expanded && (
+        <div className="border-t border-violet-400/10 px-4 py-3">
+          <AnalysisWithLinks text={analysis} companies={companies} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AnalysisWithLinks({ text, companies }) {
+  if (!text || typeof text !== 'string') return null;
+  // Build a map of company name (lowercase) → website URL
+  const urlMap = {};
+  for (const c of (companies || [])) {
+    if (c.website) {
+      const url = c.website.startsWith('http') ? c.website : `https://${c.website}`;
+      urlMap[(c.name || '').toLowerCase()] = url;
+    }
+  }
+
+  // Parse the analysis text: find **CompanyName** patterns and make them links
+  const parts = [];
+  let remaining = text;
+  const boldRegex = /\*\*([^*]+)\*\*/g;
+  let match;
+  let lastIdx = 0;
+
+  while ((match = boldRegex.exec(text)) !== null) {
+    // Add text before this match
+    if (match.index > lastIdx) {
+      parts.push({ type: 'text', content: text.slice(lastIdx, match.index) });
+    }
+    const name = match[1];
+    const url = urlMap[name.toLowerCase()];
+    parts.push({ type: 'bold', name, url });
+    lastIdx = match.index + match[0].length;
+  }
+  // Remaining text
+  if (lastIdx < text.length) {
+    parts.push({ type: 'text', content: text.slice(lastIdx) });
+  }
+
+  return (
+    <div className="text-xs text-bright/70 leading-relaxed whitespace-pre-wrap">
+      {parts.map((part, i) => {
+        if (part.type === 'text') return <span key={i}>{part.content}</span>;
+        return (
+          <span key={i} className="inline-flex items-center gap-1">
+            <strong className="text-bright font-bold">{part.name}</strong>
+            {part.url && (
+              <a href={part.url} target="_blank" rel="noopener"
+                className="inline-flex items-center text-[9px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-400/30 hover:bg-sky-500/20 hover:text-sky-300 transition-all font-medium no-underline"
+                onClick={e => e.stopPropagation()}>
+                🌐
+              </a>
+            )}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+function Countdown({ targetMs }) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => { const i = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(i); }, []);
+  const diff = Math.max(0, targetMs - now);
+  if (diff === 0) return <span className="text-emerald-400/60">Ready</span>;
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  return <span className="font-mono">{h}:{String(m).padStart(2,'0')}:{String(s).padStart(2,'0')}</span>;
+}
+
+function WebGrowthBadge({ company }) {
+  const t = company.traction || {};
+  const g30 = t.webGrowth30d;
+  const g90 = t.webGrowth90d;
+  const harmonicUrl = company.id && typeof company.id === 'number' ? `https://console.harmonic.ai/dashboard/company/${company.id}?selectedTab=TRACTION` : null;
+  const badges = [];
+  if (g30 !== null && g30 !== undefined) {
+    if (g30 >= 50) badges.push({ label: `🌐▲${Math.round(g30)}%`, period: '1mo', color: 'bg-emerald-500/15 text-emerald-400 border-emerald-400/25', url: harmonicUrl });
+    else if (g30 <= -30) badges.push({ label: `🌐▼${Math.abs(Math.round(g30))}%`, period: '1mo', color: 'bg-red-500/12 text-red-400 border-red-400/20', url: harmonicUrl });
+  }
+  if (g90 !== null && g90 !== undefined) {
+    if (g90 >= 50) badges.push({ label: `🌐▲${Math.round(g90)}%`, period: '3mo', color: 'bg-emerald-500/12 text-emerald-300/70 border-emerald-400/20', url: harmonicUrl });
+    else if (g90 <= -30) badges.push({ label: `🌐▼${Math.abs(Math.round(g90))}%`, period: '3mo', color: 'bg-red-500/10 text-red-300/70 border-red-400/15', url: harmonicUrl });
+  }
+  if (badges.length === 0) return null;
+  return badges.map((b, i) => b.url ? (
+    <a key={i} href={b.url} target="_blank" rel="noopener" className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md border hover:opacity-80 ${b.color}`} title={`${b.period} web traffic — click for Harmonic`}>{b.label} <span className="text-[7px] opacity-60">{b.period}</span></a>
+  ) : (
+    <span key={i} className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md border ${b.color}`}>{b.label} <span className="text-[7px] opacity-60">{b.period}</span></span>
+  ));
+}
+
+function ScanResultCard({ company, onFavorite, isFavorited, onDismiss, onShowLogic }) {
+  const stage = stageFmt(company.funding_stage);
+  const total = moneyFmt(company.funding_total);
+  const webUrl = company.website ? (company.website.startsWith('http') ? company.website : `https://${company.website}`) : null;
+  return (
+    <div className="rounded-xl border border-border/25 bg-surface/50 p-3.5 space-y-2 fade-in">
+      <div className="flex items-start gap-3">
+        {company.logo_url ? <img src={company.logo_url} alt="" className="w-9 h-9 rounded-lg bg-surface object-contain flex-shrink-0" onError={e => { e.target.style.display = 'none'; }} />
+          : <div className="w-9 h-9 rounded-lg bg-sky-500/10 flex items-center justify-center flex-shrink-0"><span className="text-sky-400 font-bold text-sm">{(company.name||'?')[0]}</span></div>}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h3 className="font-bold text-bright text-sm truncate">{company.name}</h3>
+            {company.id && typeof company.id === "number" && <a href={`/company/${company.id}`} className="text-[9px] px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-400 border border-pink-400/15 hover:bg-pink-500/20 font-bold" title="Harmonic Card">H</a>}
+            {webUrl && (
+              <a href={webUrl} target="_blank" rel="noopener"
+                className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded-md bg-blue-500/15 text-blue-400 border border-blue-400/30 hover:bg-sky-500/20 font-medium">
+                🌐
+              </a>
+            )}
+            {company.socials?.linkedin && <a href={company.socials.linkedin} target="_blank" rel="noopener" className="text-[9px] px-1.5 py-0.5 rounded-md bg-surface/40 border border-border/20 text-muted/50 hover:text-sky-400 font-medium">💼</a>}
+          </div>
+        </div>
+        {(company._score || company.score) > 0 && (
+          <span className={`flex-shrink-0 text-[10px] px-2 py-0.5 rounded-full font-bold border ${
+            (company._score||company.score) >= 8 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/25' :
+            (company._score||company.score) >= 6 ? 'bg-sky-500/20 text-sky-300 border-sky-400/25' :
+            'bg-muted/10 text-muted/60 border-border/20'
+          }`}>{company._score||company.score}/10</span>
+        )}
+        {onShowLogic && <button onClick={() => onShowLogic(company.name)} className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400 border border-violet-400/15 hover:bg-violet-500/20 font-medium" title="View scoring logic">🧠</button>}
+        <button onClick={() => !isFavorited && onFavorite({...company})} className={`flex-shrink-0 text-base ${isFavorited ? 'text-sky-400' : 'text-muted/40 hover:text-sky-400'}`}>{isFavorited ? '★' : '☆'}</button>
+        {onDismiss && <UnvettedRemoveMenu company={company} onHide={(c) => onDismiss(c)} onBackburn={(c) => { onDismiss(c); try { fetch(`${API_BASE}/api/vetting/backburn`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ companyName: c.name, personId: localStorage.getItem('crm_user') || '' }) }); } catch(e){} }} />}
+      </div>
+      {company.description && <p className="text-muted/60 text-xs leading-relaxed line-clamp-2">{company.description}</p>}
+      <div className="flex flex-wrap gap-1.5">
+        {company._crmStage && <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+          company._crmStage === 'BORO-SM' ? 'bg-violet-500/15 text-violet-300 border-violet-400/25' :
+          company._crmStage === 'BORO' ? 'bg-blue-500/15 text-blue-300 border-blue-400/25' :
+          company._crmStage === 'BO' ? 'bg-sky-500/12 text-sky-300 border-sky-400/20' :
+          'bg-amber-500/12 text-amber-300 border-amber-400/20'
+        }`}>CRM: {company._crmStage}</span>}
+        {company._sourceCategory && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md border bg-amber-500/10 text-amber-300 border-amber-400/20">Ⓗ {company._sourceCategory}</span>}
+        {stage && <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${stageColor(company.funding_stage)}`}>{stage}</span>}
+        {total && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md border bg-sky-500/12 text-sky-400 border-sky-500/20">💰 {total}</span>}
+        <WebGrowthBadge company={company} />
+        {company.location && <span className="text-[10px] px-2 py-0.5 rounded-md border bg-surface/40 border-border/20 text-muted/50">📍 {company.location}</span>}
+        {company.headcount && <span className="text-[10px] px-2 py-0.5 rounded-md border bg-surface/40 border-border/20 text-muted/50">👥 {company.headcount}</span>}
+      </div>
+      {company.investors?.length > 0 && <p className="text-[10px] text-muted/40">Backed by: {company.investors.join(', ')}</p>}
+      <div className="flex items-center gap-1.5">
+        <CrmButton company={company} />
+      </div>
+    </div>
+  );
+}
+
+function HistoryPanel({ personId }) {
+  const { loadHistory, setScanResults } = useScan();
+  const localHistory = loadHistory(personId);
+  const [serverHistory, setServerHistory] = useState([]);
+  const [userFilters, setUserFilters] = useState({});
+  const [loadingResults, setLoadingResults] = useState(null); // index of entry being loaded
+  const [expandedIdx, setExpandedIdx] = useState(null);
+  const [winnersIdx, setWinnersIdx] = useState(null);
+  const [winnersShowCount, setWinnersShowCount] = useState({});
+
+  // Fetch server-side history (all users)
+  useEffect(() => {
+    fetch(`${API_BASE}/api/autoscan/history`).then(r => r.json()).then(d => {
+      const hist = d.history || [];
+      setServerHistory(hist);
+      // Init all users as visible
+      const users = {};
+      hist.forEach(h => { if (h.personId) users[h.personId] = true; });
+      setUserFilters(users);
+    }).catch(() => {});
+  }, []);
+
+  // Merge: server history + local history (dedup by timestamp)
+  const allHistory = [...serverHistory];
+  const serverTimestamps = new Set(serverHistory.map(h => h.timestamp));
+  localHistory.forEach(h => {
+    if (!serverTimestamps.has(h.timestamp)) {
+      allHistory.push({ ...h, personId: personId, profileName: h.profileName, funnel: h.results?.funnel || {}, topCompanies: [], totalResults: (h.results?.results || []).length, timestamp: h.timestamp, _isLocal: true, _localResults: h.results });
+    }
+  });
+  allHistory.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+  // Apply user filters
+  const allUsers = [...new Set(allHistory.map(h => h.personId).filter(Boolean))];
+  const history = allHistory.filter(h => !h.personId || userFilters[h.personId] !== false);
+
+  const toggleUser = (uid) => setUserFilters(prev => ({ ...prev, [uid]: prev[uid] === false ? true : false }));
+
+  if (history.length === 0 && allHistory.length === 0) return <p className="text-muted/40 text-xs text-center py-4">No scan history yet</p>;
+  return (
+    <div>
+      {/* User filter toggles */}
+      {allUsers.length > 1 && (
+        <div className="flex items-center gap-1.5 mb-2">
+          <span className="text-[9px] text-muted/30 mr-1">Filter:</span>
+          {allUsers.map(uid => (
+            <button key={uid} onClick={() => toggleUser(uid)}
+              className={`text-[9px] px-2 py-0.5 rounded-full border transition-all ${userFilters[uid] !== false ? 'bg-sky-500/15 border-sky-400/25 text-sky-300' : 'border-border/15 text-muted/25 hover:text-muted/50'}`}>
+              {uid}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="space-y-2 max-h-[500px] overflow-y-auto">
+      {history.map((h, i) => {
+        const isExpanded = expandedIdx === i;
+        const isWinners = winnersIdx === i;
+        const results = h._localResults || h.results || {};
+        const analysis = results.analysis || h.analysis || '';
+        const companies = results.results || [];
+        const funnel = h.funnel || results.funnel || {};
+        const meta = results.savedSearchMeta || null;
+        const topCos = h.topCompanies || [];
+        // All scored companies sorted by score (winners = score ≥ 6, but we show all scored progressively)
+        const allScored = topCos.length > 0
+          ? topCos.filter(c => (c.score || 0) > 0).sort((a, b) => (b.score || 0) - (a.score || 0))
+          : companies.filter(c => (c._score || c.score || 0) > 0).sort((a, b) => (b._score || b.score || 0) - (a._score || a.score || 0));
+        const winners = allScored.filter(c => (c._score || c.score || 0) >= 6);
+        const currentWinnersCount = winnersShowCount[i] || winners.length || Math.min(allScored.length, 10);
+        const visibleScored = allScored.slice(0, currentWinnersCount);
+        const hasMoreScored = allScored.length > currentWinnersCount;
+
+        return (
+          <div key={i} className="border border-border/15 rounded-xl overflow-hidden">
+            <div className="flex items-center gap-2 px-3 py-2.5 hover:bg-sky-500/[0.03] transition-colors">
+              <button onClick={() => { setExpandedIdx(isExpanded ? null : i); setWinnersIdx(null); }} className="flex-1 text-left min-w-0">
+                <p className="text-xs font-medium text-bright/80 truncate">
+                  {h.personId && h.personId !== personId && <span className="text-[9px] text-sky-400/60 mr-1">[{h.personId}]</span>}
+                  {h.profileName || 'Scan'}
+                  {h.totalResults > 0 && <span className="text-[9px] text-muted/30 ml-1">({h.totalResults} results)</span>}
+                </p>
+                <p className="text-[10px] text-muted/40">
+                  {new Date(h.timestamp).toLocaleDateString()} {new Date(h.timestamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}
+                  {meta?.totalBeforeDedup > 0 && ` · ${meta.totalBeforeDedup} found`}
+                </p>
+                {(funnel.totalUrns > 0 || funnel.sonnetPassed > 0 || funnel.preFiltered > 0) && (
+                  <p className="text-[9px] text-muted/30 mt-0.5">
+                    {funnel.totalUrns > 0 && `${funnel.totalUrns} URNs`}
+                    {funnel.newCompanies > 0 && ` → ${funnel.newCompanies} new`}
+                    {funnel.preFiltered > 0 && ` → ${funnel.preFiltered} filtered`}
+                    {funnel.sonnetPassed > 0 && ` → ${funnel.sonnetPassed} Sonnet`}
+                    {funnel.opusScored > 0 && ` → ${funnel.opusScored} Opus`}
+                  </p>
+                )}
+              </button>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                {allScored.length > 0 && (
+                  <button onClick={() => { setWinnersIdx(isWinners ? null : i); setExpandedIdx(null); }}
+                    className={`text-[9px] px-2 py-1 rounded-lg border transition-all font-bold ${
+                      isWinners ? 'bg-sky-500/15 border-sky-400/30 text-sky-300' : 'border-sky-400/25 text-sky-400/70 hover:text-sky-300 hover:border-sky-400/40'
+                    }`}>
+                    🏆 {winners.length > 0 ? `Winners (${winners.length})` : `Scored (${allScored.length})`}
+                  </button>
+                )}
+                <button onClick={async () => {
+                  // If we have local results with companies, use them directly
+                  if (companies.length > 0) {
+                    setScanResults(prev => ({ ...prev, [personId]: { ...results, analysis } }));
+                    return;
+                  }
+                  // Otherwise fetch from server (last-results for this person)
+                  setLoadingResults(i);
+                  try {
+                    const pid = h.personId || personId;
+                    const r = await fetch(`${API_BASE}/api/autoscan/last-results/${pid}`);
+                    if (r.ok) {
+                      const data = await r.json();
+                      if (data.results && !data.error) {
+                        setScanResults(prev => ({ ...prev, [personId]: data }));
+                      }
+                    }
+                  } catch (e) {}
+                  setLoadingResults(null);
+                }}
+                  className="text-[9px] px-2 py-1 rounded-lg border border-sky-400/20 text-sky-400/60 hover:text-sky-300 hover:border-sky-400/30 transition-all font-medium">
+                  {loadingResults === i ? '...' : 'Load Results'}
+                </button>
+                <button onClick={() => { setExpandedIdx(isExpanded ? null : i); setWinnersIdx(null); }}
+                  className={`text-[9px] px-2 py-1 rounded-lg border transition-all font-medium ${
+                    isExpanded ? 'bg-violet-500/10 border-violet-400/25 text-violet-300' : 'border-border/15 text-muted/40 hover:text-violet-300 hover:border-violet-400/20'
+                  }`}>
+                  🧠 {isExpanded ? 'Hide' : 'Logic'}
+                </button>
+              </div>
+            </div>
+
+            {isWinners && allScored.length > 0 && (
+              <div className="border-t border-sky-400/10 px-3 py-3 bg-sky-500/[0.02] space-y-2">
+                <p className="text-[9px] uppercase tracking-widest text-sky-400/45 font-bold">
+                  {winners.length > 0 ? `🏆 Winners — Sent to DD (${winners.length})` : '📊 Scored Companies'}
+                  {allScored.length > winners.length && <span className="text-muted/30 font-normal ml-1">· {allScored.length} total scored</span>}
+                </p>
+                {visibleScored.map((c, wi) => {
+                  const score = c._score || c.score || 0;
+                  const isWinner = score >= 6;
+                  return (
+                    <div key={wi} className={`flex items-center gap-3 px-3 py-2 rounded-lg border ${isWinner ? 'border-border/10 bg-surface/30' : 'border-border/8 bg-surface/15'}`}>
+                      {c.logo_url && <img src={c.logo_url} alt="" className="w-7 h-7 rounded-md bg-ink/50 object-contain flex-shrink-0" onError={e => { e.target.style.display='none'; }} />}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[11px] font-bold ${isWinner ? 'text-bright' : 'text-bright/60'}`}>{c.name}</span>
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold border ${
+                            score >= 7 ? 'bg-emerald-500/15 text-emerald-400 border-emerald-400/20' :
+                            score >= 6 ? 'bg-sky-500/15 text-sky-400 border-sky-400/20' :
+                            score >= 4 ? 'bg-amber-500/15 text-amber-400 border-amber-400/20' :
+                            'bg-muted/10 text-muted/50 border-border/15'
+                          }`}>★ {score}/10</span>
+                        </div>
+                        {c.description && <p className="text-[9px] text-muted/45 line-clamp-1 mt-0.5">{c.description}</p>}
+                      </div>
+                      {c.id && typeof c.id === 'number' && <a href={`/company/${c.id}`} className="text-[8px] px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-400 border border-pink-400/15 font-bold">H</a>}
+                    </div>
+                  );
+                })}
+                {hasMoreScored && (
+                  <button onClick={() => setWinnersShowCount(prev => ({ ...prev, [i]: currentWinnersCount + 15 }))}
+                    className="w-full py-2.5 rounded-xl border border-sky-400/15 bg-sky-500/[0.04] text-sky-400/60 text-[10px] font-medium hover:text-sky-300 hover:border-sky-400/25 transition-all">
+                    Load More ({allScored.length - currentWinnersCount} remaining)
+                  </button>
+                )}
+              </div>
+            )}
+
+            {isExpanded && analysis && (
+              <div className="border-t border-border/10 px-3 py-3 bg-violet-500/[0.02]">
+                <p className="text-[9px] uppercase tracking-widest text-violet-400/45 font-bold mb-2">Opus Scoring Logic</p>
+                <AnalysisWithLinks text={analysis} companies={companies} />
+              </div>
+            )}
+            {isExpanded && !analysis && (
+              <div className="border-t border-border/10 px-3 py-3">
+                <p className="text-[10px] text-muted/35 text-center">No analysis saved for this scan</p>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+    </div>
+  );
+}
+
+
+function TopPicksPanel({ personId, addFavorite, isFavorited }) {
+  const { loadTopPicks, team } = useScan();
+  const person = team.find(t => t.id === personId);
+  const picks = loadTopPicks(personId);
+  const [expandedLogic, setExpandedLogic] = useState(null);
+  const crmUser = (typeof window !== 'undefined' ? localStorage.getItem('crm_user') : '') || '';
+
+  // Hide/backburn for top picks — uses vetting API since these companies are likely in DD too
+  const handleHide = async (company) => {
+    if (!crmUser) return;
+    try {
+      await fetch(`${API_BASE}/api/vetting/hide`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companyName: company.name, personId: crmUser }),
+      });
+    } catch (e) {}
+  };
+
+  const handleBackburn = async (company) => {
+    try {
+      await fetch(`${API_BASE}/api/vetting/backburn`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companyName: company.name, personId: crmUser }),
+      });
+    } catch (e) {}
+  };
+
+  if (picks.length === 0) {
+    return (
+      <div className="bg-amber-500/4 border border-amber-400/12 rounded-xl p-4 text-center">
+        <p className="text-amber-300/65 text-xs">No top picks yet for {person?.name || personId}</p>
+        <p className="text-[10px] text-muted/40 mt-1">Run scans — companies scoring 7+/10 from {person?.name || 'this person'}'s scans auto-save here</p>
+      </div>
+    );
+  }
+
+  // Group by date
+  const byDate = {};
+  for (const pick of picks) {
+    const dateKey = new Date(pick.addedAt).toLocaleDateString();
+    if (!byDate[dateKey]) byDate[dateKey] = [];
+    byDate[dateKey].push(pick);
+  }
+
+  return (
+    <div className="bg-amber-500/4 border border-amber-400/12 rounded-xl p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-[10px] uppercase tracking-widest text-amber-400/50 font-bold">⭐ {person?.name || personId}'s Top Picks</p>
+          <p className="text-[9px] text-muted/35 mt-0.5">Companies that scored 7+/10 in {person?.name || 'this person'}'s scans (last 30 days)</p>
+        </div>
+        <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-400/20 font-medium">{picks.length}</span>
+      </div>
+      <div className="space-y-3 max-h-[600px] overflow-y-auto">
+        {Object.entries(byDate).map(([date, dayPicks]) => (
+          <div key={date}>
+            <p className="text-[10px] text-muted/40 font-medium mb-1.5">{date}</p>
+            <div className="space-y-2">
+              {dayPicks.map((pick, i) => {
+                const c = pick.company;
+                if (!c) return null;
+                const globalIdx = picks.indexOf(pick);
+                const isLogicOpen = expandedLogic === globalIdx;
+                const stage = c.funding_stage ? (typeof c.funding_stage === 'string' ? c.funding_stage : '').replace(/_/g,' ').replace(/\b\w/g, ch => ch.toUpperCase()).replace('Pre Seed','Preseed') : '';
+                const total = c.funding_total ? (c.funding_total >= 1e9 ? `$${(c.funding_total/1e9).toFixed(1)}B` : c.funding_total >= 1e6 ? `$${(c.funding_total/1e6).toFixed(1)}M` : `$${(c.funding_total/1e3).toFixed(0)}K`) : null;
+                const saved = isFavorited && isFavorited(c.name);
+                const scanLabel = pick.scanName || 'Scan';
+                const scanIcon = pick.scanMode === 'savedSearch' ? 'Ⓗ' : '🔍';
+                const score = pick.score || c._score || null;
+                const coWinners = (pick.allWinners || []).filter(w => w.name !== c.name);
+
+                return (
+                  <div key={`${c.name}-${i}`} className="rounded-xl border border-amber-400/10 bg-surface/40 overflow-hidden">
+                    <div className="p-3 space-y-1.5">
+                      <div className="flex items-start gap-2.5">
+                        {c.logo_url ? <img src={c.logo_url} alt="" className="w-8 h-8 rounded-lg bg-ink/50 flex-shrink-0" onError={e => { e.target.style.display='none'; }} />
+                          : <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0"><span className="text-amber-400 font-bold text-xs">{(c.name||'?')[0]}</span></div>}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-xs font-semibold text-bright leading-snug truncate">{c.name}</p>
+                            {score && (
+                              <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${
+                                score >= 8 ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-400/20' : 'bg-sky-500/12 text-sky-400 border border-sky-400/15'
+                              }`}>{score}/10</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                            {stage && <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300/70 border border-emerald-400/15">{stage}</span>}
+                            {total && <span className="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-300/70 border border-sky-400/15">💰 {total}</span>}
+                            {c.headcount && <span className="text-[9px] text-muted/40">👥 {c.headcount}</span>}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <button onClick={() => !saved && addFavorite && addFavorite({...c})} className={`text-sm ${saved ? 'text-amber-400' : 'text-muted/40 hover:text-amber-400'}`}>
+                            {saved ? '★' : '☆'}
+                          </button>
+                          <UnvettedRemoveMenu company={c} onHide={handleHide} onBackburn={handleBackburn} />
+                        </div>
+                      </div>
+
+                      {c.description && <p className="text-[10px] text-muted/50 leading-relaxed line-clamp-2">{c.description}</p>}
+
+                      {/* Source scan + actions */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[9px] text-amber-400/50">{scanIcon} {scanLabel}</span>
+                        {c.website && <a href={c.website.startsWith('http') ? c.website : `https://${c.website}`} target="_blank" rel="noopener" className="text-[9px] text-sky-400/65 hover:text-sky-300 hover:underline">🌐 Website</a>}
+                        {c.location && <span className="text-[9px] text-muted/40">📍 {c.location}</span>}
+                        <button onClick={() => setExpandedLogic(isLogicOpen ? null : globalIdx)}
+                          className={`text-[9px] px-2 py-0.5 rounded-lg border font-medium transition-all ml-auto ${
+                            isLogicOpen ? 'bg-violet-500/10 border-violet-400/25 text-violet-300' : 'border-border/15 text-muted/40 hover:text-violet-300 hover:border-violet-400/20'
+                          }`}>
+                          🧠 {isLogicOpen ? 'Hide' : 'Logic'}
+                        </button>
+                      </div>
+
+                      {/* Co-winners from the same scan */}
+                      {coWinners.length > 0 && (
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <span className="text-[8px] text-muted/30 uppercase tracking-wider font-bold">Also picked:</span>
+                          {coWinners.map(w => (
+                            <span key={w.name} className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/6 text-amber-300/50 border border-amber-400/10">
+                              {w.name}{w.score ? ` (${w.score})` : ''}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Expanded: full Opus logic from this scan */}
+                    {isLogicOpen && pick.analysis && (
+                      <div className="border-t border-amber-400/8 px-3 py-3 bg-violet-500/[0.02]">
+                        <p className="text-[9px] uppercase tracking-widest text-violet-400/45 font-bold mb-2">Opus Logic — {scanLabel}</p>
+                        <div className="text-[10px] text-bright/55 leading-relaxed whitespace-pre-wrap max-h-[300px] overflow-y-auto">
+                          <AnalysisWithLinks text={pick.analysis} companies={[c, ...(pick.allWinners || []).map(w => ({ name: w.name }))]} />
+                        </div>
+                      </div>
+                    )}
+                    {isLogicOpen && !pick.analysis && (
+                      <div className="border-t border-amber-400/8 px-3 py-3">
+                        <p className="text-[10px] text-muted/35 text-center">No analysis saved for this scan (older picks may not have logic stored)</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ---- Scan Mode Panel (inline saved search picker — always visible on main view) ----
+
+function ScanModePanel({ activeTab, activeProfile, personProfiles, activeProfileIdx, onSaveProfile }) {
+  const [searches, setSearches] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  const isSavedSearchMode = activeProfile?.scanMode === 'savedSearch';
+  const selectedIds = new Set((activeProfile?.savedSearchIds || []).map(s => s.id));
+
+  const fetchSearches = () => {
+    if (searches.length > 0) return;
+    setLoading(true);
+    fetch(`${import.meta.env.VITE_API_URL || 'https://pigeon-api.up.railway.app'}/api/harmonic/saved-searches`)
+      .then(r => r.json())
+      .then(data => setSearches(data.searches || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  };
+
+  const handleExpand = () => {
+    if (!expanded) fetchSearches();
+    setExpanded(!expanded);
+  };
+
+  const toggleSearch = (search) => {
+    const current = activeProfile?.savedSearchIds || [];
+    const exists = current.findIndex(s => s.id === search.id);
+    let updated;
+    if (exists >= 0) {
+      updated = current.filter(s => s.id !== search.id);
+    } else {
+      updated = [...current, { id: search.id, name: search.name, category: search.name }];
+    }
+    // Auto-save the profile with new selection
+    const newProfile = {
+      ...activeProfile,
+      scanMode: 'savedSearch',
+      savedSearchIds: updated,
+      _customized: true,
+      updatedAt: new Date().toISOString(),
+    };
+    onSaveProfile(newProfile);
+  };
+
+  const switchToKeywords = () => {
+    const newProfile = {
+      ...activeProfile,
+      scanMode: 'keywords',
+      updatedAt: new Date().toISOString(),
+    };
+    onSaveProfile(newProfile);
+  };
+
+  return (
+    <div className={`border rounded-xl transition-all ${
+      isSavedSearchMode ? 'border-amber-400/20 bg-amber-500/[0.03]' : 'border-border/15 bg-ink/15'
+    }`}>
+      {/* Header — always visible */}
+      <button onClick={handleExpand}
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/[0.02] transition-colors">
+        <div className="flex items-center gap-2.5">
+          <span className="text-base">{isSavedSearchMode ? 'Ⓗ' : '🔍'}</span>
+          <div className="text-left">
+            <p className="text-xs font-bold text-bright/80">
+              {isSavedSearchMode ? 'Saved Search Scan' : 'Keyword Scan'}
+            </p>
+            <p className="text-[10px] text-muted/45">
+              {isSavedSearchMode
+                ? `${selectedIds.size} Harmonic searches selected · Top 5-10 → DD pipeline`
+                : 'Using keyword-based queries · Tap to switch to Saved Searches'
+              }
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {isSavedSearchMode && selectedIds.size > 0 && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/12 text-amber-300 border border-amber-400/20 font-medium">
+              {selectedIds.size}
+            </span>
+          )}
+          <span className={`text-muted/40 text-xs transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}>▾</span>
+        </div>
+      </button>
+
+      {/* Expanded: search selector */}
+      {expanded && (
+        <div className="border-t border-border/10 px-4 py-3 space-y-3">
+          {/* Mode toggle */}
+          <div className="flex gap-2">
+            <button onClick={() => {
+              if (!isSavedSearchMode) return;
+              switchToKeywords();
+            }}
+              className={`flex-1 py-2 rounded-lg border text-[11px] font-semibold transition-all ${
+                !isSavedSearchMode ? 'bg-sky-500/12 border-sky-400/35 text-sky-300' : 'border-border/25 text-muted/50 hover:border-border/40'
+              }`}>
+              🔍 Keywords Mode
+            </button>
+            <button onClick={() => {
+              if (isSavedSearchMode) return;
+              const newProfile = { ...activeProfile, scanMode: 'savedSearch', savedSearchIds: activeProfile.savedSearchIds || [], _customized: true, updatedAt: new Date().toISOString() };
+              onSaveProfile(newProfile);
+              fetchSearches();
+            }}
+              className={`flex-1 py-2 rounded-lg border text-[11px] font-semibold transition-all ${
+                isSavedSearchMode ? 'bg-amber-500/12 border-amber-400/35 text-amber-300' : 'border-border/25 text-muted/50 hover:border-border/40'
+              }`}>
+              H Saved Search Mode
+            </button>
+          </div>
+
+          {isSavedSearchMode && (
+            <>
+              <p className="text-[10px] text-muted/40">Select which Harmonic saved searches to include in daily scans. Top 5-10 scored companies auto-push to DD.</p>
+
+              {loading ? (
+                <div className="flex justify-center py-4">
+                  <div className="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : searches.length === 0 ? (
+                <div className="text-center py-3">
+                  <p className="text-muted/50 text-xs">No saved searches found</p>
+                  <p className="text-[10px] text-muted/35 mt-1">Create them in the Harmonic console</p>
+                </div>
+              ) : (
+                <div className="space-y-1.5 max-h-[350px] overflow-y-auto">
+                  {searches.map(s => {
+                    const selected = selectedIds.has(s.id);
+                    return (
+                      <button key={s.id} onClick={() => toggleSearch(s)}
+                        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg border text-left transition-all ${
+                          selected ? 'bg-amber-500/10 border-amber-400/25' : 'border-border/15 hover:border-border/30'
+                        }`}>
+                        <div className="min-w-0 flex-1">
+                          <p className={`text-xs font-medium truncate ${selected ? 'text-amber-300' : 'text-bright/65'}`}>{s.name}</p>
+                          {s.count != null && <p className="text-[10px] text-muted/35">{s.count} companies</p>}
+                        </div>
+                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ml-2 transition-all ${
+                          selected ? 'bg-amber-500 border-amber-500' : 'border-border/30'
+                        }`}>
+                          {selected && <span className="text-white text-[10px] font-bold">✓</span>}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {selectedIds.size > 0 && (
+                <div className="space-y-2">
+                  <p className="text-[10px] text-muted/40 font-semibold uppercase tracking-wider">Per-search scoring hints (optional)</p>
+                  <p className="text-[10px] text-muted/35">Add keywords or notes per search to tell Opus what to prioritize within each pool.</p>
+                  {(activeProfile?.savedSearchIds || []).map((s, idx) => (
+                    <div key={s.id} className="bg-surface/30 border border-border/10 rounded-lg px-3 py-2 space-y-1.5">
+                      <p className="text-[11px] text-amber-300/70 font-medium">{s.category || s.name}</p>
+                      <input type="text" value={s.keywords || ''} placeholder="Keywords: e.g. robotics, energy, hardware"
+                        onChange={e => {
+                          const updated = [...(activeProfile.savedSearchIds || [])];
+                          updated[idx] = { ...updated[idx], keywords: e.target.value };
+                          onSaveProfile({ ...activeProfile, savedSearchIds: updated, updatedAt: new Date().toISOString() });
+                        }}
+                        className="w-full bg-ink/40 border border-border/20 rounded px-2.5 py-1.5 text-[11px] text-bright outline-none focus:border-amber-400/30 placeholder:text-white/60" />
+                      <input type="text" value={s.notes || ''} placeholder="Notes: e.g. looking for hardware founders specifically"
+                        onChange={e => {
+                          const updated = [...(activeProfile.savedSearchIds || [])];
+                          updated[idx] = { ...updated[idx], notes: e.target.value };
+                          onSaveProfile({ ...activeProfile, savedSearchIds: updated, updatedAt: new Date().toISOString() });
+                        }}
+                        className="w-full bg-ink/40 border border-border/20 rounded px-2.5 py-1.5 text-[11px] text-bright outline-none focus:border-amber-400/30 placeholder:text-white/60" />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {selectedIds.size > 0 && (
+                <div className="bg-amber-500/5 border border-amber-400/10 rounded-lg px-3 py-2">
+                  <p className="text-[10px] text-amber-300/60">
+                    ✓ {selectedIds.size} search{selectedIds.size !== 1 ? 'es' : ''} selected — daily scan will pull net-new companies, filter out CRM dupes, score with Opus using your preferences + per-search hints, and push top 5-10 to DD.
+                  </p>
+                </div>
+              )}
+
+              {/* Global preferences — keywords & notes that guide Opus scoring across ALL saved searches */}
+              <div className="space-y-2 pt-1">
+                <div className="flex items-center gap-2">
+                  <p className="text-[10px] text-muted/50 font-semibold uppercase tracking-wider">Scoring Preferences</p>
+                  <p className="text-[9px] text-muted/30">These guide Opus when ranking results from ALL saved searches above</p>
+                </div>
+                <input type="text" value={activeProfile?.keywords || ''} placeholder="Priority keywords: e.g. crypto, betting, exchange, AI agent"
+                  onChange={e => onSaveProfile({ ...activeProfile, keywords: e.target.value, updatedAt: new Date().toISOString() })}
+                  className="w-full bg-ink/40 border border-border/20 rounded-lg px-3 py-2 text-[11px] text-bright outline-none focus:border-amber-400/30 placeholder:text-white/60" />
+                <input type="text" value={activeProfile?.antiKeywords || ''} placeholder="Exclude: e.g. consulting, NFT collection, metaverse"
+                  onChange={e => onSaveProfile({ ...activeProfile, antiKeywords: e.target.value, updatedAt: new Date().toISOString() })}
+                  className="w-full bg-ink/40 border border-border/20 rounded-lg px-3 py-2 text-[11px] text-bright outline-none focus:border-amber-400/30 placeholder:text-white/60" />
+                <textarea value={activeProfile?.notes || ''} placeholder="Notes for Opus: e.g. Looking for first-time founders, val <$25M, priority on crypto infra..."
+                  onChange={e => onSaveProfile({ ...activeProfile, notes: e.target.value, updatedAt: new Date().toISOString() })}
+                  rows={2}
+                  className="w-full bg-ink/40 border border-border/20 rounded-lg px-3 py-2 text-[11px] text-bright outline-none focus:border-amber-400/30 resize-none leading-relaxed placeholder:text-white/60" />
+              </div>
+            </>
+          )}
+
+          {!isSavedSearchMode && (
+            <p className="text-[10px] text-muted/40">Currently using keyword-based search queries. Hit ✏️ Edit Scan to modify sectors, keywords, and filters. Or switch to Saved Search mode above to use your Harmonic saved searches instead.</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---- Unvetted Remove Menu (Backburn / Hide for me) ----
+
+function UnvettedRemoveMenu({ company, onHide, onBackburn }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative">
+      <button onClick={() => setOpen(!open)} className="text-muted/40 hover:text-red-400 transition-colors" title="Options">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute top-full right-0 mt-1 z-50 bg-[#1a1d2e] border border-border/30 rounded-lg shadow-xl py-1 min-w-[140px]">
+            <button onClick={() => { onHide(company); setOpen(false); }}
+              className="w-full text-left px-3 py-2 text-[11px] text-muted/60 hover:text-bright hover:bg-white/5 transition-colors">
+              👁‍🗨 Hide for me
+            </button>
+            <button onClick={() => { onBackburn(company); setOpen(false); }}
+              className="w-full text-left px-3 py-2 text-[11px] text-red-400/70 hover:text-red-400 hover:bg-red-500/5 transition-colors border-t border-border/10">
+              🔥 Backburn
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ---- Vetting Pipeline Panel ----
+
+const API_BASE = import.meta.env.VITE_API_URL || 'https://pigeon-api.up.railway.app';
+
+function VettingPanel({ team, addFavorite, isFavorited }) {
+  const [companies, setCompanies] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const crmUser = (typeof window !== 'undefined' ? localStorage.getItem('crm_user') : '') || '';
+
+  const fetchVetting = async () => {
+    try {
+      const r = await fetch(`${API_BASE}/api/vetting`);
+      const data = await r.json();
+      setCompanies((data.companies || []).filter(c => !c.dismissed && !c.backburned));
+    } catch (e) { console.error('Vetting fetch error:', e); }
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchVetting(); }, []);
+
+  const handleHide = async (company) => {
+    if (!crmUser) return;
+    setCompanies(prev => prev.map(c =>
+      (c.name || '').toLowerCase() === (company.name || '').toLowerCase()
+        ? { ...c, hiddenBy: [...(c.hiddenBy || []), crmUser] }
+        : c
+    ));
+    try {
+      await fetch(`${API_BASE}/api/vetting/hide`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companyName: company.name, personId: crmUser }),
+      });
+    } catch (e) {}
+  };
+
+  const handleBackburn = async (company) => {
+    setCompanies(prev => prev.map(c =>
+      (c.name || '').toLowerCase() === (company.name || '').toLowerCase()
+        ? { ...c, dismissed: true, backburned: true }
+        : c
+    ));
+    try {
+      await fetch(`${API_BASE}/api/vetting/backburn`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companyName: company.name, personId: crmUser }),
+      });
+    } catch (e) {}
+  };
+
+  const handleFavorite = (company) => {
+    if (addFavorite && !(isFavorited && isFavorited(company.name))) {
+      addFavorite({ ...company });
+      // Remove from unvetted for this user after favoriting
+      handleHide(company);
+    }
+  };
+
+  // Filter out hidden-for-me and favorited companies
+  const visible = companies.filter(c => {
+    if (c.dismissed || c.backburned) return false;
+    if (crmUser && (c.hiddenBy || []).includes(crmUser)) return false;
+    if (isFavorited && isFavorited(c.name)) return false;
+    return true;
+  });
+
+  if (loading) return <div className="flex justify-center py-6"><div className="w-5 h-5 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" /></div>;
+
+  if (visible.length === 0) {
+    return (
+      <div className="bg-violet-500/4 border border-violet-400/12 rounded-xl p-4 text-center">
+        <p className="text-violet-300/50 text-xs">No unvetted companies</p>
+        <p className="text-[10px] text-muted/40 mt-1">Top-scoring companies from daily and weekly scans will appear here for team review</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-violet-500/4 border border-violet-400/12 rounded-xl p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] uppercase tracking-widest text-violet-400/50 font-bold">📋 Unvetted New Companies</p>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-300 border border-violet-400/20 font-medium">{visible.length}</span>
+          <button onClick={fetchVetting} className="text-[9px] text-muted/40 hover:text-violet-300">↻</button>
+        </div>
+      </div>
+
+      <div className="space-y-3 max-h-[600px] overflow-y-auto">
+        {visible.map((c, idx) => {
+          const webUrl = c.website ? (c.website.startsWith('http') ? c.website : `https://${c.website}`) : null;
+          const total = moneyFmt(c.funding_total);
+          const stage = stageFmt(c.funding_stage);
+          const saved = isFavorited && isFavorited(c.name);
+
+          return (
+            <div key={c.name || idx} className="rounded-xl border border-violet-400/10 bg-surface/40 p-3.5 space-y-2.5">
+              {/* Header */}
+              <div className="flex items-start gap-3">
+                {c.logo_url ? <img src={c.logo_url} alt="" className="w-9 h-9 rounded-lg bg-ink/50 flex-shrink-0" onError={e => { e.target.style.display='none'; }} />
+                  : <div className="w-9 h-9 rounded-lg bg-violet-500/10 flex items-center justify-center flex-shrink-0"><span className="text-violet-400 font-bold text-sm">{(c.name||'?')[0]}</span></div>}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-bright text-sm truncate">{c.name}</h3>
+                    {webUrl && <a href={webUrl} target="_blank" rel="noopener" className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-400/30 hover:bg-sky-500/20 font-medium">🌐</a>}
+                  </div>
+                  <div className="flex gap-1.5 mt-0.5 flex-wrap">
+                    {stage && <span className={`text-[9px] px-1.5 py-0.5 rounded-md border ${stageColor(c.funding_stage)}`}>{stage}</span>}
+                    {total && <span className="text-[9px] px-1.5 py-0.5 rounded-md border bg-sky-500/10 text-sky-400 border-sky-500/20">💰 {total}</span>}
+                  </div>
+                </div>
+                {/* X button with Backburn / Hide for me menu */}
+                <div className="relative flex-shrink-0">
+                  <UnvettedRemoveMenu company={c} onHide={handleHide} onBackburn={handleBackburn} />
+                </div>
+              </div>
+
+              {c.description && <p className="text-[10px] text-muted/50 leading-relaxed line-clamp-2">{c.description}</p>}
+
+              {/* Source info */}
+              <p className="text-[9px] text-muted/35">
+                Added {c.addedAt ? new Date(c.addedAt).toLocaleDateString() : '?'} · from {c.source || 'scan'}
+              </p>
+
+              {/* Action row — Favorite + CRM */}
+              <div className="flex items-center gap-2">
+                <button onClick={() => handleFavorite(c)}
+                  className={`text-[10px] px-3 py-1 rounded-lg border font-bold transition-all active:scale-95 ${
+                    saved
+                      ? 'bg-pink-500/15 border-pink-400/40 text-pink-400'
+                      : 'border-pink-400/25 text-pink-400/70 hover:bg-pink-500/15 hover:border-pink-400/50 hover:text-pink-400'
+                  }`}>
+                  {saved ? '❤️ Favorited' : '🤍 Favorite'}
+                </button>
+                <CrmButton company={c} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ---- Main Page ----
+
+function ScanProgressPanel({ scanStatus, effectiveScanMode, onCancel, profileName, savedSearchNames }) {
+  const [tick, setTick] = useState(0);
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const [feed, setFeed] = useState([]);
+  const [hideFeed, setHideFeed] = useState(false);
+  
+  useEffect(() => {
+    const t = setInterval(() => setTick(v => v + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Build live feed from progress messages
+  useEffect(() => {
+    const msg = scanStatus?.progress || '';
+    if (!msg || msg === 'keepalive') return;
+    setFeed(prev => {
+      const next = [{ msg, ts: Date.now(), id: Date.now() }, ...prev].slice(0, 30);
+      return next;
+    });
+  }, [scanStatus?.progress]);
+
+  const elapsed = scanStatus?.startedAt ? Math.floor((Date.now() - scanStatus.startedAt) / 1000) : 0;
+  const mins = Math.floor(elapsed / 60);
+  const secs = elapsed % 60;
+
+  const progress = scanStatus?.progress || '';
+  let estCostSoFar = null;
+  // ETA countdown: set target when we know how much work remains, update as stages change
+  const [etaTarget, setEtaTarget] = useState(null);
+  
+  useEffect(() => {
+    const msg = scanStatus?.progress || '';
+    if (!msg || msg === 'keepalive') return;
+    
+    let estSeconds = null;
+    
+    const screenMatch = msg.match(/Screening (\d+) companies/);
+    const preBatchMatch = msg.match(/pre-screen batch (\d+)\/(\d+)/);
+    const enrichMatch = msg.match(/Enriching (\d+)\/(\d+)/);
+    const filterMatch = msg.match(/Filtering (\d+)/);
+    const deepMatch = msg.match(/deep scoring batch (\d+)\/(\d+)/);
+    const sonnetBatch = msg.match(/Sonnet screening batch (\d+)\/(\d+)/);
+    const preDone = msg.match(/Pre-screen done/);
+    
+    if (deepMatch) {
+      const remaining = parseInt(deepMatch[2]) - parseInt(deepMatch[1]);
+      estSeconds = remaining * 50;
+    } else if (sonnetBatch) {
+      const remaining = parseInt(sonnetBatch[2]) - parseInt(sonnetBatch[1]);
+      estSeconds = remaining * 30 + 120;
+    } else if (filterMatch) {
+      estSeconds = 180;
+    } else if (preDone) {
+      estSeconds = 240;
+    } else if (enrichMatch) {
+      const remaining = parseInt(enrichMatch[2]) - parseInt(enrichMatch[1]);
+      estSeconds = Math.round((remaining / 30) * 4 + 180);
+    } else if (preBatchMatch) {
+      const remaining = parseInt(preBatchMatch[2]) - parseInt(preBatchMatch[1]);
+      estSeconds = remaining * 30 + 300;
+    } else if (screenMatch) {
+      const n = parseInt(screenMatch[1]);
+      estSeconds = Math.round((n / 150) * 30 + 360);
+    } else if (msg.includes('page') && msg.includes('fetched')) {
+      estSeconds = 480;
+    }
+    
+    if (estSeconds !== null) {
+      setEtaTarget(Date.now() + estSeconds * 1000);
+    }
+  }, [scanStatus?.progress]);
+  
+  const etaRemaining = etaTarget ? Math.max(0, Math.floor((etaTarget - Date.now()) / 1000)) : null;
+  const showEta = etaRemaining !== null && etaRemaining > 0;
+  const etaMins = showEta ? Math.floor(etaRemaining / 60) : 0;
+  const etaSecs = showEta ? etaRemaining % 60 : 0;
+
+  // Determine current stage — order: fetch → sonnet_pre → enrich → filter → scoring
+  let stage = 'fetch';
+  if (progress.includes('deep scoring') || progress.includes('Opus')) stage = 'scoring';
+  else if (progress.includes('Sonnet screening') || progress.includes('Sonnet complete')) stage = 'filter'; // post-enrich Sonnet = filtering stage
+  else if (progress.includes('Filtering')) stage = 'filter';
+  else if (progress.includes('Enriching')) stage = 'enrich';
+  else if (progress.includes('Pre-screen done')) stage = 'enrich'; // about to enrich
+  else if (progress.includes('Pre-screen') || progress.includes('Screening') || progress.includes('pre-screen')) stage = 'sonnet';
+  else if (progress.includes('Fetched') || progress.includes('page')) stage = 'fetch';
+
+  const stageEmoji = { fetch: '📡', sonnet: '⚡', enrich: '🔬', filter: '🧹', scoring: '🧠' };
+  const stageLabel = { fetch: 'Importing', sonnet: 'Sonnet Screen', enrich: 'Enriching', filter: 'Filtering', scoring: 'Deep Scoring' };
+  const stageColors = { fetch: 'text-sky-400', sonnet: 'text-violet-400', enrich: 'text-amber-400', filter: 'text-pink-400', scoring: 'text-emerald-400' };
+  const stageOrder = ['fetch', 'sonnet', 'enrich', 'filter', 'scoring'];
+
+  return (
+    <div className="bg-ink/30 border border-sky-400/15 rounded-xl overflow-hidden">
+      {/* Main progress header */}
+      <div className="p-4 space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 border-2 border-sky-400 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-bright/70 font-medium">
+              {scanStatus?.progress || `Scanning via ${effectiveScanMode === 'savedSearch' ? 'Harmonic Saved Searches' : 'Keywords'}...`}
+            </p>
+            <p className="text-[10px] text-muted/40 mt-0.5">
+              {showEta ? `~${etaMins}m ${String(etaSecs).padStart(2, '0')}s remaining` : 'Scan continues in background — even if you close this tab.'}
+            </p>
+          </div>
+          <div className="text-right flex-shrink-0">
+            <span className="text-[11px] font-mono text-sky-400/60">{mins}:{secs.toString().padStart(2, '0')}</span>
+            {showEta && (
+              <p className="text-[9px] font-mono text-amber-400/50 mt-0.5">~{etaMins}m {String(etaSecs).padStart(2, '0')}s left</p>
+            )}
+          </div>
+        </div>
+
+        {/* Stage pipeline visualization */}
+        <div className="flex items-center gap-1 px-1">
+          {stageOrder.map((s, i) => {
+            const isActive = s === stage;
+            const isPast = stageOrder.indexOf(s) < stageOrder.indexOf(stage);
+            return (
+              <React.Fragment key={s}>
+                {i > 0 && <div className={`flex-shrink-0 w-4 h-px ${isPast || isActive ? 'bg-sky-400/30' : 'bg-border/15'}`} />}
+                <div className={`flex items-center gap-1 px-2 py-1 rounded-md text-[9px] font-medium transition-all ${
+                  isActive ? `${stageColors[s]} bg-white/5 border border-white/10 scale-105` : isPast ? 'text-muted/50' : 'text-muted/20'
+                }`}>
+                  <span>{stageEmoji[s]}</span>
+                  <span className="hidden sm:inline">{stageLabel[s]}</span>
+                </div>
+              </React.Fragment>
+            );
+          })}
+        </div>
+
+        {/* Cancel */}
+        <div className="flex items-center gap-2">
+          {!confirmCancel ? (
+            <button onClick={() => setConfirmCancel(true)}
+              className="text-[10px] px-3 py-1.5 rounded-lg border border-red-400/20 text-red-400/60 hover:text-red-300 hover:border-red-400/40 transition-all font-medium">
+              Cancel Search
+            </button>
+          ) : (
+            <div className="flex items-center gap-2 bg-red-500/5 border border-red-400/20 rounded-lg px-3 py-2">
+              <div className="text-[10px] text-red-300/70">
+                Cancel? {estCostSoFar && <span className="text-amber-300/60">Cost so far: {estCostSoFar}</span>}
+              </div>
+              <button onClick={() => { onCancel(); setConfirmCancel(false); }}
+                className="text-[10px] px-2.5 py-1 rounded bg-red-500/20 border border-red-400/30 text-red-300 font-bold hover:bg-red-500/30 transition-all">
+                Yes, Cancel
+              </button>
+              <button onClick={() => setConfirmCancel(false)}
+                className="text-[10px] px-2.5 py-1 rounded border border-border/20 text-muted/50 hover:text-bright/60 transition-all">
+                Keep Going
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Live feed — streaming company verdicts */}
+      {feed.length > 0 && (
+        <div className="border-t border-border/10 bg-black/20">
+          <button onClick={() => setHideFeed(!hideFeed)}
+            className="w-full flex items-center justify-between px-4 py-2 hover:bg-white/[0.02] transition-colors">
+            <span className="text-[8px] uppercase tracking-widest text-muted/25 font-bold">Live Feed ({feed.length})</span>
+            <span className="text-[9px] text-muted/30">{hideFeed ? '▸ Show' : '▾ Hide'}</span>
+          </button>
+          {!hideFeed && (
+            <div className="px-4 pb-3 max-h-[200px] overflow-y-auto">
+              <div className="space-y-1">
+                {feed.map((f, i) => (
+                  <div key={f.id} className={`text-[10px] leading-relaxed transition-opacity duration-500 ${i === 0 ? 'text-bright/60' : i < 3 ? 'text-muted/45' : 'text-muted/25'}`}>
+                    <span className="text-[9px] font-mono text-muted/20 mr-2">{new Date(f.ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})}</span>
+                    {f.msg}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Inline saved search selector — selects searches for the active profile (doesn't start a scan)
+function SavedSearchSelector({ activeProfile, onSaveProfile }) {
+  const [searches, setSearches] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  const selectedIds = new Set((activeProfile?.savedSearchIds || []).map(s => s.id));
+
+  const fetchSearches = () => {
+    if (searches.length > 0) return;
+    setLoading(true);
+    fetch(`${import.meta.env.VITE_API_URL || 'https://pigeon-api.up.railway.app'}/api/harmonic/saved-searches`)
+      .then(r => r.json())
+      .then(data => setSearches(data.searches || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  };
+
+  const toggleSearch = (search) => {
+    const current = activeProfile?.savedSearchIds || [];
+    const exists = current.findIndex(s => s.id === search.id);
+    let updated;
+    if (exists >= 0) {
+      updated = current.filter(s => s.id !== search.id);
+    } else {
+      updated = [...current, { id: search.id, name: search.name, category: search.name }];
+    }
+    onSaveProfile({
+      ...activeProfile,
+      savedSearchIds: updated,
+      updatedAt: new Date().toISOString(),
+    });
+  };
+
+  return (
+    <div className={`border rounded-xl mb-4 transition-all ${selectedIds.size > 0 ? 'border-amber-400/20 bg-amber-500/[0.03]' : 'border-border/15 bg-ink/15'}`}>
+      <button onClick={() => { if (!expanded) fetchSearches(); setExpanded(!expanded); }}
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/[0.02] transition-colors">
+        <div className="flex items-center gap-2.5">
+          <span className="text-[11px] px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-400 border border-pink-400/15 font-bold">H</span>
+          <div className="text-left">
+            <p className="text-xs font-bold text-bright/80">Harmonic Saved Searches</p>
+            <p className="text-[10px] text-muted/45">
+              {selectedIds.size > 0 ? `${selectedIds.size} searches selected — used by orange Search button` : 'Select saved searches to include in your scan'}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {selectedIds.size > 0 && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/12 text-amber-300 border border-amber-400/20 font-medium">
+              {selectedIds.size}
+            </span>
+          )}
+          <span className={`text-muted/40 text-xs transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}>▾</span>
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="border-t border-border/10 px-4 py-3 space-y-2">
+          {loading && <div className="flex justify-center py-3"><div className="w-4 h-4 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" /></div>}
+          {!loading && searches.length === 0 && <p className="text-[10px] text-muted/35 text-center py-2">No saved searches found</p>}
+          {searches.map(s => {
+            const isSelected = selectedIds.has(s.id);
+            return (
+              <button key={s.id} onClick={() => toggleSearch(s)}
+                className={`w-full text-left px-3 py-2.5 rounded-lg border transition-all flex items-center justify-between ${
+                  isSelected ? 'bg-amber-500/8 border-amber-400/25 text-amber-200' : 'border-border/12 text-bright/60 hover:border-amber-400/15'
+                }`}>
+                <span className="text-[11px] font-medium">{s.name}</span>
+                <span className={`w-5 h-5 rounded flex items-center justify-center text-[10px] border ${
+                  isSelected ? 'bg-amber-500/20 border-amber-400/40 text-amber-300' : 'border-border/20 text-transparent'
+                }`}>{isSelected ? '✓' : ''}</span>
+              </button>
+            );
+          })}
+          {selectedIds.size > 0 && (
+            <p className="text-[9px] text-amber-300/50 text-center pt-1">
+              Selected searches are saved to this profile — press the orange Search button to run
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Results panel with Results + Logic tabs
+function ResultsPanel({ currentResults, dismissedSet, addFavorite, isFavorited, dismissCompany, activeTab }) {
+  const [tab, setTab] = useState('results');
+  const [showCount, setShowCount] = useState(10);
+  const prevResultsRef = useRef(currentResults);
+  if (currentResults !== prevResultsRef.current) { prevResultsRef.current = currentResults; if (showCount !== 10) setShowCount(10); }
+  const logicRef = useRef(null);
+  const [highlightName, setHighlightName] = useState(null);
+
+  const showLogicForCompany = (companyName) => {
+    setTab('logic');
+    setHighlightName(companyName.toLowerCase());
+    // Scroll to the company in the analysis after render
+    setTimeout(() => {
+      if (logicRef.current) {
+        const el = logicRef.current;
+        const text = el.textContent || '';
+        const idx = text.toLowerCase().indexOf(companyName.toLowerCase());
+        if (idx >= 0) {
+          // Find the nearest element containing the name
+          const allEls = el.querySelectorAll('strong, b, h1, h2, h3, h4, p, div, span');
+          for (const child of allEls) {
+            if (child.textContent.toLowerCase().includes(companyName.toLowerCase())) {
+              child.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              child.style.background = 'rgba(139, 92, 246, 0.2)';
+              child.style.borderRadius = '4px';
+              setTimeout(() => { child.style.background = ''; }, 4000);
+              break;
+            }
+          }
+        }
+      }
+    }, 200);
+  };
+
+  // Safety: if currentResults is malformed, show error
+  if (!currentResults || typeof currentResults !== 'object') {
+    return <div className="bg-red-500/8 border border-red-500/15 rounded-xl p-3"><p className="text-red-400/80 text-xs">Invalid scan results</p></div>;
+  }
+
+  let visible = [];
+  try {
+    visible = (currentResults.results || []).filter(c => c && c.name && !dismissedSet?.has(c.name));
+  } catch (e) {
+    visible = currentResults.results || [];
+  }
+  
+  // Sort by score descending (best picks first)
+  visible.sort((a, b) => {
+    const aIsStealth = (a.name || '').toLowerCase().startsWith('stealth company');
+    const bIsStealth = (b.name || '').toLowerCase().startsWith('stealth company');
+    if (aIsStealth && !bIsStealth) return 1;
+    if (!aIsStealth && bIsStealth) return -1;
+    const scoreA = a._score || a.score || 0;
+    const scoreB = b._score || b.score || 0;
+    if (scoreB !== scoreA) return scoreB - scoreA;
+    // Same score — newest first
+    return (b.addedAt || 0) - (a.addedAt || 0);
+  });
+
+  const shownResults = visible.slice(0, showCount);
+  const hasMore = visible.length > showCount;
+
+  const hasAnalysis = currentResults.analysis && typeof currentResults.analysis === 'string' && currentResults.analysis.length > 50;
+
+  return (
+    <div className="space-y-3">
+      {currentResults.message && <div className="bg-red-500/8 border border-red-500/15 rounded-xl p-3"><p className="text-red-400/80 text-xs">{currentResults.message}</p></div>}
+      {currentResults.error && <div className="bg-red-500/8 border border-red-500/15 rounded-xl p-3"><p className="text-red-400/80 text-xs">Error: {currentResults.error}</p></div>}
+
+      {/* Funnel stats */}
+      {currentResults.savedSearchMeta && (
+        <div className="bg-amber-500/5 border border-amber-400/12 rounded-xl p-3 flex items-center gap-2 text-[10px] text-amber-300/60 flex-wrap">
+          <span>Ⓗ {currentResults.savedSearchMeta.searchCount} searches</span>
+          <span>→ {currentResults.savedSearchMeta.totalBeforeDedup} found</span>
+          <span>→ {currentResults.savedSearchMeta.freshCount} new</span>
+          {currentResults.funnel?.enriched > 0 && <span>→ {currentResults.funnel.enriched} enriched</span>}
+          {currentResults.funnel?.sonnetPassed > 0 && (
+            <span className="text-sky-300/60">→ {currentResults.funnel.sonnetPassed} passed Sonnet</span>
+          )}
+          {currentResults.funnel?.opusScored > 0 && (
+            <span className="text-violet-300/60">→ {currentResults.funnel.opusScored} Opus scored</span>
+          )}
+        </div>
+      )}
+      {currentResults.funnel?.totalUrns > 0 && (
+        <div className="flex gap-2 text-[10px] text-muted/40 flex-wrap">
+          <span>🔎 {currentResults.funnel.totalUrns} found</span>
+          <span>→ {currentResults.funnel.newCompanies || '?'} new</span>
+          <span>→ {currentResults.funnel.detailsFetched || '?'} enriched</span>
+          {currentResults.funnel?.sonnetPassed > 0 && <span className="text-sky-300/60">→ {currentResults.funnel.sonnetPassed} Sonnet</span>}
+          {currentResults.funnel?.opusScored > 0 && <span className="text-violet-300/60">→ {currentResults.funnel.opusScored} Opus</span>}
+        </div>
+      )}
+
+      {/* Tab switcher: Results | Logic */}
+      <div className="flex gap-1 bg-ink/30 rounded-lg p-1">
+        <button onClick={() => setTab('results')}
+          className={`flex-1 text-[11px] py-2 rounded-md font-semibold transition-all ${
+            tab === 'results' ? 'bg-sky-500/15 text-sky-300 border border-sky-400/25' : 'text-muted/50 hover:text-muted/70'
+          }`}>
+          📊 Results ({visible.length})
+        </button>
+        {hasAnalysis && (
+          <button onClick={() => setTab('logic')}
+            className={`flex-1 text-[11px] py-2 rounded-md font-semibold transition-all ${
+              tab === 'logic' ? 'bg-violet-500/15 text-violet-300 border border-violet-400/25' : 'text-muted/50 hover:text-muted/70'
+            }`}>
+            🧠 Opus Logic
+          </button>
+        )}
+      </div>
+
+      {/* Results tab */}
+      {tab === 'results' && (
+        <div>
+          {visible.length > 0 ? (
+            <div className="space-y-2.5">
+              <p className="text-[11px] text-muted/40">{visible.length} companies · sorted by score · showing {shownResults.length}</p>
+              {shownResults.map(c => {
+                try {
+                  return <ScanResultCard key={c.name} company={c} onFavorite={addFavorite} isFavorited={isFavorited ? isFavorited(c.name) : false} onDismiss={(co) => dismissCompany(activeTab, co)} onShowLogic={hasAnalysis ? showLogicForCompany : null} />;
+                } catch (e) {
+                  return <div key={c.name} className="text-red-400/60 text-xs p-2">Error rendering {c.name}: {e.message}</div>;
+                }
+              })}
+              {hasMore && (
+                <button onClick={() => setShowCount(prev => prev + 15)}
+                  className="w-full py-3 rounded-xl border border-sky-400/15 bg-sky-500/[0.04] text-sky-400/60 text-xs font-medium hover:text-sky-300 hover:border-sky-400/25 transition-all">
+                  Load More ({visible.length - showCount} remaining)
+                </button>
+              )}
+            </div>
+          ) : currentResults.results?.length > 0 ? (
+            <p className="text-muted/40 text-sm text-center py-4">All dismissed. Run another scan.</p>
+          ) : (
+            <p className="text-muted/40 text-sm text-center py-4">No results from this scan.</p>
+          )}
+        </div>
+      )}
+
+      {/* Logic tab — full Opus analysis */}
+      {tab === 'logic' && hasAnalysis && (
+        <div ref={logicRef} className="bg-violet-500/[0.03] border border-violet-400/12 rounded-xl p-4 space-y-3 max-h-[80vh] overflow-y-auto">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] text-violet-400/50 uppercase tracking-widest font-bold">Full Opus Analysis</p>
+            <button onClick={() => {
+              navigator.clipboard.writeText(currentResults.analysis).then(() => {
+                // Could show toast but keeping it simple
+              }).catch(() => {});
+            }} className="text-[9px] px-2 py-0.5 rounded border border-violet-400/20 text-violet-300/60 hover:bg-violet-500/10 transition-all">
+              📋 Copy
+            </button>
+          </div>
+          <div className="text-[11px] text-bright/60 leading-relaxed whitespace-pre-wrap font-mono">{currentResults.analysis}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function AutoScanPage({ addFavorite, isFavorited }) {
+  const { team, activeScans, scanResults, setScanResults, dismissed, nextRuns, runScan, cancelScan, dismissCompany, loadTopPicks } = useScan();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const API_BASE = import.meta.env.VITE_API_URL || 'https://pigeon-api.up.railway.app';
+
+  // Auto-search from URL param
+  useEffect(() => {
+    const q = searchParams.get('search');
+    if (q && q.length >= 2) {
+      setSearchQuery(q);
+      runSearch(q);
+    }
+  }, []);
+
+  const runSearch = async (q) => {
+    if (!q || q.length < 2) return;
+    setSearchLoading(true);
+    try {
+      const r = await fetch(`${API_BASE}/api/harmonic/typeahead?q=${encodeURIComponent(q)}&size=12`);
+      if (r.ok) {
+        const data = await r.json();
+        setSearchResults(data.results || []);
+      }
+    } catch (e) {}
+    setSearchLoading(false);
+    // Clear the URL param
+    setSearchParams({});
+  };
+  const [activeTab, setActiveTab] = useState(() => {
+    try { const saved = localStorage.getItem('autoscan_activeTab'); if (saved && team.some(t => t.id === saved)) return saved; } catch {}
+    return team[0].id;
+  });
+  const [allProfiles, setAllProfiles] = useState(() => { const p = {}; team.forEach(t => { p[t.id] = loadProfiles(t.id); }); return p; });
+  const [activeProfileIdx, setActiveProfileIdx] = useState(() => {
+    try { const saved = parseInt(localStorage.getItem('autoscan_activeProfileIdx') || '0'); return isNaN(saved) ? 0 : saved; } catch { return 0; }
+  });
+  const [editing, setEditing] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [showTopPicks, setShowTopPicks] = useState(false);
+  const [showVetting, setShowVetting] = useState(false);
+  const [showCost, setShowCost] = useState(false);
+  const [showCostBreakdown, setShowCostBreakdown] = useState(false);
+  const [costConfirm, setCostConfirm] = useState(null); // { mode, profile, estimatedCount, estimatedCost }
+  const [disabledScans, setDisabledScans] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('autoscan_disabled') || '{}'); } catch { return {}; }
+  });
+
+  const toggleDisabled = (personId) => {
+    setDisabledScans(prev => {
+      const next = { ...prev, [personId]: !prev[personId] };
+      localStorage.setItem('autoscan_disabled', JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const isDisabled = (personId) => !!disabledScans[personId];
+
+  const activePerson = team.find(t => t.id === activeTab);
+  const personProfiles = allProfiles[activeTab] || [];
+  const activeProfile = personProfiles[activeProfileIdx] || null;
+  const scanStatus = activeScans[activeTab];
+  const isScanning = scanStatus?.status === 'scanning';
+  const [scanningMode, setScanningMode] = useState(null); // 'savedSearch' | 'keywords' | null
+  // Persist scanningMode from context if local state was lost (page navigation)
+  const effectiveScanMode = scanningMode || (isScanning ? scanStatus?.scanMode : null);
+  const currentResults = scanResults[activeTab];
+  const dismissedSet = dismissed[activeTab] || new Set();
+
+  // Clear scanningMode when scan finishes
+  useEffect(() => {
+    if (!isScanning) setScanningMode(null);
+  }, [isScanning]);
+
+  // Dean/Brett can only edit their own profiles
+  const crmUser = (typeof window !== 'undefined' ? localStorage.getItem('crm_user') : '') || '';
+  const crmUserLower = crmUser.toLowerCase();
+  const isRestrictedUser = crmUserLower === 'dean' || crmUserLower === 'brett';
+  const canEdit = !isRestrictedUser || crmUserLower === activeTab;
+
+  useEffect(() => { localStorage.setItem('autoscan_activeTab', activeTab); setActiveProfileIdx(0); setEditing(false); setShowHistory(false); setShowTopPicks(false); setShowVetting(false); }, [activeTab]);
+  useEffect(() => { localStorage.setItem('autoscan_activeProfileIdx', String(activeProfileIdx)); }, [activeProfileIdx]);
+
+  const handleSaveProfile = (profile) => {
+    const updated = [...personProfiles];
+    if (activeProfileIdx < updated.length) updated[activeProfileIdx] = profile;
+    else updated.push(profile);
+    saveProfiles(activeTab, updated);
+    setAllProfiles(prev => ({ ...prev, [activeTab]: updated }));
+    setEditing(false);
+  };
+
+  const handleNewProfile = () => {
+    if (personProfiles.length >= MAX_PROFILES) return;
+    const np = { name: `Scan #${personProfiles.length + 1}`, id: `scan_${Date.now()}`, sectors: [], stages: ['Pre-Seed','Seed'], geos: ['Global / No Preference'], models: [], teamPrefs: [], checkSize: ['$100K–$250K'], signals: [], maxValuation: '', maxRaised: '', minHeadcount: '', maxHeadcount: '', foundedAfter: '', keywords: '', antiKeywords: '', notes: '', updatedAt: new Date().toISOString() };
+    const updated = [...personProfiles, np];
+    saveProfiles(activeTab, updated);
+    setAllProfiles(prev => ({ ...prev, [activeTab]: updated }));
+    setActiveProfileIdx(updated.length - 1);
+    setEditing(true);
+  };
+
+  const handleDeleteProfile = (idx) => {
+    if (personProfiles.length <= 1) return;
+    const name = personProfiles[idx]?.name || `Scan #${idx + 1}`;
+    if (!window.confirm(`Delete "${name}"? This can't be undone.`)) return;
+    const updated = personProfiles.filter((_, i) => i !== idx);
+    saveProfiles(activeTab, updated);
+    setAllProfiles(prev => ({ ...prev, [activeTab]: updated }));
+    setActiveProfileIdx(Math.min(activeProfileIdx, updated.length - 1));
+  };
+
+  const handleScan = () => {
+    if (!activeProfile) return;
+    runScan(activeTab, activeProfile);
+  };
+
+  return (
+    <div className="min-h-screen max-w-4xl mx-auto px-8 pt-4 pb-4">
+      <div className="mb-4">
+        <h1 className="text-xl font-bold tracking-tight">
+          <span className="text-sky-400" style={{ fontFamily: "'Courier New', monospace" }}>dc</span> Screen
+        </h1>
+        <p className="text-muted/50 text-xs mt-0.5">Personalized deal discovery for each team member</p>
+      </div>
+
+      {/* Search bar */}
+      <div className="mb-3">
+        <div className="relative">
+          <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && searchQuery.trim().length >= 2) runSearch(searchQuery.trim()); }}
+            placeholder="🔍 Search Harmonic for any company..."
+            className="w-full bg-ink/50 border border-border/20 rounded-xl px-3.5 py-2.5 text-sm text-bright outline-none focus:border-amber-400/30 placeholder:text-white/60" />
+          {searchLoading && <div className="absolute right-3 top-3 w-3.5 h-3.5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />}
+          {searchQuery && !searchLoading && (
+            <button onClick={() => { setSearchQuery(''); setSearchResults([]); }} className="absolute right-3 top-2.5 text-muted/40 hover:text-bright text-sm">✕</button>
+          )}
+        </div>
+      </div>
+
+      {/* Search results */}
+      {searchResults.length > 0 && (
+        <div className="mb-4 border border-border/15 rounded-xl overflow-hidden">
+          <div className="bg-ink/30 px-3 py-2 border-b border-border/15 flex items-center justify-between">
+            <span className="text-[10px] text-bright/50 font-bold uppercase">Search Results — {searchResults.length} companies</span>
+            <button onClick={() => setSearchResults([])} className="text-[9px] text-muted/40 hover:text-bright">Clear</button>
+          </div>
+          <div className="max-h-[400px] overflow-y-auto divide-y divide-border/8">
+            {searchResults.map((s, i) => {
+              const webUrl = s.website || (s.domain ? `https://${s.domain}` : '');
+              return (
+                <div key={s.id || i} className="px-3 py-2.5 hover:bg-white/[0.03] transition-colors">
+                  <div className="flex items-center gap-2.5">
+                    {s.logo_url ? (
+                      <img src={s.logo_url} alt="" className="w-9 h-9 rounded-lg bg-ink/50 object-contain flex-shrink-0" onError={e => { e.target.style.display='none'; }} />
+                    ) : (
+                      <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                        <span className="text-amber-400 text-sm font-bold">{(s.name || '?')[0]}</span>
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {webUrl ? (
+                          <a href={webUrl} target="_blank" rel="noopener" className="text-sm font-semibold text-bright hover:text-amber-300 transition-colors">{s.name}</a>
+                        ) : (
+                          <span className="text-sm font-semibold text-bright">{s.name}</span>
+                        )}
+                        {s.stage && <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300/60 border border-emerald-400/15">{String(s.stage).replace(/_/g,' ')}</span>}
+                        {s.funding_total && <span className="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-300/60 border border-sky-400/15">💰 {typeof s.funding_total === 'number' ? (s.funding_total >= 1e9 ? `$${(s.funding_total/1e9).toFixed(1)}B` : s.funding_total >= 1e6 ? `$${(s.funding_total/1e6).toFixed(1)}M` : `$${s.funding_total}`) : s.funding_total}</span>}
+                      </div>
+                      {s.description && <p className="text-[10px] text-bright/40 truncate mt-0.5">{s.description}</p>}
+                      {(s.location || s.headcount) && (
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {s.location && <span className="text-[9px] text-muted/35">📍 {s.location}</span>}
+                          {s.headcount && <span className="text-[9px] text-muted/35">👥 {s.headcount}</span>}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-1.5 ml-[46px]">
+                    {webUrl && <a href={webUrl} target="_blank" rel="noopener" className="text-[8px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-400/30 hover:bg-sky-500/20 font-medium" onClick={e => e.stopPropagation()}>🌐</a>}
+                    <button onClick={() => addFavorite && addFavorite({ name: s.name, description: s.description, website: s.website || webUrl, logo_url: s.logo_url, funding_total: s.funding_total })}
+                      className="text-[8px] px-1.5 py-0.5 rounded border text-muted/40 border-border/15 hover:text-sky-400 hover:border-sky-400/20 font-medium">☆ Fav</button>
+                    <CrmButton company={{ name: s.name, website: webUrl, description: s.description, funding_total: s.funding_total, sector: s.stage, socials: { twitter: s.twitter } }} />
+                    <FindSimilar addFavorite={addFavorite} isFavorited={isFavorited} companyId={s.id} companyName={s.name} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Team selector — single row with big emojis + timer */}
+      <div className="mb-4 bg-ink/20 border border-border/15 rounded-xl px-3 py-3">
+        {/* Total cost estimate — clickable for breakdown */}
+        {(() => {
+          const costPerTier = { full: 3.0, balanced: 2.1, economy: 1.88, ultra: 0.44, micro: 0.14 };
+          const tierLabels = { full: '🧠 Full', balanced: '⚡ Balanced', economy: '💰 Economy', ultra: '🪶 Ultra', micro: '⚡ Micro' };
+          const perUser = team.map(t => {
+            const profiles = (allProfiles[t.id] || []).filter(p => !isProfileEmpty(p));
+            const disabled = isDisabled(t.id);
+            const userProfiles = profiles.map(p => {
+              const perScan = costPerTier[p.defaultTier || 'full'] || 3.0;
+              const freqDays = p.timeframeDays || 1; // how often this scan runs
+              const dailyAvg = perScan / freqDays; // amortized daily cost
+              return {
+                name: p.name || 'Scan',
+                tier: p.defaultTier || 'full',
+                perScan,
+                freqDays,
+                dailyAvg,
+              };
+            });
+            const daily = disabled ? 0 : userProfiles.reduce((s, p) => s + p.dailyAvg, 0);
+            return { ...t, profiles: userProfiles, daily, disabled, profileCount: profiles.length };
+          });
+          const totalDaily = perUser.reduce((s, u) => s + u.daily, 0);
+          return (
+            <div className="mb-2 px-1">
+              <button onClick={() => setShowCostBreakdown(!showCostBreakdown)}
+                className="flex items-center justify-between w-full group">
+                <span className="text-[9px] text-muted/30 uppercase tracking-wider font-bold">Team</span>
+                <span className="text-[9px] text-amber-400/40 group-hover:text-amber-400/70 transition-colors">
+                  💲 Est. daily: ~${totalDaily.toFixed(2)} · weekly: ~${(totalDaily * 7).toFixed(2)} <span className="text-[8px] text-muted/25">▾</span>
+                </span>
+              </button>
+              {showCostBreakdown && (
+                <div className="mt-2 bg-ink/30 border border-amber-400/10 rounded-lg p-3 space-y-2">
+                  <p className="text-[9px] text-amber-400/50 font-bold uppercase tracking-wider">Cost Breakdown by User</p>
+                  {perUser.map(u => (
+                    <div key={u.id} className={`flex items-start gap-2 text-[10px] ${u.disabled ? 'opacity-40' : ''}`}>
+                      <span className="text-lg leading-none">{u.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-bright/70">{u.name}</span>
+                          <span className={`font-mono ${u.daily > 0 ? 'text-amber-300/70' : 'text-muted/30'}`}>
+                            ${u.daily.toFixed(2)}/day {u.disabled ? '(off)' : ''}
+                          </span>
+                        </div>
+                        {u.profiles.length > 0 ? (
+                          <div className="flex flex-wrap gap-1 mt-0.5">
+                            {u.profiles.map((p, i) => (
+                              <span key={i} className="text-[9px] px-1.5 py-0.5 rounded bg-surface/50 border border-border/15 text-muted/40">
+                                {p.name} · {tierLabels[p.tier] || p.tier} · ${p.perScan.toFixed(2)}/scan · every {p.freqDays}d
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-[9px] text-muted/30">No active scans</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  <div className="border-t border-border/15 pt-1.5 flex justify-between text-[10px]">
+                    <span className="text-muted/40">Total</span>
+                    <span className="font-bold text-amber-300/80">${totalDaily.toFixed(2)}/day · ${(totalDaily * 7).toFixed(2)}/week · ${(totalDaily * 30).toFixed(2)}/month</span>
+                  </div>
+                </div>
+              )}}
+            </div>
+          );
+        })()}
+        <div className="flex items-center gap-1 overflow-x-auto pb-0.5">
+          {team.map(t => {
+            const next = nextRuns[t.id];
+            const isBusy = activeScans[t.id]?.status === 'scanning';
+            const profiles = allProfiles[t.id] || [];
+            const empty = profiles.length === 0 || profiles.every(p => isProfileEmpty(p));
+            const disabled = isDisabled(t.id);
+            const isActive = activeTab === t.id;
+            const hasResults = !!scanResults[t.id]?.results?.length;
+            return (
+              <button key={t.id} onClick={() => setActiveTab(t.id)}
+                className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-all min-w-[70px] ${
+                  isActive ? 'bg-sky-500/10 border border-sky-400/20' : 'hover:bg-white/5 border border-transparent'
+                } ${disabled ? 'opacity-40' : ''}`}>
+                {isBusy && <span className="text-[8px] text-amber-400 font-bold animate-pulse mb-0.5">🔍 Scanning...</span>}
+                <span className="text-4xl leading-none">{t.emoji}</span>
+                <span className={`text-[10px] font-bold ${isActive ? 'text-sky-300' : disabled ? 'text-red-400/60' : 'text-muted/50'}`}>{t.name}</span>
+                {hasResults && !isBusy && <span className="min-w-[18px] h-[16px] px-1 rounded-full bg-sky-500 text-white text-[8px] font-bold flex items-center justify-center">{scanResults[t.id].results.length}</span>}
+                <span className={`text-[9px] font-mono leading-none ${
+                  disabled ? 'text-red-400/65'
+                  : isBusy ? 'text-amber-400 animate-pulse'
+                  : empty ? 'text-red-400/65'
+                  : 'text-muted/35'
+                }`}>
+                  {disabled ? '⏸ Off'
+                    : isBusy ? '⚡ Live'
+                    : empty ? 'No prefs'
+                    : next > Date.now() ? <Countdown targetMs={next} />
+                    : '✓ Ready'}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Profile selector — larger tabs with timers */}
+      {personProfiles.length > 0 && !editing && (
+        <div className="flex items-center gap-2 mb-3 overflow-x-auto pb-1">
+          {personProfiles.map((prof, idx) => {
+            const personLastRun = nextRuns[activeTab] || 0;
+            const profileStagger = idx * 30 * 60 * 1000;
+            const profileNextRun = personLastRun > 0 ? personLastRun + profileStagger : 0;
+            const isLive = activeScans[activeTab]?.status === 'scanning' && activeProfileIdx === idx;
+            const isReady = profileNextRun > 0 && profileNextRun <= Date.now();
+            const disabled = disabledScans[activeTab];
+
+            return (
+              <div key={idx} className="relative group">
+                <button onClick={() => { setActiveProfileIdx(idx); setShowHistory(false); }}
+                  className={`text-[12px] px-4 py-2 rounded-xl border whitespace-nowrap transition-all flex items-center gap-2 ${
+                    activeProfileIdx === idx ? 'bg-sky-500/12 border-sky-400/30 text-sky-300 font-bold' : 'border-border/20 text-muted/50 hover:border-border/40 font-medium'
+                  }`}>
+                  {prof.name || `Scan ${idx + 1}`}
+                  {isLive && <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse flex-shrink-0" title="Live" />}
+                  {!isLive && !disabled && isReady && <span className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" title="Ready" />}
+                  {!isLive && !disabled && !isReady && profileNextRun > 0 && (
+                    <span className="text-[9px] text-muted/35 font-mono" title="Next auto-scan">
+                      <Countdown targetMs={profileNextRun} />
+                    </span>
+                  )}
+                  {disabled && <span className="w-2 h-2 rounded-full bg-red-500/60 flex-shrink-0" />}
+                </button>
+                {personProfiles.length > 1 && (
+                  <button onClick={() => handleDeleteProfile(idx)}
+                    className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-red-500/80 text-white text-[8px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
+                )}
+              </div>
+            );
+          })}
+          {personProfiles.length < MAX_PROFILES && (
+            <button onClick={handleNewProfile} className="text-[12px] px-4 py-2 rounded-xl border border-dashed border-sky-400/20 text-sky-400/65 hover:border-sky-400/40 hover:text-sky-300 transition-all whitespace-nowrap font-medium">+ New Scan</button>
+          )}
+        </div>
+      )}
+
+      {/* Content */}
+      {editing ? (
+        <ProfileEditor profile={activeProfile || {}} onSave={handleSaveProfile} onCancel={activeProfile ? () => setEditing(false) : null} personName={activePerson?.name} />
+      ) : activeProfile ? (
+        <div className="space-y-4">
+
+          {/* Profile header: Name + Edit + utility buttons */}
+          <div className="bg-ink/30 border border-border/15 rounded-xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-sm font-bold text-bright/90">{activeProfile.name || 'Main Scan'}</h2>
+                <button onClick={() => setEditing(true)}
+                  className={`text-[11px] px-3 py-1 rounded-lg border-2 border-sky-400/40 bg-sky-500/15 text-sky-300 font-bold hover:bg-sky-500/25 hover:border-sky-400/60 transition-all active:scale-95 ${!canEdit ? 'hidden' : ''}`}>
+                  ✏️ Edit Scan
+                </button>
+              </div>
+              <div className="flex gap-1.5 flex-wrap">
+                <button onClick={() => { setShowVetting(!showVetting); setShowTopPicks(false); setShowHistory(false); }}
+                  className={`text-[10px] px-2.5 py-1.5 rounded-lg border transition-all ${showVetting ? 'bg-violet-500/10 border-violet-400/30 text-violet-300' : 'border-border/20 text-muted/40 hover:border-violet-400/25'}`}>
+                  📋 Unvetted
+                </button>
+                <button onClick={() => { setShowTopPicks(!showTopPicks); setShowHistory(false); setShowVetting(false); }}
+                  className={`text-[10px] px-2.5 py-1.5 rounded-lg border transition-all ${showTopPicks ? 'bg-amber-500/10 border-amber-400/30 text-amber-300' : 'border-border/20 text-muted/40 hover:border-amber-400/25'}`}>
+                  ⭐ Top Picks
+                </button>
+                <button onClick={() => { setShowHistory(!showHistory); setShowTopPicks(false); setShowVetting(false); setShowCost(false); }}
+                  className={`text-[10px] px-2.5 py-1.5 rounded-lg border transition-all ${showHistory ? 'bg-sky-500/10 border-sky-400/30 text-sky-300' : 'border-border/20 text-muted/40 hover:border-sky-400/25'}`}>
+                  🕐 History
+                </button>
+                <button onClick={() => { setShowCost(!showCost); setShowHistory(false); setShowTopPicks(false); setShowVetting(false); }}
+                  className={`text-[10px] px-2.5 py-1.5 rounded-lg border transition-all ${showCost ? 'bg-amber-500/10 border-amber-400/30 text-amber-300' : 'border-border/20 text-muted/40 hover:border-amber-400/25'}`}>
+                  💲 Cost
+                </button>
+                <TimeframePicker compact value={activeProfile.timeframeDays || 2} onChange={(v) => {
+                  const updated = { ...activeProfile, timeframeDays: v, updatedAt: new Date().toISOString() };
+                  handleSaveProfile(updated);
+                }} />
+                <button onClick={() => toggleDisabled(activeTab)}
+                  className={`text-[10px] px-2.5 py-1.5 rounded-lg border transition-all ${
+                    isDisabled(activeTab) ? 'bg-red-500/15 border-red-400/30 text-red-400' : 'border-border/20 text-muted/40 hover:border-red-400/25 hover:text-red-400/60'
+                  }`}>
+                  {isDisabled(activeTab) ? '🔴 Disabled' : '⏸ Disable'}
+                </button>
+              </div>
+            </div>
+
+            {/* Profile summary chips */}
+            <div className="space-y-1.5">
+              {activeProfile.savedSearchIds?.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  <span className="text-[9px] text-amber-400/50 uppercase tracking-wider font-bold mr-1 self-center">H Searches</span>
+                  {activeProfile.savedSearchIds.map(s => (
+                    <span key={s.id} className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/8 text-amber-300/70 border border-amber-400/15">
+                      {s.category || s.name}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {activeProfile.sectors?.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  <span className="text-[9px] text-muted/40 uppercase tracking-wider font-bold mr-1 self-center">Sectors</span>
+                  {activeProfile.sectors.map(s => <span key={s} className="text-[10px] px-1.5 py-0.5 rounded bg-sky-500/8 text-sky-300/70 border border-sky-400/15">{s}</span>)}
+                </div>
+              )}
+              {activeProfile.stages?.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  <span className="text-[9px] text-muted/40 uppercase tracking-wider font-bold mr-1 self-center">Stage</span>
+                  {activeProfile.stages.map(s => <span key={s} className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/8 text-emerald-300/70 border border-emerald-400/15">{s}</span>)}
+                </div>
+              )}
+              <div className="flex flex-wrap gap-2 text-[10px] text-muted/40">
+                {activeProfile.maxValuation && <span>Val: ≤{activeProfile.maxValuation}</span>}
+                {activeProfile.maxRaised && <span>Raised: ≤{activeProfile.maxRaised}</span>}
+                {activeProfile.maxHeadcount && <span>Team: ≤{activeProfile.maxHeadcount}</span>}
+                {activeProfile.foundedAfter && <span>Founded: ≥{activeProfile.foundedAfter}</span>}
+              </div>
+
+              {/* Per-user cost estimate */}
+              {(() => {
+                const costPerTier = { full: 3.0, balanced: 2.1, economy: 1.88, ultra: 0.44, micro: 0.14 };
+                const profiles = (allProfiles[activeTab] || []).filter(p => !isProfileEmpty(p));
+                const tierLabel = { full: '🧠 Full', balanced: '⚡ Balanced', economy: '💰 Economy', ultra: '🪶 Ultra', micro: '⚡ Micro' }[activeProfile?.defaultTier || 'full'] || 'Full';
+                const dailyCost = profiles.reduce((sum, p) => {
+                  const perScan = costPerTier[p.defaultTier || 'full'] || 3.0;
+                  const freqDays = p.timeframeDays || 1;
+                  return sum + (perScan / freqDays);
+                }, 0);
+                return (
+                  <div className="flex items-center gap-3 pt-1 border-t border-border/10 mt-1">
+                    <span className="text-[9px] text-amber-400/50 uppercase tracking-wider font-bold">{activePerson?.name}'s Costs</span>
+                    <span className="text-[9px] text-muted/40">This scan: {tierLabel} · every {activeProfile?.timeframeDays || 1}d</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/8 text-amber-300/70 border border-amber-400/15">Daily: ~${dailyCost.toFixed(2)}</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/8 text-amber-300/70 border border-amber-400/15">Weekly: ~${(dailyCost * 7).toFixed(2)}</span>
+                    <span className="text-[9px] text-muted/30">{profiles.length} scan{profiles.length !== 1 ? 's' : ''}</span>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+
+          {/* Keywords — always visible, applies to BOTH search types */}
+          <div className="bg-ink/20 border border-border/12 rounded-xl p-3.5 space-y-2">
+            <div className="flex items-center gap-2">
+              <p className="text-[10px] text-muted/50 font-bold uppercase tracking-wider">Keywords</p>
+              <p className="text-[9px] text-muted/30">Guides Opus scoring for both search types</p>
+            </div>
+            <input type="text" value={activeProfile.keywords || ''} placeholder="Priority: e.g. crypto, betting, exchange, AI agent, robotics"
+              onChange={e => handleSaveProfile({ ...activeProfile, keywords: e.target.value, updatedAt: new Date().toISOString() })}
+              className="w-full bg-ink/40 border border-border/20 rounded-lg px-3 py-2 text-[11px] text-bright outline-none focus:border-sky-400/30 placeholder:text-white/60" />
+            <input type="text" value={activeProfile.antiKeywords || ''} placeholder="Exclude: e.g. consulting, NFT collection, metaverse"
+              onChange={e => handleSaveProfile({ ...activeProfile, antiKeywords: e.target.value, updatedAt: new Date().toISOString() })}
+              className="w-full bg-ink/40 border border-border/20 rounded-lg px-3 py-2 text-[11px] text-bright outline-none focus:border-sky-400/30 placeholder:text-white/60" />
+            <textarea value={activeProfile.notes || ''} placeholder="Notes for Opus: e.g. first-time founders, val <$25M, priority on crypto infra..."
+              onChange={e => handleSaveProfile({ ...activeProfile, notes: e.target.value, updatedAt: new Date().toISOString() })}
+              rows={2}
+              className="w-full bg-ink/40 border border-border/20 rounded-lg px-3 py-2 text-[11px] text-bright outline-none focus:border-sky-400/30 resize-none leading-relaxed placeholder:text-white/60" />
+          </div>
+
+          {/* Harmonic Saved Searches — below keywords */}
+          {activeProfile && (
+            <SavedSearchSelector
+              activeProfile={activeProfile}
+              onSaveProfile={handleSaveProfile}
+            />
+          )}
+
+          {/* Panels */}
+          {showVetting && <VettingPanel team={team} addFavorite={addFavorite} isFavorited={isFavorited} />}
+          {showTopPicks && <TopPicksPanel personId={activeTab} addFavorite={addFavorite} isFavorited={isFavorited} />}
+          {showHistory && (
+            <div className="bg-ink/20 border border-border/15 rounded-xl p-3">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] text-muted/40 uppercase tracking-wider font-bold">Scan History — All Users</p>
+                <p className="text-[9px] text-muted/30">Click 🧠 Logic to see Opus reasoning</p>
+              </div>
+              <HistoryPanel personId={activeTab} />
+            </div>
+          )}
+          {showCost && (
+            <div className="bg-ink/20 border border-amber-400/15 rounded-xl p-4 space-y-3">
+              <p className="text-[10px] text-amber-400/50 uppercase tracking-wider font-bold">Default Cost Tier — {activePerson?.name || activeTab}</p>
+              <p className="text-[9px] text-muted/35">Select a default tier for this scan profile. Auto-scans will use this tier.</p>
+              {[
+                { id: 'full', label: '🧠 Full', desc: 'Sonnet screen → Opus top 80', badge: 'Best', color: 'border-emerald-400/30 bg-emerald-500/8', textColor: 'text-emerald-400' },
+                { id: 'balanced', label: '⚡ Balanced', desc: 'Sonnet screen → Opus top 20', badge: '-50%', color: 'border-sky-400/30 bg-sky-500/8', textColor: 'text-sky-400' },
+                { id: 'economy', label: '💰 Economy', desc: 'Sonnet-only, deep top 40', badge: '-75%', color: 'border-amber-400/30 bg-amber-500/8', textColor: 'text-amber-400' },
+                { id: 'ultra', label: '🪶 Ultra Light', desc: 'Screen first 200, brief top 20', badge: '-85%', color: 'border-violet-400/30 bg-violet-500/8', textColor: 'text-violet-400' },
+                { id: 'micro', label: '⚡ Micro', desc: 'Quick screen first 100 only', badge: '-96%', color: 'border-pink-400/30 bg-pink-500/8', textColor: 'text-pink-400' },
+              ].map(t => {
+                const isSelected = (activeProfile?.defaultTier || 'full') === t.id;
+                return (
+                  <button key={t.id} onClick={() => handleSaveProfile({ ...activeProfile, defaultTier: t.id })}
+                    className={`w-full text-left px-4 py-3 rounded-xl border transition-all ${t.color} ${isSelected ? 'ring-1 ring-white/15' : 'hover:bg-white/[0.03]'}`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs font-bold ${t.textColor}`}>{t.label}</span>
+                        <span className={`text-[8px] px-1.5 py-0.5 rounded-full border ${t.color} ${t.textColor} font-medium`}>{t.badge}</span>
+                        {isSelected && <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-white/10 text-bright/60 font-bold">✓ Default</span>}
+                      </div>
+                      <p className="text-[10px] text-muted/45">{t.desc}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Cost confirmation modal */}
+          {costConfirm && (() => {
+            const n = costConfirm.estimatedCount;
+            const defaultTier = activeProfile?.defaultTier || null;
+            const survivors = Math.round(n * 0.18);
+            
+            // Tier 1: Full — Screen ALL + enrich survivors + Opus top 80
+            const t1Screen = n * 0.0008;
+            const t1Opus = Math.min(survivors, 80);
+            const t1Total = (t1Screen + t1Opus * 0.015).toFixed(2);
+            const t1Time = Math.max(3, Math.round((n / 150) * 0.4 + (survivors / 30) * 0.3 + (t1Opus / 40) * 1.2));
+            
+            // Tier 2: Balanced — Screen ALL + enrich survivors + Opus top 20
+            const t2Opus = Math.min(survivors, 20);
+            const t2Total = (t1Screen + t2Opus * 0.015).toFixed(2);
+            const t2Time = Math.max(2, Math.round((n / 150) * 0.4 + (survivors / 30) * 0.3 + (t2Opus / 40) * 1.2));
+            
+            // Tier 3: Economy — Screen ALL + enrich survivors + Sonnet deep top 40 (no Opus)
+            const t3Total = (t1Screen + Math.min(survivors, 40) * 0.002).toFixed(2);
+            const t3Time = Math.max(2, Math.round((n / 150) * 0.4 + (survivors / 30) * 0.3 + 0.5));
+            
+            // Tier 4: Ultra Light (-85%) — Screen first 500 only + enrich top + Sonnet deep 20
+            const t4Screen = Math.min(n, 500) * 0.0008;
+            const t4Survivors = Math.round(Math.min(n, 500) * 0.18);
+            const t4Total = (t4Screen + Math.min(t4Survivors, 20) * 0.002).toFixed(2);
+            const t4Time = Math.max(1, Math.round((Math.min(n, 500) / 150) * 0.4 + (t4Survivors / 30) * 0.3));
+            
+            // Tier 5: Micro (-96%) — Screen first 150 only (1 Sonnet batch) + no deep
+            const t5Screen = Math.min(n, 150) * 0.0008;
+            const t5Total = (t5Screen + 0.02).toFixed(2);
+            const t5Time = '1-2min';
+
+            const tiers = [
+              { id: 'full', label: '🧠 Full', desc: `Screen all ${n} → Opus top ${t1Opus}`, cost: t1Total, time: `${t1Time}min`, color: 'border-emerald-400/30 bg-emerald-500/8', textColor: 'text-emerald-400', badge: 'Best', warn: null },
+              { id: 'balanced', label: '⚡ Balanced', desc: `Screen all ${n} → Opus top ${t2Opus}`, cost: t2Total, time: `${t2Time}min`, color: 'border-sky-400/30 bg-sky-500/8', textColor: 'text-sky-400', badge: `-${Math.round((1 - t2Total/t1Total) * 100)}%`, warn: null },
+              { id: 'economy', label: '💰 Economy', desc: `Screen all ${n} → Sonnet deep top 40`, cost: t3Total, time: `${t3Time}min`, color: 'border-amber-400/30 bg-amber-500/8', textColor: 'text-amber-400', badge: `-${Math.round((1 - t3Total/t1Total) * 100)}%`, warn: null },
+              { id: 'ultra', label: '🪶 Ultra Light', desc: `Screen ${Math.min(n, 500)} of ${n} → deep top 20`, cost: t4Total, time: `${t4Time}min`, color: 'border-violet-400/30 bg-violet-500/8', textColor: 'text-violet-400', badge: `-${Math.round((1 - t4Total/t1Total) * 100)}%`, warn: n > 500 ? `${n - 500} companies not analyzed` : null },
+              { id: 'micro', label: '⚡ Micro', desc: `Screen ${Math.min(n, 150)} of ${n} → quick pass only`, cost: t5Total, time: t5Time, color: 'border-pink-400/30 bg-pink-500/8', textColor: 'text-pink-400', badge: `-${Math.round((1 - t5Total/t1Total) * 100)}%`, warn: n > 150 ? `${n - 150} companies not analyzed` : null },
+            ];
+
+            return (
+              <div className="bg-amber-500/5 border-2 border-amber-400/30 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">💰</span>
+                    <p className="text-sm font-bold text-amber-300">Scan Options — {n} companies</p>
+                  </div>
+                  <button onClick={() => setCostConfirm(null)} className="text-muted/40 hover:text-bright/60 text-xs">✕</button>
+                </div>
+                <div className="space-y-2">
+                  {tiers.map(t => {
+                    const isDefault = defaultTier === t.id;
+                    const isSelected = (costConfirm._selectedTier || defaultTier || 'full') === t.id;
+                    return (
+                      <button key={t.id} onClick={() => {
+                        // Just select the tier — don't run scan yet
+                        handleSaveProfile({ ...activeProfile, defaultTier: t.id });
+                        setCostConfirm({ ...costConfirm, _selectedTier: t.id });
+                      }} className={`w-full text-left px-4 py-3 rounded-xl border transition-all group ${isSelected ? t.color + ' ring-2 ring-white/20' : t.color + ' hover:bg-white/[0.03]'}`}>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-xs font-bold ${t.textColor}`}>{t.label}</span>
+                              <span className={`text-[8px] px-1.5 py-0.5 rounded-full border ${t.color} ${t.textColor} font-medium`}>{t.badge}</span>
+                              {isSelected && <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-white/10 text-bright/60 font-bold">✓ Selected</span>}
+                            </div>
+                            <p className="text-[10px] text-muted/45 mt-0.5">{t.desc}</p>
+                            {t.warn && <p className="text-[9px] text-red-400/70 mt-0.5">⚠️ {t.warn}</p>}
+                          </div>
+                          <div className="text-right">
+                            <p className={`text-sm font-bold ${t.textColor}`}>${t.cost}</p>
+                            <p className="text-[9px] text-muted/35">{t.time}</p>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <button onClick={() => {
+                    const { mode, profile } = costConfirm;
+                    const tier = costConfirm._selectedTier || defaultTier || 'full';
+                    setCostConfirm(null);
+                    setScanningMode(mode);
+                    setScanResults(prev => ({ ...prev, [activeTab]: null }));
+                    runScan(activeTab, { ...profile, scanTier: tier }, { mode: 'daily' });
+                  }} className="flex-1 py-3 rounded-xl bg-emerald-500/20 border-2 border-emerald-400/40 text-emerald-400 font-bold text-sm hover:bg-emerald-500/30 transition-all active:scale-[0.98]">
+                    ✓ Run Scan
+                  </button>
+                  <button onClick={() => setCostConfirm(null)} className="px-6 py-3 rounded-xl border border-border/30 text-muted/50 text-sm hover:text-bright/60 transition-all">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Two Search Buttons */}
+          {!costConfirm && (
+          <div className="flex gap-3">
+            {/* Harmonic Saved Search button — orange */}
+            <button onClick={async () => {
+              if (!activeProfile || isScanning) return;
+              const p = { ...activeProfile, scanMode: 'savedSearch' };
+              if (!p.savedSearchIds?.length) { setEditing(true); return; }
+              
+              // Fetch REAL company count from Harmonic saved searches
+              let estCompanies = p.savedSearchIds.length * 200; // fallback estimate
+              try {
+                const ids = p.savedSearchIds.map(s => s.id).join(',');
+                const countRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://pigeon-api.up.railway.app'}/api/harmonic/saved-searches/count?ids=${ids}`);
+                if (countRes.ok) {
+                  const countData = await countRes.json();
+                  console.log('[CostEstimate] Count response:', countData);
+                  if (countData.total > 0) estCompanies = countData.total;
+                }
+              } catch (e) { console.log('Count fetch failed, using estimate', e); }
+              
+              const sonnetCost = (estCompanies * 0.0008).toFixed(2);
+              const opusSurvivors = Math.min(Math.round(estCompanies * 0.18), 80); // 18% pass rate, capped at 80
+              const opusCost = (opusSurvivors * 0.015).toFixed(2);
+              const totalCost = (parseFloat(sonnetCost) + parseFloat(opusCost)).toFixed(2);
+              const estMinutes = Math.max(1, Math.round((estCompanies / 60) * 0.3 + (opusSurvivors / 40) * 1.2));
+              setCostConfirm({ mode: 'savedSearch', profile: p, estimatedCount: estCompanies, estimatedCost: totalCost, sonnetCost, opusCost, estimatedTime: `${estMinutes}min` });
+            }} disabled={isScanning}
+              className={`flex-1 py-4 rounded-xl font-bold active:scale-[0.98] transition-all duration-200 text-white text-center ${isScanning && effectiveScanMode !== 'savedSearch' ? 'opacity-30' : isScanning ? 'opacity-80' : ''}`}
+              style={{ background: 'linear-gradient(135deg, #78350f 0%, #f59e0b 50%, #d97706 100%)', boxShadow: '0 4px 20px rgba(245,158,11,0.25)' }}>
+              {isScanning && effectiveScanMode === 'savedSearch' ? (
+                <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Scanning...</span>
+              ) : (
+                <div>
+                  <div className="text-sm font-bold">Search</div>
+                  <div className="text-[10px] font-normal opacity-80 mt-0.5">using Harmonic saved search criteria</div>
+                </div>
+              )}
+            </button>
+
+            {/* Keyword-only button — blue */}
+            <button onClick={() => {
+              if (!activeProfile || isScanning) return;
+              const p = { ...activeProfile, scanMode: 'keywords' };
+              const estCompanies = 40; // keyword mode typically returns fewer
+              const sonnetCost = (estCompanies * 0.0008).toFixed(2);
+              const opusSurvivors = Math.round(estCompanies * 0.4);
+              const opusCost = (opusSurvivors * 0.015).toFixed(2);
+              const totalCost = (parseFloat(sonnetCost) + parseFloat(opusCost)).toFixed(2);
+              setCostConfirm({ mode: 'keywords', profile: p, estimatedCount: estCompanies, estimatedCost: totalCost, sonnetCost, opusCost, estimatedTime: '1-2min' });
+            }} disabled={isScanning}
+              className={`flex-1 py-4 rounded-xl font-bold active:scale-[0.98] transition-all duration-200 text-white text-center ${isScanning && effectiveScanMode !== 'keywords' ? 'opacity-30' : isScanning ? 'opacity-80' : ''}`}
+              style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #3b82f6 50%, #6366f1 100%)', boxShadow: '0 4px 20px rgba(59,130,246,0.25)' }}>
+              {isScanning && effectiveScanMode === 'keywords' ? (
+                <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Scanning...</span>
+              ) : (
+                <div>
+                  <div className="text-sm font-bold">Search</div>
+                  <div className="text-[10px] font-normal opacity-80 mt-0.5">only using keyword/filter criteria</div>
+                </div>
+              )}
+            </button>
+          </div>
+          )}
+
+          {/* Results — show when available, even if scan errored */}
+          {currentResults && (() => {
+            try {
+              return <ResultsPanel currentResults={currentResults} dismissedSet={dismissedSet} addFavorite={addFavorite} isFavorited={isFavorited} dismissCompany={dismissCompany} activeTab={activeTab} />;
+            } catch (e) {
+              return <div className="bg-red-500/8 border border-red-500/15 rounded-xl p-3"><p className="text-red-400/80 text-xs">Render error: {e.message}</p></div>;
+            }
+          })()}
+
+          {/* Scanning indicator */}
+          {isScanning && (
+            <ScanProgressPanel scanStatus={scanStatus} effectiveScanMode={effectiveScanMode} onCancel={() => cancelScan(activeTab)} />
+          )}
+        </div>
+      ) : (
+        <div className="text-center py-8">
+          <p className="text-muted/40 text-sm mb-4">No scan profile yet</p>
+          <button onClick={handleNewProfile} className="px-6 py-3 rounded-xl bg-sky-500 text-white font-bold text-sm shadow-md shadow-sky-500/20">+ Create First Scan</button>
+        </div>
+      )}
+    </div>
+  );
+}
