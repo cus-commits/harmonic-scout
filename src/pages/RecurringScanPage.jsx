@@ -37,6 +37,30 @@ const PRESETS_KEY = 'deepscan_presets';
 function loadPresets() { try { return JSON.parse(localStorage.getItem(PRESETS_KEY) || '[]'); } catch { return []; } }
 function savePresets(p) { localStorage.setItem(PRESETS_KEY, JSON.stringify(p)); }
 
+const TEAM = [
+  { id: 'mark', name: 'Mark' }, { id: 'jake', name: 'Jake' },
+  { id: 'joe', name: 'Joe' }, { id: 'carlo', name: 'Carlo' },
+  { id: 'liam', name: 'Liam' }, { id: 'serena', name: 'Serena' },
+];
+
+function loadHScreensProfiles() {
+  const all = [];
+  for (const t of TEAM) {
+    try {
+      const saved = localStorage.getItem(`autoscan_profiles_${t.id}`);
+      if (saved) {
+        const profiles = JSON.parse(saved);
+        if (Array.isArray(profiles)) {
+          profiles.forEach(p => {
+            all.push({ ...p, _owner: t.name, _ownerId: t.id });
+          });
+        }
+      }
+    } catch {}
+  }
+  return all;
+}
+
 const tierColors = {
   sky:     { bg: 'bg-sky-500/10', border: 'border-sky-400/25', text: 'text-sky-300', activeBg: 'bg-sky-500/20', activeBorder: 'border-sky-400/50' },
   violet:  { bg: 'bg-violet-500/10', border: 'border-violet-400/25', text: 'text-violet-300', activeBg: 'bg-violet-500/20', activeBorder: 'border-violet-400/50' },
@@ -778,11 +802,13 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
   const [notes, setNotes] = useState('');
   const [expandedFilters, setExpandedFilters] = useState({});
   const [presets, setPresets] = useState(loadPresets());
+  const [hScreensProfiles] = useState(loadHScreensProfiles);
   const [jiggleKey, setJiggleKey] = useState(null);
   const [presetScroll, setPresetScroll] = useState(0);
   const presetContainerRef = useRef(null);
+  const hScreensRef = useRef(null);
   const [editingPresetId, setEditingPresetId] = useState(null);
-  const [editMode, setEditMode] = useState(false); // global edit mode for presets
+  const [editMode, setEditMode] = useState(false);
   const [editPresetName, setEditPresetName] = useState('');
 
   // Search selection
@@ -905,6 +931,34 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
     setPresets(updated);
     savePresets(updated);
     setEditingPresetId(null);
+  };
+
+  const applyHScreensProfile = (profile) => {
+    setSectors(profile.sectors || []);
+    setStages(profile.stages || []);
+    setGeos(profile.geos || []);
+    setModels(profile.models || []);
+    setSignals(profile.signals || []);
+    setKeywords(profile.keywords || '');
+    setExcludeKeywords(profile.antiKeywords || '');
+    setMaxRaised(profile.maxRaised || '');
+    setMaxValuation(profile.maxValuation || '');
+    setFoundedAfter(profile.foundedAfter || '');
+    setMinTeam(profile.minHeadcount || profile.minTeam || '');
+    setMaxTeam(profile.maxHeadcount || profile.maxTeam || '');
+    setNotes(profile.notes || '');
+    // If the profile has savedSearchIds, map them to our search selection
+    if (profile.savedSearchIds && profile.savedSearchIds.length > 0) {
+      const ids = new Set(profile.savedSearchIds.map(s => typeof s === 'object' ? String(s.id) : String(s)));
+      setSelectedSearchIds(ids);
+    }
+    // Jiggle
+    setJiggleKey(Date.now());
+    setTimeout(() => setJiggleKey(null), 600);
+  };
+
+  const scrollHScreens = (dir) => {
+    if (hScreensRef.current) hScreensRef.current.scrollBy({ left: dir * 200, behavior: 'smooth' });
   };
 
   const renamePreset = (id, newName) => {
@@ -1160,6 +1214,32 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                   {showNewScan && hasRunning && (
                     <button onClick={() => setShowNewScan(false)}
                       className="text-[10px] text-sky-400/60 hover:text-sky-300 font-medium">← Back to live scans</button>
+                  )}
+
+                  {/* H Screens Profiles (from team members) */}
+                  {hScreensProfiles.length > 0 && (
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] text-muted/50 uppercase tracking-widest font-bold">H Screens Profiles</p>
+                        {hScreensProfiles.length > 4 && (
+                          <div className="flex gap-1">
+                            <button onClick={() => scrollHScreens(-1)} className="text-[10px] px-1.5 py-0.5 rounded border border-border/20 text-muted/40 hover:text-muted/60">◀</button>
+                            <button onClick={() => scrollHScreens(1)} className="text-[10px] px-1.5 py-0.5 rounded border border-border/20 text-muted/40 hover:text-muted/60">▶</button>
+                          </div>
+                        )}
+                      </div>
+                      <div ref={hScreensRef} className="flex gap-2 overflow-x-auto scrollbar-hide pb-1" style={{ scrollBehavior: 'smooth' }}>
+                        {hScreensProfiles.map((p, i) => (
+                          <button key={`${p._ownerId}-${p.id || i}`} onClick={() => applyHScreensProfile(p)}
+                            className="flex-shrink-0 text-[10px] px-3 py-2 rounded-lg border border-sky-400/20 bg-sky-500/8 text-sky-300/70 hover:bg-sky-500/15 hover:text-sky-300 transition-all font-medium whitespace-nowrap">
+                            <span className="text-[9px] text-sky-400/40 mr-1">{p._owner}</span>
+                            {p.name || 'Main Scan'}
+                            {p.sectors?.length > 0 && <span className="text-[8px] text-muted/30 ml-1.5">{p.sectors.length} sectors</span>}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-[9px] text-muted/25">Click to auto-fill all filters from an H Screens profile</p>
+                    </div>
                   )}
 
                   {/* Saved Scans */}
@@ -1444,15 +1524,15 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                       }, 0)} />
                   </div>
 
-                  {/* Action buttons */}
-                  <div className="flex gap-2">
+                  {/* Action buttons — Save above Run */}
+                  <div className="space-y-2">
                     <button onClick={saveCurrentAsPreset}
-                      className="flex-1 px-4 py-3 rounded-xl border border-violet-400/25 bg-violet-500/8 text-violet-300/70 font-bold text-sm hover:bg-violet-500/15 hover:text-violet-300 transition-all active:scale-[0.98]">
-                      Save Scan
+                      className="w-full px-4 py-2.5 rounded-xl border border-violet-400/20 bg-violet-500/6 text-violet-300/60 font-medium text-xs hover:bg-violet-500/12 hover:text-violet-300 transition-all active:scale-[0.98]">
+                      Save Search
                     </button>
                     <button onClick={startScan} disabled={selectedSearchIds !== null && selectedSearchIds.size === 0}
-                      className="flex-[2] px-6 py-3 rounded-xl bg-sky-500/15 border border-sky-400/30 text-sky-300 font-bold text-sm hover:bg-sky-500/25 hover:border-sky-400/50 transition-all active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed">
-                      Start {TIERS.find(t => t.key === selectedTier)?.name} Scan ({TIERS.find(t => t.key === selectedTier)?.cost})
+                      className="w-full px-6 py-3 rounded-xl bg-sky-500/15 border border-sky-400/30 text-sky-300 font-bold text-sm hover:bg-sky-500/25 hover:border-sky-400/50 transition-all active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed">
+                      Run {TIERS.find(t => t.key === selectedTier)?.name} Scan ({TIERS.find(t => t.key === selectedTier)?.cost})
                     </button>
                   </div>
                 </div>
