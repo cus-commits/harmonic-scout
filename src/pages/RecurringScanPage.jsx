@@ -781,6 +781,9 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
   const [jiggleKey, setJiggleKey] = useState(null);
   const [presetScroll, setPresetScroll] = useState(0);
   const presetContainerRef = useRef(null);
+  const [editingPresetId, setEditingPresetId] = useState(null);
+  const [editMode, setEditMode] = useState(false); // global edit mode for presets
+  const [editPresetName, setEditPresetName] = useState('');
 
   // Search selection
   const [availableSearches, setAvailableSearches] = useState([]);
@@ -882,16 +885,30 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
   };
 
   const saveCurrentAsPreset = () => {
-    const name = prompt('Name this preset:');
+    const name = prompt('Name this scan:');
     if (!name) return;
     const config = getCurrentConfig();
-    const updated = [...presets, { ...config, name, id: Date.now() }];
+    const updated = [...presets, { ...config, name, id: Date.now(), user: localStorage.getItem('crm_user') || 'Mark' }];
     setPresets(updated);
     savePresets(updated);
   };
 
   const deletePreset = (id) => {
     const updated = presets.filter(p => p.id !== id);
+    setPresets(updated);
+    savePresets(updated);
+  };
+
+  const updatePresetFromCurrent = (id) => {
+    const config = getCurrentConfig();
+    const updated = presets.map(p => p.id === id ? { ...p, ...config } : p);
+    setPresets(updated);
+    savePresets(updated);
+    setEditingPresetId(null);
+  };
+
+  const renamePreset = (id, newName) => {
+    const updated = presets.map(p => p.id === id ? { ...p, name: newName } : p);
     setPresets(updated);
     savePresets(updated);
   };
@@ -1145,51 +1162,67 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                       className="text-[10px] text-sky-400/60 hover:text-sky-300 font-medium">← Back to live scans</button>
                   )}
 
-                  <div>
-                    <p className="text-[10px] text-muted/50 uppercase tracking-widest font-bold mb-2">Select Scan Depth</p>
-                    <TierSelector selected={selectedTier} onSelect={setSelectedTier}
-                      totalCompanies={availableSearches.reduce((sum, s) => {
-                        if (selectedSearchIds !== null && !selectedSearchIds.has(s.id)) return sum;
-                        return sum + (s.resultCount || 0);
-                      }, 0)} />
-                  </div>
-
-                  {/* Saved Presets */}
-                  {presets.length > 0 && (
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <p className="text-[10px] text-muted/50 uppercase tracking-widest font-bold">Saved Presets</p>
-                        <div className="flex gap-1">
-                          <button onClick={() => scrollPresets(-1)} className="text-[10px] px-1.5 py-0.5 rounded border border-border/20 text-muted/40 hover:text-muted/60">◀</button>
-                          <button onClick={() => scrollPresets(1)} className="text-[10px] px-1.5 py-0.5 rounded border border-border/20 text-muted/40 hover:text-muted/60">▶</button>
-                        </div>
-                      </div>
-                      <div ref={presetContainerRef} className="flex gap-2 overflow-x-auto scrollbar-hide pb-1" style={{ scrollBehavior: 'smooth' }}>
-                        {presets.map(p => (
-                          <button key={p.id} onClick={() => applyPreset(p)}
-                            className="flex-shrink-0 group relative text-[10px] px-3 py-2 rounded-lg border border-violet-400/20 bg-violet-500/8 text-violet-300/70 hover:bg-violet-500/15 hover:text-violet-300 transition-all font-medium whitespace-nowrap">
-                            {p.name}
-                            <span className="text-[8px] text-muted/30 ml-1.5">{p.sectors?.length || 0}s {p.stages?.length || 0}st</span>
-                            <span onClick={(e) => { e.stopPropagation(); deletePreset(p.id); }}
-                              className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-red-500/30 text-red-300 text-[8px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">x</span>
-                          </button>
-                        ))}
+                  {/* Saved Scans */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] text-muted/50 uppercase tracking-widest font-bold">Saved Scans</p>
+                      <div className="flex gap-1.5 items-center">
+                        {presets.length > 3 && (
+                          <>
+                            <button onClick={() => scrollPresets(-1)} className="text-[10px] px-1.5 py-0.5 rounded border border-border/20 text-muted/40 hover:text-muted/60">◀</button>
+                            <button onClick={() => scrollPresets(1)} className="text-[10px] px-1.5 py-0.5 rounded border border-border/20 text-muted/40 hover:text-muted/60">▶</button>
+                          </>
+                        )}
+                        <button onClick={() => setEditMode(!editMode)}
+                          className={`text-[9px] px-2 py-0.5 rounded border font-medium transition-all ${
+                            editMode ? 'bg-amber-500/15 border-amber-400/30 text-amber-300' : 'border-border/20 text-muted/40 hover:text-muted/60'
+                          }`}>
+                          {editMode ? 'Done' : 'Edit'}
+                        </button>
                       </div>
                     </div>
-                  )}
+                    <div ref={presetContainerRef} className="flex gap-2 overflow-x-auto scrollbar-hide pb-1" style={{ scrollBehavior: 'smooth' }}>
+                      {presets.map(p => (
+                        <div key={p.id} className="flex-shrink-0 relative">
+                          {editMode && editingPresetId === p.id ? (
+                            <div className="flex items-center gap-1 bg-surface/60 border border-amber-400/30 rounded-lg px-2 py-1.5">
+                              <input type="text" value={editPresetName} onChange={e => setEditPresetName(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter') { renamePreset(p.id, editPresetName); setEditingPresetId(null); } }}
+                                className="bg-transparent text-[10px] text-bright w-24 outline-none" autoFocus />
+                              <button onClick={() => { renamePreset(p.id, editPresetName); setEditingPresetId(null); }}
+                                className="text-[9px] text-emerald-400">✓</button>
+                              <button onClick={() => { updatePresetFromCurrent(p.id); }}
+                                className="text-[9px] text-sky-400 ml-1" title="Update with current filters">↻</button>
+                              <button onClick={() => deletePreset(p.id)}
+                                className="text-[9px] text-red-400 ml-1">✕</button>
+                            </div>
+                          ) : (
+                            <button onClick={() => {
+                              if (editMode) { setEditingPresetId(p.id); setEditPresetName(p.name); }
+                              else applyPreset(p);
+                            }}
+                              className={`text-[10px] px-3 py-2 rounded-lg border font-medium whitespace-nowrap transition-all ${
+                                editMode
+                                  ? 'border-amber-400/25 bg-amber-500/8 text-amber-300/70 hover:bg-amber-500/15'
+                                  : 'border-violet-400/20 bg-violet-500/8 text-violet-300/70 hover:bg-violet-500/15 hover:text-violet-300'
+                              }`}>
+                              {editMode && <span className="mr-1">✎</span>}
+                              {p.name}
+                              {!editMode && <span className="text-[8px] text-muted/30 ml-1.5">{p.sectors?.length || 0}s {p.stages?.length || 0}st</span>}
+                              {p.user && !editMode && <span className="text-[8px] text-muted/20 ml-1">· {p.user}</span>}
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
 
                   {/* Scan Options */}
                   <div className={`rounded-xl border border-border/15 bg-surface/30 p-4 space-y-4 transition-all ${jiggleKey ? 'animate-jiggle' : ''}`}>
                     <style>{`@keyframes jiggle { 0%,100% { transform: rotate(0); } 15% { transform: rotate(-1deg); } 30% { transform: rotate(1deg); } 45% { transform: rotate(-0.5deg); } 60% { transform: rotate(0.5deg); } }`}
                     {`.animate-jiggle { animation: jiggle 0.5s ease-in-out; }`}</style>
 
-                    <div className="flex items-center justify-between">
-                      <p className="text-[10px] text-muted/50 uppercase tracking-widest font-bold">Search Filters</p>
-                      <button onClick={saveCurrentAsPreset}
-                        className="text-[9px] px-2 py-0.5 rounded border border-sky-400/20 text-sky-400/50 hover:text-sky-300 font-medium">
-                        Save as Preset
-                      </button>
-                    </div>
+                    <p className="text-[10px] text-muted/50 uppercase tracking-widest font-bold">Search Filters</p>
 
                     {/* Saved Search Selection */}
                     <SearchSelector
@@ -1401,10 +1434,27 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                     </div>
                   </div>
 
-                  <button onClick={startScan} disabled={selectedSearchIds !== null && selectedSearchIds.size === 0}
-                    className="w-full px-6 py-3 rounded-xl bg-sky-500/15 border border-sky-400/30 text-sky-300 font-bold text-sm hover:bg-sky-500/25 hover:border-sky-400/50 transition-all active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed">
-                    🚀 Start {TIERS.find(t => t.key === selectedTier)?.name} Scan ({TIERS.find(t => t.key === selectedTier)?.cost})
-                  </button>
+                  {/* Scan Depth — at bottom before launch */}
+                  <div>
+                    <p className="text-[10px] text-muted/50 uppercase tracking-widest font-bold mb-2">Select Scan Depth</p>
+                    <TierSelector selected={selectedTier} onSelect={setSelectedTier}
+                      totalCompanies={availableSearches.reduce((sum, s) => {
+                        if (selectedSearchIds !== null && !selectedSearchIds.has(s.id)) return sum;
+                        return sum + (s.resultCount || 0);
+                      }, 0)} />
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="flex gap-2">
+                    <button onClick={saveCurrentAsPreset}
+                      className="flex-1 px-4 py-3 rounded-xl border border-violet-400/25 bg-violet-500/8 text-violet-300/70 font-bold text-sm hover:bg-violet-500/15 hover:text-violet-300 transition-all active:scale-[0.98]">
+                      Save Scan
+                    </button>
+                    <button onClick={startScan} disabled={selectedSearchIds !== null && selectedSearchIds.size === 0}
+                      className="flex-[2] px-6 py-3 rounded-xl bg-sky-500/15 border border-sky-400/30 text-sky-300 font-bold text-sm hover:bg-sky-500/25 hover:border-sky-400/50 transition-all active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed">
+                      Start {TIERS.find(t => t.key === selectedTier)?.name} Scan ({TIERS.find(t => t.key === selectedTier)?.cost})
+                    </button>
+                  </div>
                 </div>
               )}
 
