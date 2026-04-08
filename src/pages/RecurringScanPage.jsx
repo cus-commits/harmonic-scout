@@ -1153,7 +1153,7 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
           const data = JSON.parse(dataLine.slice(6));
           if (!data.error && data.results) {
             setResults(data);
-            // Save 7+/10 results to Top Picks (shared with AutoScan)
+            // Save 7+/10 results to Top Picks
             try {
               const userId = (crmUser || 'mark').toLowerCase();
               const resultsWithScores = (data.results || []).map(r => ({
@@ -1198,10 +1198,12 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
   const showCreateForm = true;
 
   // Dynamic company count and cost estimate
+  // Use 500 as fallback per search if server hasn't cached counts yet
+  const DEFAULT_PER_SEARCH = 500;
   const selectedCompanyCount = availableSearches.reduce((sum, s) => {
     if (selectedSearchIds !== null && !selectedSearchIds.has(s.id)) return sum;
     const rc = s.resultCount;
-    const count = typeof rc === 'string' ? parseInt(rc.replace(/[^0-9]/g, '')) || 0 : (rc || 0);
+    const count = typeof rc === 'string' ? parseInt(rc.replace(/[^0-9]/g, '')) || DEFAULT_PER_SEARCH : (rc || DEFAULT_PER_SEARCH);
     return sum + count;
   }, 0);
   const selectedTierObj = TIERS.find(t => t.key === selectedTier);
