@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CrmButton } from '../components/CrmButton';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://pigeon-api.up.railway.app';
@@ -11,11 +12,11 @@ function authHeaders() {
 // ---- Scan Tiers ----
 
 const TIERS = [
-  { key: 'scout',    name: 'Quick Scout',  cost: '$5',  emoji: '⚡', color: 'sky',     ddPush: 2,  desc: 'Haiku pre-screen → Sonnet deep 10 → top 2 to DD', time: '15-30 min' },
-  { key: 'standard', name: 'Standard',     cost: '$12', emoji: '🔍', color: 'violet',  ddPush: 5,  desc: 'Sonnet pre-screen → Opus deep 15 → top 5 to DD', time: '30-60 min' },
-  { key: 'deep',     name: 'Deep Dive',    cost: '$25', emoji: '🔬', color: 'amber',   ddPush: 8,  desc: 'Sonnet all → Opus deep 40 → top 8 to DD', time: '1-2 hours' },
-  { key: 'sweep',    name: 'Full Sweep',   cost: '$35', emoji: '🌊', color: 'pink',    ddPush: 12, desc: 'Sonnet full → Opus deep 60 → top 12 to DD', time: '2-3 hours' },
-  { key: 'maximum',  name: 'Maximum',      cost: '$50', emoji: '🚀', color: 'emerald', ddPush: 20, desc: 'Full pipeline → Opus deep 100 → top 20 to DD', time: '3-5 hours' },
+  { key: 'scout',    name: 'Quick Scout',  cost: '$5',  emoji: '⚡', color: 'sky',     ddPush: 2,  desc: 'Haiku pre-screen → Sonnet deep 10 → top 2 to DD', time: '15-30 min', estMinutes: 25 },
+  { key: 'standard', name: 'Standard',     cost: '$12', emoji: '🔍', color: 'violet',  ddPush: 5,  desc: 'Sonnet pre-screen → Opus deep 15 → top 5 to DD', time: '30-60 min', estMinutes: 45 },
+  { key: 'deep',     name: 'Deep Dive',    cost: '$25', emoji: '🔬', color: 'amber',   ddPush: 8,  desc: 'Sonnet all → Opus deep 40 → top 8 to DD', time: '1-2 hours', estMinutes: 90 },
+  { key: 'sweep',    name: 'Full Sweep',   cost: '$35', emoji: '🌊', color: 'pink',    ddPush: 12, desc: 'Sonnet full → Opus deep 60 → top 12 to DD', time: '2-3 hours', estMinutes: 150 },
+  { key: 'maximum',  name: 'Maximum',      cost: '$50', emoji: '🚀', color: 'emerald', ddPush: 20, desc: 'Full pipeline → Opus deep 100 → top 20 to DD', time: '3-5 hours', estMinutes: 240 },
 ];
 
 const CRM_STAGES = [
@@ -33,12 +34,30 @@ const tierColors = {
   emerald: { bg: 'bg-emerald-500/10', border: 'border-emerald-400/25', text: 'text-emerald-300', activeBg: 'bg-emerald-500/20', activeBorder: 'border-emerald-400/50' },
 };
 
-function TierSelector({ selected, onSelect }) {
+function TierSelector({ selected, onSelect, totalCompanies }) {
+  // Estimate cost based on company count and tier config
+  function estimateCost(tier, count) {
+    if (!count) return null;
+    const sonnetCost = 0.12; // per batch
+    const opusCost = 0.03; // per company
+    const haikuCost = 0.02;
+    const preBatches = Math.ceil(count / (tier.key === 'scout' ? 200 : 120));
+    const prePhase = tier.key === 'scout' ? preBatches * haikuCost : preBatches * sonnetCost;
+    const passRate = 0.12;
+    const survivors = Math.round(count * passRate);
+    const screenBatches = Math.ceil(survivors / 50);
+    const screenPhase = screenBatches * sonnetCost;
+    const deepCount = Math.min(survivors, tier.key === 'scout' ? 10 : tier.key === 'standard' ? 15 : tier.key === 'deep' ? 40 : tier.key === 'sweep' ? 60 : 100);
+    const deepPhase = deepCount * (tier.key === 'scout' ? sonnetCost / 15 : opusCost);
+    return Math.min(parseFloat(tier.cost.replace('$', '')), prePhase + screenPhase + deepPhase).toFixed(2);
+  }
+
   return (
     <div className="space-y-2">
       {TIERS.map(t => {
         const c = tierColors[t.color];
         const isActive = selected === t.key;
+        const estCost = estimateCost(t, totalCompanies);
         return (
           <button key={t.key} onClick={() => onSelect(t.key)}
             className={`w-full text-left rounded-xl border p-3 transition-all ${
@@ -53,118 +72,222 @@ function TierSelector({ selected, onSelect }) {
               <div className="flex items-center gap-2">
                 <span className="text-[9px] text-muted/40">{t.ddPush} to DD</span>
                 <span className={`text-sm font-bold ${c.text}`}>{t.cost}</span>
+                {estCost && totalCompanies > 0 && (
+                  <span className="text-[8px] text-muted/30">~${estCost} est</span>
+                )}
               </div>
             </div>
             <p className="text-[10px] text-muted/40 mt-1 ml-7">{t.desc}</p>
           </button>
         );
       })}
+      {totalCompanies > 0 && (
+        <p className="text-[9px] text-muted/25 text-center">Cost estimates based on ~{totalCompanies.toLocaleString()} companies across selected searches</p>
+      )}
     </div>
   );
 }
 
+// ---- Search Selector ----
+
+function SearchSelector({ searches, selectedIds, onToggle, onToggleAll }) {
+  const [expanded, setExpanded] = useState(false);
+  const allSelected = selectedIds === null || (searches.length > 0 && selectedIds?.size === searches.length);
+
+  if (searches.length === 0) return null;
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] text-bright/60 font-medium">Harmonic Saved Searches</span>
+        <div className="flex items-center gap-2">
+          <label className="flex items-center gap-1.5 cursor-pointer">
+            <input type="checkbox" checked={allSelected} onChange={onToggleAll}
+              className="w-3.5 h-3.5 rounded border-border/30 bg-ink/50 accent-sky-400" />
+            <span className="text-[10px] text-muted/50 font-medium">All ({searches.length})</span>
+          </label>
+          <button onClick={() => setExpanded(!expanded)}
+            className="text-[9px] text-sky-400/50 hover:text-sky-300 font-medium">
+            {expanded ? '▾ Collapse' : '▸ Select'}
+          </button>
+        </div>
+      </div>
+      {expanded && (
+        <div className="bg-ink/30 border border-border/15 rounded-lg p-2 max-h-[200px] overflow-y-auto space-y-0.5">
+          {searches.map(s => {
+            const isOn = selectedIds === null || selectedIds?.has(s.id);
+            return (
+              <label key={s.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-white/[0.03] cursor-pointer">
+                <input type="checkbox" checked={isOn} onChange={() => onToggle(s.id)}
+                  className="w-3.5 h-3.5 rounded border-border/30 bg-ink/50 accent-sky-400 flex-shrink-0" />
+                <span className={`text-[10px] truncate flex-1 ${isOn ? 'text-bright/60' : 'text-muted/30'}`}>{s.name}</span>
+                {s.resultCount > 0 && <span className="text-[8px] text-muted/25 flex-shrink-0">{s.resultCount.toLocaleString()}</span>}
+              </label>
+            );
+          })}
+        </div>
+      )}
+      {!allSelected && selectedIds && (
+        <p className="text-[9px] text-amber-400/50">{selectedIds.size} of {searches.length} searches selected</p>
+      )}
+    </div>
+  );
+}
+
+// ---- Portfolio Selector ----
+
+function PortcoSelector({ portcos, enabled, onToggleEnabled, selectedIds, onToggle, onToggleAll }) {
+  const [expanded, setExpanded] = useState(false);
+  const allSelected = selectedIds === null || (portcos.length > 0 && selectedIds?.size === portcos.length);
+  const activeCount = selectedIds === null ? portcos.length : selectedIds.size;
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <label className="flex items-center gap-2 cursor-pointer group">
+          <input type="checkbox" checked={enabled} onChange={onToggleEnabled}
+            className="w-4 h-4 rounded border-border/30 bg-ink/50 accent-sky-400" />
+          <div>
+            <span className="text-[11px] text-bright/70 font-medium group-hover:text-bright">Include Portfolio Companies</span>
+            <p className="text-[9px] text-muted/35">Find similar to our portcos{enabled ? ` (${activeCount} selected)` : ''}</p>
+          </div>
+        </label>
+        {enabled && portcos.length > 0 && (
+          <div className="flex items-center gap-2">
+            <label className="flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" checked={allSelected} onChange={onToggleAll}
+                className="w-3.5 h-3.5 rounded border-border/30 bg-ink/50 accent-sky-400" />
+              <span className="text-[10px] text-muted/50 font-medium">All ({portcos.length})</span>
+            </label>
+            <button onClick={() => setExpanded(!expanded)}
+              className="text-[9px] text-sky-400/50 hover:text-sky-300 font-medium">
+              {expanded ? '▾ Collapse' : '▸ Select'}
+            </button>
+          </div>
+        )}
+      </div>
+      {enabled && expanded && portcos.length > 0 && (
+        <div className="bg-ink/30 border border-border/15 rounded-lg p-2 max-h-[180px] overflow-y-auto space-y-0.5 ml-6">
+          {portcos.map(domain => {
+            const isOn = selectedIds === null || selectedIds?.has(domain);
+            return (
+              <label key={domain} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-white/[0.03] cursor-pointer">
+                <input type="checkbox" checked={isOn} onChange={() => onToggle(domain)}
+                  className="w-3.5 h-3.5 rounded border-border/30 bg-ink/50 accent-sky-400 flex-shrink-0" />
+                <span className={`text-[10px] truncate ${isOn ? 'text-bright/60' : 'text-muted/30'}`}>{domain}</span>
+              </label>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// (BatchInspector removed — replaced by Real Time page)
+
 // ---- Progress Panel ----
 
-function ScanProgress({ status, onCancel }) {
+function ScanProgress({ scan, onCancel }) {
+  const navigate = useNavigate();
   const [tick, setTick] = useState(0);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [feed, setFeed] = useState([]);
   const [hideFeed, setHideFeed] = useState(false);
-  const [etaTarget, setEtaTarget] = useState(null);
+  const [batchData, setBatchData] = useState([]);
 
   useEffect(() => {
     const t = setInterval(() => setTick(v => v + 1), 1000);
     return () => clearInterval(t);
   }, []);
 
+  // Fetch batch data for winner cards in feed
+  useEffect(() => {
+    if (!scan?.id) return;
+    const fetchBatches = async () => {
+      try {
+        const r = await fetch(`${API_BASE}/api/recurring-scan/batches/${scan.id}`);
+        const data = await r.json();
+        if (data.batches) setBatchData(data.batches);
+      } catch {}
+    };
+    fetchBatches();
+    const interval = setInterval(fetchBatches, 8000);
+    return () => clearInterval(interval);
+  }, [scan?.id]);
+
   const lastMsg = useRef('');
   useEffect(() => {
-    const msg = status?.progress || '';
+    const msg = scan?.progress || '';
     if (!msg || msg === 'keepalive' || msg === lastMsg.current) return;
     lastMsg.current = msg;
-    setFeed(prev => [{ msg, ts: Date.now(), id: Date.now() }, ...prev].slice(0, 80));
-  }, [status?.progress]);
+    setFeed(prev => [{ msg, ts: Date.now(), id: Date.now() + Math.random() }, ...prev].slice(0, 80));
+  }, [scan?.progress]);
 
-  // ETA calculation based on progress messages
-  useEffect(() => {
-    const msg = status?.progress || '';
-    if (!msg || msg === 'keepalive') return;
+  const progress = scan?.progress || '';
+  const stats = scan?.stats || {};
+  const tierInfo = scan?.tier || {};
+  const startedAt = scan?.startedAt || Date.now();
 
-    let estSeconds = null;
-    const preBatch = msg.match(/[Pp]re-screen batch (\d+)\/(\d+)/);
-    const scoreBatch = msg.match(/[Ss]coring batch (\d+)\/(\d+)/);
-    const deepBatch = msg.match(/[Oo]pus.*batch (\d+)\/(\d+)|deep batch (\d+)\/(\d+)/i);
-    const enriching = msg.match(/[Ee]nriching (\d+)/);
-    const fetching = msg.match(/\[(\d+)\/(\d+)\] Fetching/);
-
-    if (deepBatch) {
-      const cur = parseInt(deepBatch[1] || deepBatch[3]);
-      const total = parseInt(deepBatch[2] || deepBatch[4]);
-      estSeconds = (total - cur) * 55;
-    } else if (scoreBatch) {
-      const remaining = parseInt(scoreBatch[2]) - parseInt(scoreBatch[1]);
-      estSeconds = remaining * 35 + 120; // + time for deep phase
-    } else if (enriching) {
-      estSeconds = 60 + 300; // enrichment + scoring + deep
-    } else if (msg.includes('Pre-screen complete') || msg.includes('pre-screen complete')) {
-      estSeconds = 300;
-    } else if (preBatch) {
-      const remaining = parseInt(preBatch[2]) - parseInt(preBatch[1]);
-      estSeconds = remaining * 25 + 400;
-    } else if (fetching) {
-      const remaining = parseInt(fetching[2]) - parseInt(fetching[1]);
-      estSeconds = remaining * 8 + 600;
-    } else if (msg.includes('Fetching all') || msg.includes('Starting')) {
-      estSeconds = 900;
-    }
-
-    if (estSeconds !== null) setEtaTarget(Date.now() + estSeconds * 1000);
-  }, [status?.progress]);
-
-  const elapsed = status?.startedAt ? Math.floor((Date.now() - status.startedAt) / 1000) : 0;
-  const hours = Math.floor(elapsed / 3600);
-  const mins = Math.floor((elapsed % 3600) / 60);
-  const secs = elapsed % 60;
-
-  const etaRemaining = etaTarget ? Math.max(0, Math.floor((etaTarget - Date.now()) / 1000)) : null;
-  const etaMins = etaRemaining !== null ? Math.floor(etaRemaining / 60) : 0;
-  const etaSecs = etaRemaining !== null ? etaRemaining % 60 : 0;
-  const showEta = etaRemaining !== null && etaRemaining > 0;
-
-  const progress = status?.progress || '';
-  const stats = status?.stats || {};
-  const tierInfo = status?.tier || {};
-
+  // Determine current stage
   let stage = 'fetch';
-  if (progress.includes('Opus') || progress.includes('deep')) stage = 'opus';
-  else if (progress.includes('Sonnet scoring') || progress.includes('scoring batch') || progress.includes('Scoring batch')) stage = 'screen';
-  else if (progress.includes('Enriching') || progress.includes('Enriched') || progress.includes('Filtered')) stage = 'enrich';
-  else if (progress.includes('Pre-screen') || progress.includes('pre-screen') || progress.includes('Screening')) stage = 'prescreen';
-  else if (progress.includes('Fetching') || progress.includes('fetched') || progress.includes('search') || progress.includes('Starting')) stage = 'fetch';
+  if (progress.match(/[Oo]pus|deep.*(batch|anal)/i)) stage = 'opus';
+  else if (progress.match(/[Ss](onnet )?scoring|scoring batch/i)) stage = 'screen';
+  else if (progress.match(/[Ee]nrich|[Ff]ilter/i)) stage = 'enrich';
+  else if (progress.match(/[Pp]re-screen|[Ss]creening/i)) stage = 'prescreen';
+  else if (progress.match(/[Ff]etch|[Ss]tart|[Ll]oad|search/i)) stage = 'fetch';
 
   const stages = [
-    { id: 'fetch', emoji: '📡', label: 'Fetching', color: 'text-sky-400' },
-    { id: 'prescreen', emoji: '⚡', label: 'Pre-Screen', color: 'text-violet-400' },
-    { id: 'enrich', emoji: '🔬', label: 'Enriching', color: 'text-amber-400' },
-    { id: 'screen', emoji: '🎯', label: 'Scoring', color: 'text-pink-400' },
-    { id: 'opus', emoji: '🧠', label: 'Deep Analysis', color: 'text-emerald-400' },
+    { id: 'fetch', emoji: '📡', label: 'Fetching', color: 'text-sky-400', weight: 0.10 },
+    { id: 'prescreen', emoji: '⚡', label: 'Pre-Screen', color: 'text-violet-400', weight: 0.30 },
+    { id: 'enrich', emoji: '🔬', label: 'Enriching', color: 'text-amber-400', weight: 0.10 },
+    { id: 'screen', emoji: '🎯', label: 'Scoring', color: 'text-pink-400', weight: 0.25 },
+    { id: 'opus', emoji: '🧠', label: 'Deep Analysis', color: 'text-emerald-400', weight: 0.25 },
   ];
 
-  // Parse feed for company highlights (scored companies)
-  const companyHighlights = feed
-    .filter(f => f.msg.match(/[🌟🏆⭐📊📉✅] .+ — \d+\/10/) || f.msg.match(/[🌟🏆⭐] .+/))
-    .slice(0, 6);
+  // ETA: stage-weighted + batch progress + elapsed time
+  const stageIdx = stages.findIndex(s => s.id === stage);
+  const completedWeight = stages.slice(0, stageIdx).reduce((sum, s) => sum + s.weight, 0);
+  const currentWeight = stages[stageIdx]?.weight || 0.2;
+
+  let batchFraction = 0.5;
+  const batchMatch = progress.match(/batch (\d+)\/(\d+)/);
+  if (batchMatch) batchFraction = Math.min(1, parseInt(batchMatch[1]) / Math.max(1, parseInt(batchMatch[2])));
+
+  const overallProgress = Math.max(0.02, completedWeight + currentWeight * batchFraction);
+  const elapsed = Math.max(1, (Date.now() - startedAt) / 1000);
+  const totalEst = elapsed / overallProgress;
+  const etaRemaining = Math.max(0, Math.round(totalEst - elapsed));
+  const showEta = elapsed > 10 && etaRemaining > 5;
+  const etaMins = Math.floor(etaRemaining / 60);
+  const etaSecs = etaRemaining % 60;
+
+  const hours = Math.floor(elapsed / 3600);
+  const mins = Math.floor((elapsed % 3600) / 60);
+  const secs = Math.floor(elapsed % 60);
+
+  // Extract winners from batch data for enhanced feed
+  const latestWinners = [];
+  [...batchData].reverse().forEach(b => {
+    (b.companies || []).forEach(c => {
+      const isWinner = b.phase === 'prescreen' ? c.verdict === 'PASS' : (c.score || 0) >= 7;
+      if (isWinner && latestWinners.length < 8) {
+        latestWinners.push({ ...c, _phase: b.phase, _batch: b.batchNum });
+      }
+    });
+  });
 
   return (
     <div className="bg-ink/30 border border-sky-400/15 rounded-xl overflow-hidden">
       <div className="p-4 space-y-3">
-        {/* Tier badge + timer + ETA */}
+        {/* User + Tier badge + timer + ETA */}
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 border-2 border-sky-400 border-t-transparent rounded-full animate-spin flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <p className="text-sm text-bright/70 font-medium">{progress || 'Starting scan agent...'}</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-sm text-bright/70 font-medium truncate">{progress || 'Starting scan agent...'}</p>
               {tierInfo.name && <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-muted/50">{tierInfo.name}</span>}
+              {scan?.user && <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-500/10 border border-violet-400/15 text-violet-300/50">by {scan.user}</span>}
             </div>
             <p className="text-[10px] text-muted/40 mt-0.5">
               {showEta ? `~${etaMins}m ${String(etaSecs).padStart(2, '0')}s remaining` : 'Scan runs in background — safe to close tab or refresh'}
@@ -181,9 +304,8 @@ function ScanProgress({ status, onCancel }) {
         </div>
 
         {/* Stage pipeline */}
-        <div className="flex items-center gap-1 px-1">
+        <div className="flex items-center justify-center gap-1 px-1">
           {stages.map((s, i) => {
-            const stageIdx = stages.findIndex(x => x.id === stage);
             const isActive = s.id === stage;
             const isPast = i < stageIdx;
             return (
@@ -202,78 +324,88 @@ function ScanProgress({ status, onCancel }) {
 
         {/* Live stats funnel */}
         {(stats.savedSearches > 0 || stats.totalCompanies > 0) && (
-          <div className="flex gap-2 text-[10px] text-muted/40 flex-wrap">
+          <div className="flex gap-2 text-[10px] text-muted/40 flex-wrap justify-center">
             {stats.savedSearches > 0 && <span>Ⓗ {stats.savedSearches} searches</span>}
             {stats.totalCompanies > 0 && <span>→ {stats.totalCompanies} companies</span>}
             {stats.sonnetPassed > 0 && <span className="text-violet-300/60">→ {stats.sonnetPassed} pre-screened</span>}
             {stats.enriched > 0 && <span className="text-amber-300/60">→ {stats.enriched} enriched</span>}
+            {stats.filtered > 0 && <span className="text-orange-300/60">→ {stats.filtered} filtered</span>}
+            {stats.scored > 0 && <span className="text-pink-300/60">→ {stats.scored} scored 7+</span>}
             {stats.deepScored > 0 && <span className="text-emerald-300/60">→ {stats.deepScored} deep-scored</span>}
           </div>
         )}
 
-        {/* Live company highlights — scored companies appearing in real-time */}
-        {companyHighlights.length > 0 && (
-          <div className="bg-white/[0.02] rounded-lg p-2.5 space-y-1.5">
-            <p className="text-[8px] uppercase tracking-widest text-muted/25 font-bold">Latest Companies</p>
-            {companyHighlights.map(f => {
-              const scoreMatch = f.msg.match(/(.+?) — (\d+)\/10/);
-              const name = scoreMatch ? scoreMatch[1].replace(/^[🌟🏆⭐📊📉📋✅❌]\s*/, '').trim() : null;
-              const score = scoreMatch ? parseInt(scoreMatch[2]) : null;
-              const rest = f.msg.split(' — ').slice(1).join(' — ');
-              const isPass = f.msg.startsWith('✅');
-              const isCut = f.msg.startsWith('❌');
-
-              if (score !== null) {
-                const barColor = score >= 9 ? 'bg-emerald-400' : score >= 7 ? 'bg-sky-400' : score >= 5 ? 'bg-amber-400' : 'bg-red-400/50';
-                return (
-                  <div key={f.id} className="flex items-center gap-2">
-                    <div className="w-16 h-1.5 rounded-full bg-white/5 overflow-hidden flex-shrink-0">
-                      <div className={`h-full rounded-full ${barColor} transition-all`} style={{ width: `${score * 10}%` }} />
+        {/* Winners populating — enhanced company cards */}
+        {latestWinners.length > 0 && (
+          <div className="bg-emerald-500/[0.03] border border-emerald-400/10 rounded-lg p-2.5 space-y-1.5">
+            <p className="text-[8px] uppercase tracking-widest text-emerald-400/50 font-bold">Winners Populating ({latestWinners.length})</p>
+            {latestWinners.map((c, i) => {
+              const phaseIcon = c._phase === 'prescreen' ? '⚡' : c._phase === 'scoring' ? '🎯' : '🧠';
+              const hId = c.id || c.entity_id;
+              const hLink = hId ? `https://app.harmonic.ai/company/${hId}` : null;
+              return (
+                <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-emerald-500/[0.04] border border-emerald-400/8 hover:bg-emerald-500/[0.08] transition-all group">
+                  <span className="text-[9px] flex-shrink-0">{phaseIcon}</span>
+                  {c.logo_url ? (
+                    <img src={c.logo_url} alt="" className="w-6 h-6 rounded-md bg-ink/50 flex-shrink-0" onError={e => { e.target.style.display = 'none'; }} />
+                  ) : (
+                    <div className="w-6 h-6 rounded-md bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-emerald-400 font-bold text-[9px]">{(c.name || '?')[0]}</span>
                     </div>
-                    <span className="text-[10px] text-bright/60 font-medium truncate">{name}</span>
-                    <span className={`text-[10px] font-bold flex-shrink-0 ${score >= 7 ? 'text-emerald-400/70' : 'text-muted/40'}`}>{score}/10</span>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-bold text-bright/75 truncate">{c.name}</span>
+                      {c.score && <span className="text-[8px] px-1 py-0.5 rounded bg-emerald-500/15 text-emerald-300 font-bold">{c.score}/10</span>}
+                      {c.funding_stage && <span className="text-[8px] text-muted/25">{c.funding_stage}</span>}
+                    </div>
+                    {c.reason && <p className="text-[8px] text-muted/35 truncate">{c.reason}</p>}
                   </div>
-                );
-              } else if (isPass || isCut) {
-                const compName = f.msg.replace(/^[✅❌]\s*/, '').split(' — ')[0].trim();
-                const reason = f.msg.split(' — ').slice(1).join(' — ').trim();
-                return (
-                  <div key={f.id} className="flex items-center gap-2 text-[10px]">
-                    <span>{isPass ? '✅' : '❌'}</span>
-                    <span className={`font-medium truncate ${isPass ? 'text-emerald-400/60' : 'text-muted/30'}`}>{compName}</span>
-                    {reason && <span className="text-muted/25 truncate text-[9px]">{reason}</span>}
+                  <div className="flex items-center gap-1 flex-shrink-0 opacity-50 group-hover:opacity-100 transition-all">
+                    {hLink && (
+                      <a href={hLink} target="_blank" rel="noopener" className="text-[7px] px-1 py-0.5 rounded bg-violet-500/10 text-violet-400/50 border border-violet-400/10 hover:bg-violet-500/20">Ⓗ</a>
+                    )}
+                    {c.website && (
+                      <a href={c.website.startsWith('http') ? c.website : `https://${c.website}`} target="_blank" rel="noopener"
+                        className="text-[7px] px-1 py-0.5 rounded bg-sky-500/10 text-sky-400/50 border border-sky-400/10 hover:bg-sky-500/20">🌐</a>
+                    )}
                   </div>
-                );
-              }
-              return null;
+                </div>
+              );
             })}
           </div>
         )}
 
-        {/* Cancel */}
-        <div className="flex items-center gap-2">
-          {!confirmCancel ? (
-            <button onClick={() => setConfirmCancel(true)}
-              className="text-[10px] px-3 py-1.5 rounded-lg border border-red-400/20 text-red-400/60 hover:text-red-300 hover:border-red-400/40 transition-all font-medium">
-              Cancel Scan
-            </button>
-          ) : (
-            <div className="flex items-center gap-2 bg-red-500/5 border border-red-400/20 rounded-lg px-3 py-2">
-              <span className="text-[10px] text-red-300/70">Cancel the scan?</span>
-              <button onClick={() => { onCancel(); setConfirmCancel(false); }}
-                className="text-[10px] px-2.5 py-1 rounded bg-red-500/20 border border-red-400/30 text-red-300 font-bold hover:bg-red-500/30 transition-all">
-                Yes, Cancel
+        {/* Cancel + Real Time buttons */}
+        <div className="flex items-center justify-between">
+          <div>
+            {!confirmCancel ? (
+              <button onClick={() => setConfirmCancel(true)}
+                className="text-[10px] px-3 py-1.5 rounded-lg border border-red-400/20 text-red-400/60 hover:text-red-300 hover:border-red-400/40 transition-all font-medium">
+                Cancel Scan
               </button>
-              <button onClick={() => setConfirmCancel(false)}
-                className="text-[10px] px-2.5 py-1 rounded border border-border/20 text-muted/50 hover:text-bright/60 transition-all">
-                Keep Going
-              </button>
-            </div>
-          )}
+            ) : (
+              <div className="flex items-center gap-2 bg-red-500/5 border border-red-400/20 rounded-lg px-3 py-2">
+                <span className="text-[10px] text-red-300/70">Cancel?</span>
+                <button onClick={() => { onCancel(); setConfirmCancel(false); }}
+                  className="text-[10px] px-2.5 py-1 rounded bg-red-500/20 border border-red-400/30 text-red-300 font-bold hover:bg-red-500/30 transition-all">
+                  Yes
+                </button>
+                <button onClick={() => setConfirmCancel(false)}
+                  className="text-[10px] px-2.5 py-1 rounded border border-border/20 text-muted/50 hover:text-bright/60 transition-all">
+                  No
+                </button>
+              </div>
+            )}
+          </div>
+          <button onClick={() => navigate(`/recurring/live/${scan.id}`)}
+            className="text-[10px] px-3 py-1.5 rounded-lg border border-emerald-400/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-400/50 transition-all font-bold">
+            Real Time ⚡
+          </button>
         </div>
       </div>
 
-      {/* Full live feed — collapsible */}
+      {/* Full live feed — enhanced with winner highlights */}
       {feed.length > 0 && (
         <div className="border-t border-border/10 bg-black/20">
           <button onClick={() => setHideFeed(!hideFeed)}
@@ -284,12 +416,24 @@ function ScanProgress({ status, onCancel }) {
           {!hideFeed && (
             <div className="px-4 pb-3 max-h-[300px] overflow-y-auto">
               <div className="space-y-1">
-                {feed.map((f, i) => (
-                  <div key={f.id} className={`text-[10px] leading-relaxed transition-opacity duration-500 ${i === 0 ? 'text-bright/60' : i < 3 ? 'text-muted/45' : 'text-muted/25'}`}>
-                    <span className="text-[9px] font-mono text-muted/20 mr-2">{new Date(f.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
-                    {f.msg}
-                  </div>
-                ))}
+                {feed.map((f, i) => {
+                  const isWinner = f.msg.match(/[✅🌟🏆⭐]/);
+                  const isScore = f.msg.match(/(\d+)\/10/);
+                  const score = isScore ? parseInt(isScore[1]) : null;
+                  const isBatchLine = f.msg.match(/batch \d+/i);
+
+                  return (
+                    <div key={f.id} className={`flex items-center gap-1 text-[10px] leading-relaxed rounded px-1 -mx-1 ${
+                      isBatchLine ? 'mt-1 pt-1 border-t border-border/5' : ''
+                    } ${isWinner ? 'text-emerald-300/60' : ''} ${i === 0 ? 'text-bright/60' : i < 3 ? 'text-muted/45' : 'text-muted/25'}`}>
+                      <span className="text-[9px] font-mono text-muted/20 mr-1 flex-shrink-0">{new Date(f.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                      <span className="flex-1 truncate">{f.msg}</span>
+                      {score !== null && score >= 7 && (
+                        <span className="text-[8px] px-1 py-0.5 rounded bg-emerald-500/15 text-emerald-300 font-bold flex-shrink-0">{score}/10</span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -322,14 +466,11 @@ function ResultCard({ result, rank, addFavorite, isFavorited }) {
     : 'bg-surface/40 text-muted/60 border-border/20';
 
   const confidenceColor = result.confidence === 'High' ? 'text-emerald-400/70' : result.confidence === 'Low' ? 'text-red-400/60' : 'text-amber-400/60';
-
   const rankColor = rank <= 3 ? 'text-amber-400' : rank <= 10 ? 'text-sky-400/70' : 'text-muted/40';
 
   return (
     <div className="rounded-xl border border-border/15 bg-surface/50 p-3.5 space-y-2.5">
-      {/* Header */}
       <div className="flex items-start gap-3">
-        {/* Rank */}
         <div className="flex flex-col items-center flex-shrink-0 w-7 pt-0.5">
           <span className={`text-[13px] font-bold ${rankColor}`}>#{rank}</span>
         </div>
@@ -356,10 +497,8 @@ function ResultCard({ result, rank, addFavorite, isFavorited }) {
         </div>
       </div>
 
-      {/* Description */}
       {card.description && <p className="text-[10px] text-muted/50 leading-relaxed line-clamp-2 ml-10">{card.description}</p>}
 
-      {/* Deep analysis — expandable */}
       {result.analysis && (
         <div className="ml-10">
           <button onClick={() => setExpanded(!expanded)}
@@ -374,7 +513,6 @@ function ResultCard({ result, rank, addFavorite, isFavorited }) {
         </div>
       )}
 
-      {/* Actions */}
       <div className="flex items-center gap-2 ml-10">
         <button onClick={() => addFavorite && addFavorite({ ...card, name: result.name, _score: score })}
           className={`text-[10px] px-3 py-1 rounded-lg border font-bold transition-all active:scale-95 ${
@@ -411,7 +549,7 @@ function HistoryPanel({ history, onViewScan }) {
             className="w-full text-left rounded-xl border border-border/15 bg-surface/40 p-3 hover:bg-surface/60 transition-all">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-sm">{scan.tier?.name ? (TIERS.find(t => t.key === scan.tier?.key)?.emoji || '🔁') : '🔁'}</span>
+                <span className="text-sm">{scan.tier?.name ? (TIERS.find(t => t.key === scan.tier?.key)?.emoji || '🔬') : '🔬'}</span>
                 <span className="text-[11px] font-bold text-bright/70">{scan.tier?.name || 'Scan'}</span>
                 <span className="text-[10px] text-muted/40">{date.toLocaleDateString()} {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
               </div>
@@ -450,14 +588,15 @@ function ResultsView({ data, addFavorite, isFavorited }) {
 
   return (
     <div className="space-y-4">
-      {/* Funnel stats */}
       {data.stats && (
-        <div className="bg-amber-500/5 border border-amber-400/12 rounded-xl p-3 flex items-center gap-2 text-[10px] text-amber-300/60 flex-wrap">
+        <div className="bg-amber-500/5 border border-amber-400/12 rounded-xl p-3 flex items-center gap-2 text-[10px] text-amber-300/60 flex-wrap justify-center">
           {data.tier?.name && <span className="text-muted/50">{data.tier.name}</span>}
           {data.stats.savedSearches > 0 && <span>Ⓗ {data.stats.savedSearches} searches</span>}
           <span>→ {data.stats.totalCompanies} sourced</span>
           <span className="text-violet-300/60">→ {data.stats.sonnetPassed} pre-screened</span>
           <span className="text-amber-300/60">→ {data.stats.enriched} enriched</span>
+          {data.stats.filtered > 0 && <span className="text-orange-300/60">→ {data.stats.filtered} filtered</span>}
+          {data.stats.scored > 0 && <span className="text-pink-300/60">→ {data.stats.scored} scored 7+</span>}
           <span className="text-emerald-300/60">→ {data.stats.deepScored} deep-scored</span>
           <span className="text-pink-300/60">→ {data.stats.topResults} rated 7+</span>
           {data.stats.ddPushed > 0 && <span className="text-emerald-400/70 font-medium">→ {data.stats.ddPushed} to DD</span>}
@@ -466,9 +605,8 @@ function ResultsView({ data, addFavorite, isFavorited }) {
         </div>
       )}
 
-      {/* Options used */}
       {data.options && (data.options.includePortcos || data.options.crmStages?.length > 0 || data.options.keywords) && (
-        <div className="flex gap-2 text-[9px] text-muted/30 flex-wrap">
+        <div className="flex gap-2 text-[9px] text-muted/30 flex-wrap justify-center">
           {data.options.includePortcos && <span className="px-1.5 py-0.5 rounded bg-sky-500/8 border border-sky-400/15 text-sky-400/50">📂 Portcos</span>}
           {data.options.crmStages?.map(s => (
             <span key={s} className="px-1.5 py-0.5 rounded bg-violet-500/8 border border-violet-400/15 text-violet-400/50">{s}</span>
@@ -477,7 +615,6 @@ function ResultsView({ data, addFavorite, isFavorited }) {
         </div>
       )}
 
-      {/* Tab switcher */}
       <div className="flex gap-1 bg-ink/30 rounded-lg p-1">
         <button onClick={() => setTab('results')}
           className={`flex-1 text-[11px] py-2 rounded-md font-semibold transition-all ${
@@ -495,7 +632,6 @@ function ResultsView({ data, addFavorite, isFavorited }) {
         )}
       </div>
 
-      {/* Results */}
       {tab === 'results' && (
         <div className="space-y-2.5">
           {sortedResults.length === 0 && (
@@ -513,7 +649,6 @@ function ResultsView({ data, addFavorite, isFavorited }) {
         </div>
       )}
 
-      {/* Full analysis */}
       {tab === 'logic' && data.screenAnalysis && (
         <div className="bg-violet-500/[0.03] border border-violet-400/12 rounded-xl p-4 space-y-3 max-h-[80vh] overflow-y-auto">
           <div className="flex items-center justify-between">
@@ -533,19 +668,28 @@ function ResultsView({ data, addFavorite, isFavorited }) {
 // ---- Main Page ----
 
 export default function RecurringScanPage({ addFavorite, isFavorited }) {
-  const [status, setStatus] = useState(null);
+  const [scans, setScans] = useState([]);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [results, setResults] = useState(null);
   const [history, setHistory] = useState([]);
-  const [scanning, setScanning] = useState(false);
   const [selectedTier, setSelectedTier] = useState('standard');
-  const [pageTab, setPageTab] = useState('scan'); // scan | history
-  const [viewingScan, setViewingScan] = useState(null); // for viewing history item
-  const abortRef = useRef(null);
+  const [pageTab, setPageTab] = useState('scan');
+  const [viewingScan, setViewingScan] = useState(null);
+  const [showNewScan, setShowNewScan] = useState(false);
+  const abortRefs = useRef({});
 
   // Scan options
   const [includePortcos, setIncludePortcos] = useState(false);
   const [crmStages, setCrmStages] = useState([]);
   const [keywords, setKeywords] = useState('');
+
+  // Search selection
+  const [availableSearches, setAvailableSearches] = useState([]);
+  const [selectedSearchIds, setSelectedSearchIds] = useState(null); // null = all
+
+  // Portco selection
+  const [availablePortcos, setAvailablePortcos] = useState([]);
+  const [selectedPortcos, setSelectedPortcos] = useState(null); // null = all
 
   const toggleCrmStage = (stage) => {
     setCrmStages(prev => prev.includes(stage) ? prev.filter(s => s !== stage) : [...prev, stage]);
@@ -555,11 +699,56 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
     setCrmStages(prev => prev.length === allKeys.length ? [] : allKeys);
   };
 
-  // Poll status on mount — reconnect if scan is running
+  const toggleSearch = (searchId) => {
+    setSelectedSearchIds(prev => {
+      if (prev === null) {
+        // Was "all" — create set with all except this one
+        const all = new Set(availableSearches.map(s => s.id));
+        all.delete(searchId);
+        return all;
+      }
+      const next = new Set(prev);
+      if (next.has(searchId)) next.delete(searchId);
+      else next.add(searchId);
+      // If all selected, go back to null
+      if (next.size === availableSearches.length) return null;
+      return next;
+    });
+  };
+
+  const toggleAllSearches = () => {
+    setSelectedSearchIds(prev => {
+      if (prev === null) return new Set();
+      return null;
+    });
+  };
+
+  const togglePortco = (domain) => {
+    setSelectedPortcos(prev => {
+      if (prev === null) {
+        const all = new Set(availablePortcos);
+        all.delete(domain);
+        return all;
+      }
+      const next = new Set(prev);
+      if (next.has(domain)) next.delete(domain);
+      else next.add(domain);
+      if (next.size === availablePortcos.length) return null;
+      return next;
+    });
+  };
+
+  const toggleAllPortcos = () => {
+    setSelectedPortcos(prev => prev === null ? new Set() : null);
+  };
+
+  // Poll status
   useEffect(() => {
     fetchStatus();
     fetchResults();
     fetchHistory();
+    fetchSearches();
+    fetchPortcos();
     const interval = setInterval(fetchStatus, 3000);
     return () => clearInterval(interval);
   }, []);
@@ -568,16 +757,13 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
     try {
       const r = await fetch(`${API_BASE}/api/recurring-scan/status`);
       const data = await r.json();
-      setStatus(data);
-      if (data.status === 'scanning') {
-        setScanning(true);
+      const scanList = data.scans || [];
+      setScans(scanList);
+      if (scanList.some(s => s.status === 'scanning')) {
         setPageTab('scan');
-      } else if (data.status === 'done' && scanning) {
-        setScanning(false);
-        fetchResults();
-        fetchHistory();
       }
     } catch (e) {}
+    setInitialLoading(false);
   };
 
   const fetchResults = async () => {
@@ -596,25 +782,43 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
     } catch (e) {}
   };
 
+  const fetchSearches = async () => {
+    try {
+      const r = await fetch(`${API_BASE}/api/recurring-scan/searches`);
+      const data = await r.json();
+      if (Array.isArray(data)) setAvailableSearches(data);
+    } catch (e) {}
+  };
+
+  const fetchPortcos = async () => {
+    try {
+      const r = await fetch(`${API_BASE}/api/recurring-scan/portcos`);
+      const data = await r.json();
+      if (Array.isArray(data)) setAvailablePortcos(data);
+    } catch (e) {}
+  };
+
+  const crmUser = localStorage.getItem('crm_user') || 'Mark';
+
   const startScan = async () => {
-    setScanning(true);
+    setShowNewScan(false);
     setViewingScan(null);
     setPageTab('scan');
 
+    const searchesToSend = selectedSearchIds === null ? [] : [...selectedSearchIds];
+
     try {
       const controller = new AbortController();
-      abortRef.current = controller;
 
       const res = await fetch(`${API_BASE}/api/recurring-scan`, {
         method: 'POST',
         headers: authHeaders(),
-        body: JSON.stringify({ tier: selectedTier, includePortcos, crmStages, keywords }),
+        body: JSON.stringify({ tier: selectedTier, includePortcos, crmStages, keywords, selectedSearches: searchesToSend, selectedPortcos: selectedPortcos === null ? null : [...selectedPortcos], user: crmUser }),
         signal: controller.signal,
       });
 
       if (!res.ok) {
         console.error('Scan request failed:', res.status);
-        setScanning(false);
         fetchStatus();
         return;
       }
@@ -622,222 +826,287 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let fullText = '';
+      let currentScanId = null;
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         const chunk = decoder.decode(value, { stream: true });
         fullText += chunk;
+
+        const lines = chunk.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const d = JSON.parse(line.slice(6));
+              if (d.scanId) {
+                currentScanId = d.scanId;
+                abortRefs.current[currentScanId] = controller;
+              }
+            } catch {}
+          } else if (line.startsWith(': ') && line.length > 2 && currentScanId) {
+            const comment = line.slice(2).trim();
+            if (comment && comment !== 'keepalive') {
+              setScans(prev => {
+                const idx = prev.findIndex(s => s.id === currentScanId);
+                if (idx >= 0) {
+                  const updated = [...prev];
+                  updated[idx] = { ...updated[idx], progress: comment };
+                  return updated;
+                }
+                return [...prev, { id: currentScanId, status: 'scanning', progress: comment, startedAt: Date.now(), user: crmUser, tier: TIERS.find(t => t.key === selectedTier) }];
+              });
+            }
+          }
+        }
       }
 
       const dataLine = fullText.split('\n').filter(l => l.startsWith('data: ')).pop();
       if (dataLine) {
         try {
           const data = JSON.parse(dataLine.slice(6));
-          if (!data.error) setResults(data);
+          if (!data.error && data.results) setResults(data);
         } catch (e) {}
       }
     } catch (e) {
       if (e.name !== 'AbortError') console.error('Scan error:', e);
     }
 
-    setScanning(false);
     fetchStatus();
     fetchResults();
     fetchHistory();
   };
 
-  const cancelScan = async () => {
-    if (abortRef.current) abortRef.current.abort();
-    try { await fetch(`${API_BASE}/api/recurring-scan/cancel`, { method: 'POST' }); } catch (e) {}
-    setScanning(false);
+  const cancelScan = async (scanId) => {
+    if (scanId && abortRefs.current[scanId]) {
+      abortRefs.current[scanId].abort();
+      delete abortRefs.current[scanId];
+    }
+    try {
+      await fetch(`${API_BASE}/api/recurring-scan/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: scanId }),
+      });
+    } catch (e) {}
     fetchStatus();
   };
 
-  const isRunning = scanning || status?.status === 'scanning';
-  const isInterrupted = status?.status === 'interrupted';
-  const crmUser = localStorage.getItem('crm_user') || 'Mark';
-
-  // Determine what results to show
+  const runningScans = scans.filter(s => s.status === 'scanning');
+  const interruptedScans = scans.filter(s => s.status === 'interrupted');
+  const hasRunning = runningScans.length > 0;
   const activeResults = viewingScan || results;
 
+  // Show create form when: no running scans, or user clicked "New Scan"
+  const showCreateForm = (!hasRunning && !activeResults) || showNewScan;
+
   return (
-    <div className="min-h-screen max-w-4xl mx-auto px-4 sm:px-8 pt-6 pb-20">
+    <div className="min-h-screen max-w-4xl mx-auto px-4 sm:px-6 pt-6 pb-20">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-xl font-bold text-bright">🔁 Recurring Scan Agent</h1>
+          <h1 className="text-xl font-bold text-bright">🔬 Deep Scan Agent</h1>
           <p className="text-[11px] text-muted/40 mt-1">AI-powered pipeline across all Harmonic saved searches</p>
         </div>
         <span className="text-[11px] text-sky-400/70 font-medium">🦅 {crmUser}</span>
       </div>
 
-      {/* Page tabs */}
-      <div className="flex gap-1 bg-ink/30 rounded-lg p-1 mb-5">
-        <button onClick={() => { setPageTab('scan'); setViewingScan(null); }}
-          className={`flex-1 text-[11px] py-2 rounded-md font-semibold transition-all ${
-            pageTab === 'scan' ? 'bg-sky-500/15 text-sky-300 border border-sky-400/25' : 'text-muted/50 hover:text-muted/70'
-          }`}>
-          {isRunning ? '📡 Live Scan' : '🚀 New Scan'}
-        </button>
-        <button onClick={() => setPageTab('history')}
-          className={`flex-1 text-[11px] py-2 rounded-md font-semibold transition-all ${
-            pageTab === 'history' ? 'bg-violet-500/15 text-violet-300 border border-violet-400/25' : 'text-muted/50 hover:text-muted/70'
-          }`}>
-          📜 History ({history.length})
-        </button>
-      </div>
+      {/* Loading state — prevents flash of create form on refresh */}
+      {initialLoading && (
+        <div className="flex items-center justify-center py-20">
+          <div className="w-8 h-8 border-2 border-sky-400 border-t-transparent rounded-full animate-spin" />
+          <span className="ml-3 text-sm text-muted/40">Loading scan status...</span>
+        </div>
+      )}
 
-      {/* ---- SCAN TAB ---- */}
-      {pageTab === 'scan' && (
+      {!initialLoading && (
         <>
-          {/* Interrupted banner */}
-          {isInterrupted && (
-            <div className="mb-4 bg-amber-500/8 border border-amber-400/20 rounded-xl p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-amber-300/80 text-sm font-medium">⚠️ Previous scan was interrupted</p>
-                  <p className="text-[10px] text-muted/40 mt-1">{status?.progress || 'Server restarted while scan was running'}</p>
-                  {status?.stats && (
-                    <div className="flex gap-2 text-[9px] text-muted/30 mt-1.5 flex-wrap">
-                      {status.stats.totalCompanies > 0 && <span>{status.stats.totalCompanies} companies found</span>}
-                      {status.stats.sonnetPassed > 0 && <span>· {status.stats.sonnetPassed} pre-screened</span>}
-                      {status.stats.deepScored > 0 && <span>· {status.stats.deepScored} deep-scored</span>}
-                    </div>
-                  )}
-                </div>
-                <button onClick={() => { fetch(`${API_BASE}/api/recurring-scan/cancel`, { method: 'POST' }); fetchStatus(); }}
-                  className="text-[10px] px-3 py-1.5 rounded-lg border border-amber-400/25 text-amber-400/60 hover:text-amber-300 font-medium flex-shrink-0">
-                  Dismiss
-                </button>
-              </div>
-            </div>
-          )}
+          {/* Page tabs */}
+          <div className="flex gap-1 bg-ink/30 rounded-lg p-1 mb-5">
+            <button onClick={() => { setPageTab('scan'); setViewingScan(null); }}
+              className={`flex-1 text-[11px] py-2 rounded-md font-semibold transition-all ${
+                pageTab === 'scan' ? 'bg-sky-500/15 text-sky-300 border border-sky-400/25' : 'text-muted/50 hover:text-muted/70'
+              }`}>
+              {hasRunning ? `📡 Live (${runningScans.length})` : '🚀 New Scan'}
+            </button>
+            <button onClick={() => setPageTab('history')}
+              className={`flex-1 text-[11px] py-2 rounded-md font-semibold transition-all ${
+                pageTab === 'history' ? 'bg-violet-500/15 text-violet-300 border border-violet-400/25' : 'text-muted/50 hover:text-muted/70'
+              }`}>
+              📜 History ({history.length})
+            </button>
+          </div>
 
-          {/* Progress panel — always shows when running (even on refresh) */}
-          {isRunning && (
-            <div className="mb-6">
-              <ScanProgress status={status} onCancel={cancelScan} />
-            </div>
-          )}
-
-          {/* Tier selector + options + start — only when NOT running */}
-          {!isRunning && !activeResults && (
-            <div className="space-y-5">
-              <div>
-                <p className="text-[10px] text-muted/50 uppercase tracking-widest font-bold mb-2">Select Scan Depth</p>
-                <TierSelector selected={selectedTier} onSelect={setSelectedTier} />
-              </div>
-
-              {/* Scan Options */}
-              <div className="rounded-xl border border-border/15 bg-surface/30 p-4 space-y-4">
-                <p className="text-[10px] text-muted/50 uppercase tracking-widest font-bold">Search Context</p>
-
-                {/* Portcos checkbox */}
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <input type="checkbox" checked={includePortcos} onChange={() => setIncludePortcos(!includePortcos)}
-                    className="w-4 h-4 rounded border-border/30 bg-ink/50 accent-sky-400" />
-                  <div>
-                    <span className="text-[11px] text-bright/70 font-medium group-hover:text-bright">Include Portfolio Companies</span>
-                    <p className="text-[9px] text-muted/35">Find companies similar to our portcos (Steel, Pump.fun, Bubblemaps, etc.)</p>
-                  </div>
-                </label>
-
-                {/* CRM Stages */}
-                <div className="space-y-2">
+          {/* ---- SCAN TAB ---- */}
+          {pageTab === 'scan' && (
+            <>
+              {/* Interrupted banners */}
+              {interruptedScans.map(scan => (
+                <div key={scan.id} className="mb-4 bg-amber-500/8 border border-amber-400/20 rounded-xl p-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] text-bright/60 font-medium">Find Similar to CRM Pipeline</span>
-                    <button onClick={toggleAllCrm}
-                      className={`text-[9px] px-2 py-0.5 rounded border transition-all font-medium ${
-                        crmStages.length === CRM_STAGES.length
-                          ? 'bg-sky-500/15 border-sky-400/30 text-sky-300'
-                          : 'border-border/20 text-muted/40 hover:text-muted/60'
-                      }`}>
-                      {crmStages.length === CRM_STAGES.length ? '✓ All' : 'Select All'}
+                    <div>
+                      <p className="text-amber-300/80 text-sm font-medium">⚠️ Scan interrupted {scan.tier?.name ? `(${scan.tier.name})` : ''}</p>
+                      <p className="text-[10px] text-muted/40 mt-1">{scan.progress || 'Server restarted while scan was running'}</p>
+                      {scan.user && <p className="text-[9px] text-muted/30 mt-0.5">Started by {scan.user}</p>}
+                    </div>
+                    <button onClick={() => cancelScan(scan.id)}
+                      className="text-[10px] px-3 py-1.5 rounded-lg border border-amber-400/25 text-amber-400/60 hover:text-amber-300 font-medium flex-shrink-0">
+                      Dismiss
                     </button>
                   </div>
-                  <div className="flex gap-2 flex-wrap">
-                    {CRM_STAGES.map(s => {
-                      const isOn = crmStages.includes(s.key);
-                      const colors = tierColors[s.color];
-                      return (
-                        <button key={s.key} onClick={() => toggleCrmStage(s.key)}
-                          className={`text-[10px] px-3 py-1.5 rounded-lg border font-bold transition-all ${
-                            isOn ? `${colors.activeBg} ${colors.activeBorder} ${colors.text}` : `${colors.bg} ${colors.border} text-muted/50 hover:text-muted/70`
-                          }`}>
-                          {isOn ? '✓ ' : ''}{s.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <p className="text-[9px] text-muted/30">Boosts companies similar to those already in your pipeline stages</p>
                 </div>
+              ))}
 
-                {/* Keywords */}
-                <div className="space-y-1.5">
-                  <label className="text-[11px] text-bright/60 font-medium">Priority Keywords</label>
-                  <input
-                    type="text"
-                    value={keywords}
-                    onChange={e => setKeywords(e.target.value)}
-                    placeholder="e.g. prediction markets, AI agents, crypto exchange, stablecoin infra..."
-                    className="w-full bg-ink/50 border border-border/25 rounded-lg px-3 py-2 text-xs text-bright outline-none focus:border-sky-400/35 transition-colors placeholder:text-white/15"
-                  />
-                  <p className="text-[9px] text-muted/30">Companies matching these concepts/sectors will be scored higher</p>
+              {/* Running scan panels */}
+              {runningScans.map(scan => (
+                <div key={scan.id} className="mb-4">
+                  <ScanProgress scan={scan} onCancel={() => cancelScan(scan.id)} />
                 </div>
-              </div>
+              ))}
 
-              <button onClick={startScan}
-                className="w-full px-6 py-3 rounded-xl bg-sky-500/15 border border-sky-400/30 text-sky-300 font-bold text-sm hover:bg-sky-500/25 hover:border-sky-400/50 transition-all active:scale-[0.98]">
-                🚀 Start {TIERS.find(t => t.key === selectedTier)?.name} Scan ({TIERS.find(t => t.key === selectedTier)?.cost})
-              </button>
-            </div>
-          )}
-
-          {/* Results — show latest or viewed scan */}
-          {!isRunning && activeResults && (
-            <div className="space-y-4">
-              {/* Back to new scan */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  {viewingScan && (
-                    <button onClick={() => setViewingScan(null)} className="text-[10px] text-sky-400/60 hover:text-sky-300 font-medium">← Back</button>
-                  )}
-                  <p className="text-[10px] text-muted/40">
-                    {viewingScan ? `Viewing scan from ${new Date(viewingScan.timestamp).toLocaleString()}` : `Latest scan · ${new Date(activeResults.timestamp).toLocaleString()}`}
-                  </p>
-                </div>
-                <button onClick={() => { setResults(null); setViewingScan(null); }}
-                  className="text-[10px] px-3 py-1 rounded-lg border border-sky-400/20 text-sky-400/60 hover:text-sky-300 font-medium">
-                  + New Scan
+              {/* "Start New Scan" button when scans are running */}
+              {hasRunning && !showNewScan && (
+                <button onClick={() => setShowNewScan(true)}
+                  className="w-full mb-4 py-3 rounded-xl border border-emerald-400/20 bg-emerald-500/[0.04] text-emerald-400/60 text-xs font-medium hover:text-emerald-300 hover:border-emerald-400/30 transition-all">
+                  + Start Another Scan
                 </button>
-              </div>
-              <ResultsView data={activeResults} addFavorite={addFavorite} isFavorited={isFavorited} />
-            </div>
+              )}
+
+              {/* Create scan form */}
+              {showCreateForm && (
+                <div className="space-y-5">
+                  {showNewScan && hasRunning && (
+                    <button onClick={() => setShowNewScan(false)}
+                      className="text-[10px] text-sky-400/60 hover:text-sky-300 font-medium">← Back to live scans</button>
+                  )}
+
+                  <div>
+                    <p className="text-[10px] text-muted/50 uppercase tracking-widest font-bold mb-2">Select Scan Depth</p>
+                    <TierSelector selected={selectedTier} onSelect={setSelectedTier}
+                      totalCompanies={availableSearches.reduce((sum, s) => {
+                        if (selectedSearchIds !== null && !selectedSearchIds.has(s.id)) return sum;
+                        return sum + (s.resultCount || 0);
+                      }, 0)} />
+                  </div>
+
+                  {/* Scan Options */}
+                  <div className="rounded-xl border border-border/15 bg-surface/30 p-4 space-y-4">
+                    <p className="text-[10px] text-muted/50 uppercase tracking-widest font-bold">Search Context</p>
+
+                    {/* Saved Search Selection */}
+                    <SearchSelector
+                      searches={availableSearches}
+                      selectedIds={selectedSearchIds}
+                      onToggle={toggleSearch}
+                      onToggleAll={toggleAllSearches}
+                    />
+
+                    {/* Portcos selector */}
+                    <PortcoSelector
+                      portcos={availablePortcos}
+                      enabled={includePortcos}
+                      onToggleEnabled={() => setIncludePortcos(!includePortcos)}
+                      selectedIds={selectedPortcos}
+                      onToggle={togglePortco}
+                      onToggleAll={toggleAllPortcos}
+                    />
+
+                    {/* CRM Stages */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] text-bright/60 font-medium">Find Similar to CRM Pipeline</span>
+                        <button onClick={toggleAllCrm}
+                          className={`text-[9px] px-2 py-0.5 rounded border transition-all font-medium ${
+                            crmStages.length === CRM_STAGES.length
+                              ? 'bg-sky-500/15 border-sky-400/30 text-sky-300'
+                              : 'border-border/20 text-muted/40 hover:text-muted/60'
+                          }`}>
+                          {crmStages.length === CRM_STAGES.length ? '✓ All' : 'Select All'}
+                        </button>
+                      </div>
+                      <div className="flex gap-2 flex-wrap">
+                        {CRM_STAGES.map(s => {
+                          const isOn = crmStages.includes(s.key);
+                          const colors = tierColors[s.color];
+                          return (
+                            <button key={s.key} onClick={() => toggleCrmStage(s.key)}
+                              className={`text-[10px] px-3 py-1.5 rounded-lg border font-bold transition-all ${
+                                isOn ? `${colors.activeBg} ${colors.activeBorder} ${colors.text}` : `${colors.bg} ${colors.border} text-muted/50 hover:text-muted/70`
+                              }`}>
+                              {isOn ? '✓ ' : ''}{s.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <p className="text-[9px] text-muted/30">Boosts companies similar to those already in your pipeline stages</p>
+                    </div>
+
+                    {/* Keywords */}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] text-bright/60 font-medium">Priority Keywords</label>
+                      <input
+                        type="text"
+                        value={keywords}
+                        onChange={e => setKeywords(e.target.value)}
+                        placeholder="e.g. prediction markets, AI agents, crypto exchange, stablecoin infra..."
+                        className="w-full bg-ink/50 border border-border/25 rounded-lg px-3 py-2 text-xs text-bright outline-none focus:border-sky-400/35 transition-colors placeholder:text-white/15"
+                      />
+                      <p className="text-[9px] text-muted/30">Companies matching these concepts/sectors will be scored higher</p>
+                    </div>
+                  </div>
+
+                  <button onClick={startScan} disabled={selectedSearchIds !== null && selectedSearchIds.size === 0}
+                    className="w-full px-6 py-3 rounded-xl bg-sky-500/15 border border-sky-400/30 text-sky-300 font-bold text-sm hover:bg-sky-500/25 hover:border-sky-400/50 transition-all active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed">
+                    🚀 Start {TIERS.find(t => t.key === selectedTier)?.name} Scan ({TIERS.find(t => t.key === selectedTier)?.cost})
+                  </button>
+                </div>
+              )}
+
+              {/* Results — show latest or viewed scan */}
+              {!hasRunning && !showNewScan && activeResults && !showCreateForm && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {viewingScan && (
+                        <button onClick={() => setViewingScan(null)} className="text-[10px] text-sky-400/60 hover:text-sky-300 font-medium">← Back</button>
+                      )}
+                      <p className="text-[10px] text-muted/40">
+                        {viewingScan ? `Viewing scan from ${new Date(viewingScan.timestamp).toLocaleString()}` : `Latest scan · ${new Date(activeResults.timestamp).toLocaleString()}`}
+                      </p>
+                    </div>
+                    <button onClick={() => { setResults(null); setViewingScan(null); }}
+                      className="text-[10px] px-3 py-1 rounded-lg border border-sky-400/20 text-sky-400/60 hover:text-sky-300 font-medium">
+                      + New Scan
+                    </button>
+                  </div>
+                  <ResultsView data={activeResults} addFavorite={addFavorite} isFavorited={isFavorited} />
+                </div>
+              )}
+
+              {/* Empty state */}
+              {!hasRunning && !activeResults && !showCreateForm && (
+                <div className="bg-surface/30 border border-border/15 rounded-xl p-8 text-center mt-6">
+                  <p className="text-2xl mb-2">🔬</p>
+                  <p className="text-muted/50 text-sm">Select a tier above and start scanning</p>
+                </div>
+              )}
+            </>
           )}
 
-          {/* Empty — no results, not running, show tier selector */}
-          {!isRunning && !activeResults && !results && (
-            <div className="bg-surface/30 border border-border/15 rounded-xl p-8 text-center mt-6">
-              <p className="text-2xl mb-2">🔁</p>
-              <p className="text-muted/50 text-sm">Select a tier above and start scanning</p>
+          {/* ---- HISTORY TAB ---- */}
+          {pageTab === 'history' && (
+            <div className="space-y-4">
+              {viewingScan ? (
+                <>
+                  <button onClick={() => setViewingScan(null)} className="text-[10px] text-sky-400/60 hover:text-sky-300 font-medium">← Back to History</button>
+                  <ResultsView data={viewingScan} addFavorite={addFavorite} isFavorited={isFavorited} />
+                </>
+              ) : (
+                <HistoryPanel history={history} onViewScan={(scan) => setViewingScan(scan)} />
+              )}
             </div>
           )}
         </>
-      )}
-
-      {/* ---- HISTORY TAB ---- */}
-      {pageTab === 'history' && (
-        <div className="space-y-4">
-          {viewingScan ? (
-            <>
-              <button onClick={() => setViewingScan(null)} className="text-[10px] text-sky-400/60 hover:text-sky-300 font-medium">← Back to History</button>
-              <ResultsView data={viewingScan} addFavorite={addFavorite} isFavorited={isFavorited} />
-            </>
-          ) : (
-            <HistoryPanel history={history} onViewScan={(scan) => setViewingScan(scan)} />
-          )}
-        </div>
       )}
     </div>
   );

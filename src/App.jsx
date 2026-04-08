@@ -5,6 +5,7 @@ import FavoritesPage from './pages/FavoritesPage';
 import SharedFavoritesPage from './pages/SharedFavoritesPage';
 import AutoScanPage from './pages/AutoScanPage';
 import RecurringScanPage from './pages/RecurringScanPage';
+import RealTimeScanPage from './pages/RealTimeScanPage';
 import GitHubPage from './pages/GitHubPage';
 import FarcasterPage from './pages/FarcasterPage';
 import TwitterPage from './pages/TwitterPage';
@@ -159,6 +160,7 @@ function AppContent({ ready, setReady }) {
           <Route path="/airtable" element={<AirtablePage />} />
           <Route path="/portcos" element={<PortcosPage addFavorite={addFavorite} isFavorited={isFavorited} />} />
           <Route path="/recurring" element={<RecurringScanPage addFavorite={addFavorite} isFavorited={isFavorited} />} />
+          <Route path="/recurring/live/:scanId" element={<RealTimeScanPage />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>
