@@ -350,7 +350,7 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
           <h1 className="text-xl font-bold text-bright">🔁 Recurring Scan Agent</h1>
           <p className="text-[11px] text-muted/40 mt-1">Full pipeline: ALL saved searches → Sonnet pre-screen → Enrichment → Sonnet score → Opus deep analysis</p>
         </div>
-        <span className="text-[11px] text-muted/30">Searching as <span className="text-sky-400/70 font-medium">🦅 {crmUser}</span></span>
+        <span className="text-[11px] text-sky-400/70 font-medium">🦅 {crmUser}</span>
       </div>
 
       {/* Controls */}
