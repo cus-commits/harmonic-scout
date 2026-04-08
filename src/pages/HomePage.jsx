@@ -238,12 +238,13 @@ export default function HomePage({ addFavorite, isFavorited }) {
         <div className="mb-5 p-3.5 bg-violet-500/5 border border-violet-400/15 rounded-xl">
           <div className="flex items-center justify-between mb-2.5">
             <p className="text-[10px] text-violet-400/70 font-bold uppercase tracking-wider">🏆 Scan Winners</p>
-            <button onClick={() => navigate('/recurring')} className="text-[9px] text-violet-400/50 hover:text-violet-300 font-medium">View All →</button>
+            <button onClick={() => navigate('/searchagent')} className="text-[9px] text-violet-400/50 hover:text-violet-300 font-medium">View All →</button>
           </div>
           <div className="space-y-1.5">
             {scanWinners.map((r, i) => {
               const card = r.card || {};
-              const webUrl = card.website ? (card.website.startsWith('http') ? card.website : `https://${card.website}`) : null;
+              const rawWeb = typeof card.website === 'object' ? (card.website?.url || card.website?.domain || '') : (card.website || '');
+              const webUrl = rawWeb ? (rawWeb.startsWith('http') ? rawWeb : `https://${rawWeb}`) : null;
               const scoreColor = r.score >= 9 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
                 : r.score >= 7 ? 'bg-sky-500/20 text-sky-300 border-sky-400/30'
                 : 'bg-amber-500/15 text-amber-300/70 border-amber-400/25';

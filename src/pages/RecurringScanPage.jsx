@@ -366,7 +366,7 @@ function ScanProgress({ scan, onCancel }) {
                       <a href={hLink} target="_blank" rel="noopener" className="text-[7px] px-1 py-0.5 rounded bg-violet-500/10 text-violet-400/50 border border-violet-400/10 hover:bg-violet-500/20">Ⓗ</a>
                     )}
                     {c.website && (
-                      <a href={c.website.startsWith('http') ? c.website : `https://${c.website}`} target="_blank" rel="noopener"
+                      <a href={(typeof c.website === 'object' ? (c.website?.url || '') : c.website || '').startsWith('http') ? (typeof c.website === 'object' ? c.website?.url : c.website) : `https://${typeof c.website === 'object' ? (c.website?.domain || '') : c.website}`} target="_blank" rel="noopener"
                         className="text-[7px] px-1 py-0.5 rounded bg-sky-500/10 text-sky-400/50 border border-sky-400/10 hover:bg-sky-500/20">🌐</a>
                     )}
                   </div>
@@ -398,7 +398,7 @@ function ScanProgress({ scan, onCancel }) {
               </div>
             )}
           </div>
-          <button onClick={() => navigate(`/recurring/live/${scan.id}`)}
+          <button onClick={() => navigate(`/searchagent/live/${scan.id}`)}
             className="text-[10px] px-3 py-1.5 rounded-lg border border-emerald-400/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-400/50 transition-all font-bold">
             Real Time ⚡
           </button>
@@ -458,7 +458,8 @@ function ResultCard({ result, rank, addFavorite, isFavorited }) {
   const card = result.card || {};
   const score = result.score || 0;
   const isFav = isFavorited ? isFavorited(result.name) : false;
-  const webUrl = card.website ? (card.website.startsWith('http') ? card.website : `https://${card.website}`) : null;
+  const rawWeb = typeof card.website === 'object' ? (card.website?.url || card.website?.domain || '') : (card.website || '');
+  const webUrl = rawWeb ? (rawWeb.startsWith('http') ? rawWeb : `https://${rawWeb}`) : null;
 
   const scoreColor = score >= 9 ? 'bg-emerald-500/15 text-emerald-300 border-emerald-400/30'
     : score >= 7 ? 'bg-sky-500/15 text-sky-300 border-sky-400/30'

@@ -160,7 +160,9 @@ function AppContent({ ready, setReady }) {
           <Route path="/airtable" element={<AirtablePage />} />
           <Route path="/portcos" element={<PortcosPage addFavorite={addFavorite} isFavorited={isFavorited} />} />
           <Route path="/recurring" element={<RecurringScanPage addFavorite={addFavorite} isFavorited={isFavorited} />} />
+          <Route path="/searchagent" element={<RecurringScanPage addFavorite={addFavorite} isFavorited={isFavorited} />} />
           <Route path="/recurring/live/:scanId" element={<RealTimeScanPage />} />
+          <Route path="/searchagent/live/:scanId" element={<RealTimeScanPage />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>

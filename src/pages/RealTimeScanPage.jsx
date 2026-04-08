@@ -106,7 +106,7 @@ export default function RealTimeScanPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/recurring')}
+          <button onClick={() => navigate('/searchagent')}
             className="text-[10px] px-3 py-1.5 rounded-lg border border-sky-400/20 text-sky-400/60 hover:text-sky-300 font-medium">
             ← Back to Scans
           </button>
@@ -244,7 +244,7 @@ export default function RealTimeScanPage() {
                                   </a>
                                 )}
                                 {c.website && (
-                                  <a href={c.website.startsWith('http') ? c.website : `https://${c.website}`} target="_blank" rel="noopener"
+                                  <a href={(typeof c.website === 'object' ? (c.website?.url || '') : c.website || '').startsWith('http') ? (typeof c.website === 'object' ? c.website?.url : c.website) : `https://${typeof c.website === 'object' ? (c.website?.domain || '') : c.website}`} target="_blank" rel="noopener"
                                     className="text-[8px] px-1.5 py-1 rounded bg-sky-500/10 text-sky-400/60 border border-sky-400/15 hover:bg-sky-500/20 transition-all">
                                     🌐
                                   </a>
