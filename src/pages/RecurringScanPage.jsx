@@ -1327,9 +1327,22 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                   })()}
 
                   {/* Scan Options */}
-                  <div className={`rounded-xl border border-border/15 bg-surface/30 p-4 space-y-4 transition-all ${jiggleKey ? 'animate-jiggle' : ''}`}>
-                    <style>{`@keyframes jiggle { 0%,100% { transform: rotate(0); } 15% { transform: rotate(-1deg); } 30% { transform: rotate(1deg); } 45% { transform: rotate(-0.5deg); } 60% { transform: rotate(0.5deg); } }`}
-                    {`.animate-jiggle { animation: jiggle 0.5s ease-in-out; }`}</style>
+                  <div className={`rounded-xl border border-border/15 bg-surface/30 p-4 space-y-4 transition-all fill-cascade ${jiggleKey ? 'filling' : ''}`}>
+                    <style>{`
+                      @keyframes fillin { 0% { background-color: rgba(56,189,248,0.12); } 100% { background-color: transparent; } }
+                      .fill-cascade > .filter-row { transition: all 0.3s; }
+                      .fill-cascade.filling > .filter-row:nth-child(2) { animation: fillin 0.6s 0.05s both; }
+                      .fill-cascade.filling > .filter-row:nth-child(3) { animation: fillin 0.6s 0.12s both; }
+                      .fill-cascade.filling > .filter-row:nth-child(4) { animation: fillin 0.6s 0.19s both; }
+                      .fill-cascade.filling > .filter-row:nth-child(5) { animation: fillin 0.6s 0.26s both; }
+                      .fill-cascade.filling > .filter-row:nth-child(6) { animation: fillin 0.6s 0.33s both; }
+                      .fill-cascade.filling > .filter-row:nth-child(7) { animation: fillin 0.6s 0.40s both; }
+                      .fill-cascade.filling > .filter-row:nth-child(8) { animation: fillin 0.6s 0.47s both; }
+                      .fill-cascade.filling > .filter-row:nth-child(9) { animation: fillin 0.6s 0.54s both; }
+                      .fill-cascade.filling > .filter-row:nth-child(10) { animation: fillin 0.6s 0.61s both; }
+                      .fill-cascade.filling > .filter-row:nth-child(11) { animation: fillin 0.6s 0.68s both; }
+                      .fill-cascade.filling > .filter-row:nth-child(12) { animation: fillin 0.6s 0.75s both; }
+                    `}</style>
 
                     <div className="flex items-center justify-between">
                       <p className="text-[10px] text-muted/50 uppercase tracking-widest font-bold">Search Filters</p>
@@ -1340,19 +1353,19 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                     </div>
 
                     {/* Saved Search Selection */}
-                    <SearchSelector
+                    <div className="filter-row rounded-lg"><SearchSelector
                       searches={availableSearches}
                       selectedIds={selectedSearchIds}
                       onToggle={toggleSearch}
                       onToggleAll={toggleAllSearches}
-                    />
+                    /></div>
 
                     {/* Sectors */}
-                    <div className="space-y-1.5">
+                    <div className="filter-row rounded-lg space-y-1.5">
                       <button onClick={() => toggleExpanded('sectors')} className="flex items-center gap-2 w-full text-left">
+                        <span className="text-[9px] text-muted/40">{expandedFilters.sectors ? '▾' : '▸'}</span>
                         <span className="text-[11px] text-bright/60 font-medium">Sectors</span>
-                        {sectors.length > 0 && <span className="text-[9px] text-sky-400/60 font-bold">{sectors.length} selected</span>}
-                        <span className="text-[9px] text-muted/30 ml-auto">{expandedFilters.sectors ? '▼' : '+ Sectors'}</span>
+                        {sectors.length > 0 && <span className="text-[9px] text-sky-400/60 font-bold ml-auto">{sectors.length} selected</span>}
                       </button>
                       {expandedFilters.sectors && (
                         <div className="flex gap-1.5 flex-wrap">
@@ -1367,11 +1380,11 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                     </div>
 
                     {/* Stages */}
-                    <div className="space-y-1.5">
+                    <div className="filter-row rounded-lg space-y-1.5">
                       <button onClick={() => toggleExpanded('stages')} className="flex items-center gap-2 w-full text-left">
+                        <span className="text-[9px] text-muted/40">{expandedFilters.stages ? '▾' : '▸'}</span>
                         <span className="text-[11px] text-bright/60 font-medium">Stage</span>
-                        {stages.length > 0 && <span className="text-[9px] text-violet-400/60 font-bold">{stages.length} selected</span>}
-                        <span className="text-[9px] text-muted/30 ml-auto">{expandedFilters.stages ? '▼' : '+ Stage'}</span>
+                        {stages.length > 0 && <span className="text-[9px] text-violet-400/60 font-bold ml-auto">{stages.length} selected</span>}
                       </button>
                       {expandedFilters.stages && (
                         <div className="flex gap-1.5 flex-wrap">
@@ -1386,11 +1399,11 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                     </div>
 
                     {/* Geography */}
-                    <div className="space-y-1.5">
+                    <div className="filter-row rounded-lg space-y-1.5">
                       <button onClick={() => toggleExpanded('geos')} className="flex items-center gap-2 w-full text-left">
+                        <span className="text-[9px] text-muted/40">{expandedFilters.geos ? '▾' : '▸'}</span>
                         <span className="text-[11px] text-bright/60 font-medium">Geography</span>
-                        {geos.length > 0 && <span className="text-[9px] text-emerald-400/60 font-bold">{geos.length} selected</span>}
-                        <span className="text-[9px] text-muted/30 ml-auto">{expandedFilters.geos ? '▼' : '+ Geography'}</span>
+                        {geos.length > 0 && <span className="text-[9px] text-emerald-400/60 font-bold ml-auto">{geos.length} selected</span>}
                       </button>
                       {expandedFilters.geos && (
                         <div className="flex gap-1.5 flex-wrap">
@@ -1405,11 +1418,11 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                     </div>
 
                     {/* Business Model */}
-                    <div className="space-y-1.5">
+                    <div className="filter-row rounded-lg space-y-1.5">
                       <button onClick={() => toggleExpanded('models')} className="flex items-center gap-2 w-full text-left">
+                        <span className="text-[9px] text-muted/40">{expandedFilters.models ? '▾' : '▸'}</span>
                         <span className="text-[11px] text-bright/60 font-medium">Business Model</span>
-                        {models.length > 0 && <span className="text-[9px] text-amber-400/60 font-bold">{models.length} selected</span>}
-                        <span className="text-[9px] text-muted/30 ml-auto">{expandedFilters.models ? '▼' : '+ Model'}</span>
+                        {models.length > 0 && <span className="text-[9px] text-amber-400/60 font-bold ml-auto">{models.length} selected</span>}
                       </button>
                       {expandedFilters.models && (
                         <div className="flex gap-1.5 flex-wrap">
@@ -1424,11 +1437,11 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                     </div>
 
                     {/* Deal Signals */}
-                    <div className="space-y-1.5">
+                    <div className="filter-row rounded-lg space-y-1.5">
                       <button onClick={() => toggleExpanded('signals')} className="flex items-center gap-2 w-full text-left">
+                        <span className="text-[9px] text-muted/40">{expandedFilters.signals ? '▾' : '▸'}</span>
                         <span className="text-[11px] text-bright/60 font-medium">Deal Signals</span>
-                        {signals.length > 0 && <span className="text-[9px] text-pink-400/60 font-bold">{signals.length} selected</span>}
-                        <span className="text-[9px] text-muted/30 ml-auto">{expandedFilters.signals ? '▼' : '+ Signals'}</span>
+                        {signals.length > 0 && <span className="text-[9px] text-pink-400/60 font-bold ml-auto">{signals.length} selected</span>}
                       </button>
                       {expandedFilters.signals && (
                         <div className="flex gap-1.5 flex-wrap">
@@ -1443,11 +1456,11 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                     </div>
 
                     {/* Numeric Filters */}
-                    <div className="space-y-1.5">
+                    <div className="filter-row rounded-lg space-y-1.5">
                       <button onClick={() => toggleExpanded('numerics')} className="flex items-center gap-2 w-full text-left">
+                        <span className="text-[9px] text-muted/40">{expandedFilters.numerics ? '▾' : '▸'}</span>
                         <span className="text-[11px] text-bright/60 font-medium">$ Raised / Team / Founded</span>
-                        {(maxRaised || maxValuation || foundedAfter || minTeam || maxTeam) && <span className="text-[9px] text-sky-400/60 font-bold">set</span>}
-                        <span className="text-[9px] text-muted/30 ml-auto">{expandedFilters.numerics ? '▼' : '+ Filters'}</span>
+                        {(maxRaised || maxValuation || foundedAfter || minTeam || maxTeam) && <span className="text-[9px] text-sky-400/60 font-bold ml-auto">set</span>}
                       </button>
                       {expandedFilters.numerics && (
                         <div className="grid grid-cols-2 gap-2">
@@ -1491,11 +1504,11 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                     />
 
                     {/* CRM Stages */}
-                    <div className="space-y-1.5">
+                    <div className="filter-row rounded-lg space-y-1.5">
                       <button onClick={() => toggleExpanded('crm')} className="flex items-center gap-2 w-full text-left">
+                        <span className="text-[9px] text-muted/40">{expandedFilters.crm ? '▾' : '▸'}</span>
                         <span className="text-[11px] text-bright/60 font-medium">CRM Pipeline Similarity</span>
-                        {crmStages.length > 0 && <span className="text-[9px] text-sky-400/60 font-bold">{crmStages.length} stages</span>}
-                        <span className="text-[9px] text-muted/30 ml-auto">{expandedFilters.crm ? '▼' : '+ CRM'}</span>
+                        {crmStages.length > 0 && <span className="text-[9px] text-sky-400/60 font-bold ml-auto">{crmStages.length} stages</span>}
                       </button>
                       {expandedFilters.crm && (
                         <div className="space-y-1.5">
@@ -1519,7 +1532,7 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                     </div>
 
                     {/* Keywords */}
-                    <div className="space-y-1.5">
+                    <div className="filter-row rounded-lg space-y-1.5">
                       <label className="text-[11px] text-bright/60 font-medium">Priority Keywords</label>
                       <input type="text" value={keywords} onChange={e => setKeywords(e.target.value)}
                         placeholder="e.g. prediction markets, AI agents, crypto exchange..."
@@ -1527,7 +1540,7 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                     </div>
 
                     {/* Exclude Keywords */}
-                    <div className="space-y-1.5">
+                    <div className="filter-row rounded-lg space-y-1.5">
                       <label className="text-[11px] text-bright/60 font-medium">Exclude Keywords</label>
                       <input type="text" value={excludeKeywords} onChange={e => setExcludeKeywords(e.target.value)}
                         placeholder="e.g. consulting, NFT collection, metaverse..."
@@ -1535,11 +1548,11 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                     </div>
 
                     {/* Notes for AI */}
-                    <div className="space-y-1.5">
+                    <div className="filter-row rounded-lg space-y-1.5">
                       <button onClick={() => toggleExpanded('notes')} className="flex items-center gap-2 w-full text-left">
+                        <span className="text-[9px] text-muted/40">{expandedFilters.notes ? '▾' : '▸'}</span>
                         <span className="text-[11px] text-bright/60 font-medium">Notes for AI</span>
-                        {notes && <span className="text-[9px] text-violet-400/60 font-bold">set</span>}
-                        <span className="text-[9px] text-muted/30 ml-auto">{expandedFilters.notes ? '▼' : '+ Notes'}</span>
+                        {notes && <span className="text-[9px] text-violet-400/60 font-bold ml-auto">set</span>}
                       </button>
                       {expandedFilters.notes && (
                         <textarea value={notes} onChange={e => setNotes(e.target.value)}
