@@ -3,7 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 const API_BASE = import.meta.env.VITE_API_URL || 'https://pigeon-api.up.railway.app';
 const CRM_STAGES = ['BO', 'BORO', 'BORO-SM', 'Backburn'];
 const TEAM_MEMBERS = ['Mark', 'Joe', 'Liam', 'Carlo', 'Jake', 'Serena'];
-const RESTRICTED = ['Dean', 'Brett']; // No CRM access
+const RESTRICTED = [];
+const TEAM_EMOJIS = { Mark: '🦅', Jake: '🐺', Joe: '🦁', Carlo: '🐻', Liam: '🦊', Serena: '🦋' };
 
 // Get/set the claimed identity
 function getCrmUser() { return localStorage.getItem('crm_user') || ''; }
@@ -66,10 +67,11 @@ export function CrmIdentity() {
   };
 
   if (user) {
-    const isRestricted = RESTRICTED.includes(user);
+    const emoji = TEAM_EMOJIS[user] || '';
     return (
       <div className="flex items-center gap-1.5">
-        <span className={`text-[10px] font-bold ${isRestricted ? 'text-red-400/60' : 'text-amber-400/70'}`}>{user}</span>
+        <span className="text-[10px] text-muted/40">Searching as</span>
+        <span className="text-[10px] font-bold text-amber-400/70">{emoji} {user}</span>
         <button onClick={() => { setCrmUser(''); setUser(''); }} className="text-[8px] text-muted/40 hover:text-red-400/65">✕</button>
       </div>
     );
@@ -84,12 +86,10 @@ export function CrmIdentity() {
       {picking && (
         <div className="absolute z-[100] bottom-full left-1/2 -translate-x-1/2 mb-1 bg-[#1a1d2e] border border-amber-400/20 rounded-lg overflow-hidden shadow-xl" style={{ minWidth: '140px', boxShadow: '0 -8px 30px rgba(0,0,0,0.6)' }}>
           <p className="text-[8px] text-muted/40 uppercase tracking-wider font-bold px-2.5 pt-2 pb-1">Who are you?</p>
-          {[...TEAM_MEMBERS, ...RESTRICTED].map(name => (
+          {TEAM_MEMBERS.map(name => (
             <button key={name} onClick={() => handlePick(name)}
-              className={`w-full text-left text-[11px] px-2.5 py-1.5 border-t border-white/5 font-medium transition-colors ${
-                RESTRICTED.includes(name) ? 'text-muted/40' : 'text-bright/70 hover:bg-amber-500/10'
-              }`}>
-              {name} {RESTRICTED.includes(name) ? '(view only)' : ''}
+              className="w-full text-left text-[11px] px-2.5 py-1.5 border-t border-white/5 font-medium transition-colors text-bright/70 hover:bg-amber-500/10">
+              {TEAM_EMOJIS[name] || ''} {name}
             </button>
           ))}
         </div>

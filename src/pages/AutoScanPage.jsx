@@ -26,7 +26,6 @@ const DEFAULT_PROFILES = {
   liam: { name: 'Main Scan', sectors: ['Crypto / Web3','AI / ML','Fintech','Payments','Space / Aerospace','Robotics / Automation'], stages: ['Pre-Seed','Seed','Series A'], geos: ['Global / No Preference'], models: ['B2B','Platform / Infra','API / Developer Tools','Hardware'], teamPrefs: ['Repeat founders','Ex-FAANG / Big Tech'], checkSize: ['$100K–$250K'], signals: ['Revenue / ARR traction','Headcount growth','Notable investors already in'], maxValuation: '', maxRaised: '', minHeadcount: '', maxHeadcount: '', foundedAfter: '', keywords: 'blockchain infra, fintech, payments, neo banking, BTC mining, military tech, sovereign AI, space, nuclear, energy, robotics, construction tech', antiKeywords: '', notes: 'Elite pedigree required: exits, top firms, Ivy League. Must show traction.' },
   carlo: { name: 'Main Scan', sectors: ['Fintech','Crypto / Web3','Gambling / Betting','Marketplace'], stages: ['Pre-Seed'], geos: ['Global / No Preference'], models: ['B2C','B2B','Marketplace','Platform / Infra','Protocol / Token'], teamPrefs: ['No preference'], checkSize: ['$100K–$250K'], signals: ['Revenue / ARR traction','User growth / DAU signals','Recent funding round'], maxValuation: '$15M', maxRaised: '$3M', minHeadcount: '', maxHeadcount: '', foundedAfter: '', keywords: 'finance, stablecoin, fintech, gambling, marketplace, web3', antiKeywords: '', notes: 'Pre-Seed only. Val <$15M.' },
   jake: { name: 'Main Scan', sectors: ['Crypto / Web3','DeFi','Gambling / Betting','AI / ML','Fintech'], stages: ['Pre-Seed','Seed'], geos: ['Global / No Preference'], models: ['B2C','Marketplace','Platform / Infra','API / Developer Tools'], teamPrefs: ['Repeat founders','Technical founders (eng background)'], checkSize: ['$100K–$250K'], signals: ['Revenue / ARR traction','User growth / DAU signals','Token/protocol activity (on-chain)','Open source / GitHub activity','Web traffic growth'], maxValuation: '$20M', maxRaised: '$5M', minHeadcount: '', maxHeadcount: '50', foundedAfter: '2024', keywords: 'exchange, trading platform, betting, gambling, casino, prediction market, SDK, API, dev tools, AI agent wallet, RWA, stablecoin plugin, cutting edge disruptive tech', antiKeywords: 'layer 1, L1, L2, aptos, NFT collection, metaverse, play to earn, meme coin, dating app, yield aggregator, copy trading, launchpad, governance token, quantum, AI wrapper, uniswap fork, consulting, series B', notes: 'Priority: exchanges/betting → infra/SDK → AI agent → RWA → stablecoin plugins. Founded 2024+, <$5M raised, team <50. Also: cutting edge disruptive tech <$100M.' },
-  dean: { name: 'Main Scan', sectors: ['Crypto / Web3','DeFi','Fintech','AI / ML','Consumer'], stages: ['Pre-Seed','Seed'], geos: ['Global / No Preference'], models: ['No Preference'], teamPrefs: ['No preference'], checkSize: ['$100K–$250K'], signals: ['Revenue / ARR traction','User growth / DAU signals'], maxValuation: '', maxRaised: '', minHeadcount: '', maxHeadcount: '', foundedAfter: '', keywords: '', antiKeywords: '', notes: '' },
 };
 
 function loadProfiles(personId) {
@@ -1839,11 +1838,8 @@ export default function AutoScanPage({ addFavorite, isFavorited }) {
     if (!isScanning) setScanningMode(null);
   }, [isScanning]);
 
-  // Dean/Brett can only edit their own profiles
   const crmUser = (typeof window !== 'undefined' ? localStorage.getItem('crm_user') : '') || '';
-  const crmUserLower = crmUser.toLowerCase();
-  const isRestrictedUser = crmUserLower === 'dean' || crmUserLower === 'brett';
-  const canEdit = !isRestrictedUser || crmUserLower === activeTab;
+  const canEdit = true;
 
   useEffect(() => { localStorage.setItem('autoscan_activeTab', activeTab); setActiveProfileIdx(0); setEditing(false); setShowHistory(false); setShowTopPicks(false); setShowVetting(false); }, [activeTab]);
   useEffect(() => { localStorage.setItem('autoscan_activeProfileIdx', String(activeProfileIdx)); }, [activeProfileIdx]);
@@ -1885,10 +1881,12 @@ export default function AutoScanPage({ addFavorite, isFavorited }) {
   return (
     <div className="min-h-screen max-w-4xl mx-auto px-8 pt-4 pb-4">
       <div className="mb-4">
-        <h1 className="text-xl font-bold tracking-tight">
-          <span className="text-sky-400" style={{ fontFamily: "'Courier New', monospace" }}>dc</span> Screen
-        </h1>
-        <p className="text-muted/50 text-xs mt-0.5">Personalized deal discovery for each team member</p>
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold tracking-tight">
+            <span className="text-sky-400" style={{ fontFamily: "'Courier New', monospace" }}>🔮</span> H Screens
+          </h1>
+          {activePerson && <span className="text-[11px] text-muted/50">Searching as <span className="text-amber-400/80 font-bold">{activePerson.emoji} {activePerson.name}</span></span>}
+        </div>
       </div>
 
       {/* Search bar */}
@@ -1958,110 +1956,24 @@ export default function AutoScanPage({ addFavorite, isFavorited }) {
         </div>
       )}
 
-      {/* Team selector — single row with big emojis + timer */}
-      <div className="mb-4 bg-ink/20 border border-border/15 rounded-xl px-3 py-3">
-        {/* Total cost estimate — clickable for breakdown */}
-        {(() => {
-          const costPerTier = { full: 3.0, balanced: 2.1, economy: 1.88, ultra: 0.44, micro: 0.14 };
-          const tierLabels = { full: '🧠 Full', balanced: '⚡ Balanced', economy: '💰 Economy', ultra: '🪶 Ultra', micro: '⚡ Micro' };
-          const perUser = team.map(t => {
-            const profiles = (allProfiles[t.id] || []).filter(p => !isProfileEmpty(p));
-            const disabled = isDisabled(t.id);
-            const userProfiles = profiles.map(p => {
-              const perScan = costPerTier[p.defaultTier || 'full'] || 3.0;
-              const freqDays = p.timeframeDays || 1; // how often this scan runs
-              const dailyAvg = perScan / freqDays; // amortized daily cost
-              return {
-                name: p.name || 'Scan',
-                tier: p.defaultTier || 'full',
-                perScan,
-                freqDays,
-                dailyAvg,
-              };
-            });
-            const daily = disabled ? 0 : userProfiles.reduce((s, p) => s + p.dailyAvg, 0);
-            return { ...t, profiles: userProfiles, daily, disabled, profileCount: profiles.length };
-          });
-          const totalDaily = perUser.reduce((s, u) => s + u.daily, 0);
+      {/* Team member quick-switch — compact row */}
+      <div className="mb-4 flex items-center gap-1 overflow-x-auto">
+        {team.map(t => {
+          const isBusy = activeScans[t.id]?.status === 'scanning';
+          const isActive = activeTab === t.id;
+          const hasResults = !!scanResults[t.id]?.results?.length;
           return (
-            <div className="mb-2 px-1">
-              <button onClick={() => setShowCostBreakdown(!showCostBreakdown)}
-                className="flex items-center justify-between w-full group">
-                <span className="text-[9px] text-muted/30 uppercase tracking-wider font-bold">Team</span>
-                <span className="text-[9px] text-amber-400/40 group-hover:text-amber-400/70 transition-colors">
-                  💲 Est. daily: ~${totalDaily.toFixed(2)} · weekly: ~${(totalDaily * 7).toFixed(2)} <span className="text-[8px] text-muted/25">▾</span>
-                </span>
-              </button>
-              {showCostBreakdown && (
-                <div className="mt-2 bg-ink/30 border border-amber-400/10 rounded-lg p-3 space-y-2">
-                  <p className="text-[9px] text-amber-400/50 font-bold uppercase tracking-wider">Cost Breakdown by User</p>
-                  {perUser.map(u => (
-                    <div key={u.id} className={`flex items-start gap-2 text-[10px] ${u.disabled ? 'opacity-40' : ''}`}>
-                      <span className="text-lg leading-none">{u.emoji}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-bright/70">{u.name}</span>
-                          <span className={`font-mono ${u.daily > 0 ? 'text-amber-300/70' : 'text-muted/30'}`}>
-                            ${u.daily.toFixed(2)}/day {u.disabled ? '(off)' : ''}
-                          </span>
-                        </div>
-                        {u.profiles.length > 0 ? (
-                          <div className="flex flex-wrap gap-1 mt-0.5">
-                            {u.profiles.map((p, i) => (
-                              <span key={i} className="text-[9px] px-1.5 py-0.5 rounded bg-surface/50 border border-border/15 text-muted/40">
-                                {p.name} · {tierLabels[p.tier] || p.tier} · ${p.perScan.toFixed(2)}/scan · every {p.freqDays}d
-                              </span>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-[9px] text-muted/30">No active scans</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  <div className="border-t border-border/15 pt-1.5 flex justify-between text-[10px]">
-                    <span className="text-muted/40">Total</span>
-                    <span className="font-bold text-amber-300/80">${totalDaily.toFixed(2)}/day · ${(totalDaily * 7).toFixed(2)}/week · ${(totalDaily * 30).toFixed(2)}/month</span>
-                  </div>
-                </div>
-              )}}
-            </div>
+            <button key={t.id} onClick={() => setActiveTab(t.id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-[11px] font-medium whitespace-nowrap ${
+                isActive ? 'bg-sky-500/10 border border-sky-400/20 text-sky-300' : 'hover:bg-white/5 border border-transparent text-muted/50'
+              }`}>
+              <span className="text-base leading-none">{t.emoji}</span>
+              <span>{t.name}</span>
+              {isBusy && <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
+              {hasResults && !isBusy && <span className="min-w-[16px] h-4 px-1 rounded-full bg-sky-500 text-white text-[8px] font-bold flex items-center justify-center">{scanResults[t.id].results.length}</span>}
+            </button>
           );
-        })()}
-        <div className="flex items-center gap-1 overflow-x-auto pb-0.5">
-          {team.map(t => {
-            const next = nextRuns[t.id];
-            const isBusy = activeScans[t.id]?.status === 'scanning';
-            const profiles = allProfiles[t.id] || [];
-            const empty = profiles.length === 0 || profiles.every(p => isProfileEmpty(p));
-            const disabled = isDisabled(t.id);
-            const isActive = activeTab === t.id;
-            const hasResults = !!scanResults[t.id]?.results?.length;
-            return (
-              <button key={t.id} onClick={() => setActiveTab(t.id)}
-                className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-all min-w-[70px] ${
-                  isActive ? 'bg-sky-500/10 border border-sky-400/20' : 'hover:bg-white/5 border border-transparent'
-                } ${disabled ? 'opacity-40' : ''}`}>
-                {isBusy && <span className="text-[8px] text-amber-400 font-bold animate-pulse mb-0.5">🔍 Scanning...</span>}
-                <span className="text-4xl leading-none">{t.emoji}</span>
-                <span className={`text-[10px] font-bold ${isActive ? 'text-sky-300' : disabled ? 'text-red-400/60' : 'text-muted/50'}`}>{t.name}</span>
-                {hasResults && !isBusy && <span className="min-w-[18px] h-[16px] px-1 rounded-full bg-sky-500 text-white text-[8px] font-bold flex items-center justify-center">{scanResults[t.id].results.length}</span>}
-                <span className={`text-[9px] font-mono leading-none ${
-                  disabled ? 'text-red-400/65'
-                  : isBusy ? 'text-amber-400 animate-pulse'
-                  : empty ? 'text-red-400/65'
-                  : 'text-muted/35'
-                }`}>
-                  {disabled ? '⏸ Off'
-                    : isBusy ? '⚡ Live'
-                    : empty ? 'No prefs'
-                    : next > Date.now() ? <Countdown targetMs={next} />
-                    : '✓ Ready'}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        })}
       </div>
 
       {/* Profile selector — larger tabs with timers */}

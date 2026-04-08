@@ -98,7 +98,7 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
 
   const [pendingCount, setPendingCount] = useState(0);
   const crmUser = typeof window !== 'undefined' ? localStorage.getItem('crm_user') : null;
-  const crmRestricted = ['Dean', 'Brett'].includes(crmUser);
+  const crmRestricted = false;
 
   useEffect(() => {
     if (!crmUser || crmRestricted) return;
@@ -258,7 +258,7 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
   /* INLINE TEAM PICKER — for mobile settings panel     */
   /* ═══════════════════════════════════════════════════ */
   const TEAM_NAMES = ['Mark', 'Joe', 'Liam', 'Carlo', 'Jake', 'Serena'];
-  const RESTRICTED_NAMES = ['Dean', 'Brett'];
+  const RESTRICTED_NAMES = [];
 
   function InlineTeamPicker() {
     const [user, setUser] = useState(localStorage.getItem('crm_user') || '');
@@ -305,8 +305,9 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
 
     const allPages = [
       { path: '/', label: 'Home', icon: '🏠' },
-      { path: '/autoscan', label: 'Daily Screen', icon: '📡' },
+      { path: '/autoscan', label: 'H Screens', icon: '🔮' },
       { path: '/super', label: 'Super Search', icon: '⚡' },
+      { path: '/recurring', label: 'Recurring Scan Agent', icon: '🔁' },
       { path: '/chat', label: 'Harmonic Chat', icon: '💬' },
       { path: '/twitter', label: 'X / Twitter', icon: '𝕏' },
       { path: '/farcaster', label: 'Farcaster', icon: '🟪' },
@@ -414,12 +415,6 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
                       <span className="text-[10px] text-muted">tap to edit</span>
                     </button>
                   )}
-                </div>
-
-                {/* Team Identity — inline picker */}
-                <div className="glass-card p-3">
-                  <p className="text-[10px] uppercase tracking-wider text-muted font-medium mb-1.5">Team Identity</p>
-                  <InlineTeamPicker />
                 </div>
 
                 {/* API Keys */}
@@ -619,10 +614,10 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
           <button
             onClick={() => { setShowScanMenu(!showScanMenu); setShowApps(false); setShowSearch(false); setShowMenu(false); }}
             className={`group relative flex flex-col items-center gap-0 px-1.5 py-1 transition-all duration-200 min-w-0 ${
-              showScanMenu || location.pathname === '/autoscan' || location.pathname === '/super' ? 'text-accent' : 'text-muted hover:text-bright'
+              showScanMenu || ['/autoscan','/super','/recurring'].includes(location.pathname) ? 'text-accent' : 'text-muted hover:text-bright'
             }`}>
-            {(location.pathname === '/autoscan' || location.pathname === '/super') && <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-accent" />}
-            <ScreenIcon active={showScanMenu || location.pathname === '/autoscan' || location.pathname === '/super'} />
+            {['/autoscan','/super','/recurring'].includes(location.pathname) && <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-accent" />}
+            <ScreenIcon active={showScanMenu || ['/autoscan','/super','/recurring'].includes(location.pathname)} />
             <span className="text-[8px] font-medium tracking-wide uppercase leading-tight">Scan</span>
           </button>
           {showScanMenu && (
@@ -630,13 +625,18 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
               style={{ boxShadow: '0 -8px 30px rgba(0,0,0,0.5)' }}>
               <button onClick={() => { navigate('/autoscan'); setShowScanMenu(false); }}
                 className={`w-full text-left px-3 py-2.5 text-xs font-medium transition-colors ${location.pathname === '/autoscan' ? 'bg-amber-500/10 text-amber-300' : 'text-bright/70 hover:bg-white/5'}`}>
-                📡 Daily Screen
+                🔮 H Screens
                 <span className="block text-[9px] text-muted/40 mt-0.5">Auto-scan by profile</span>
               </button>
               <button onClick={() => { navigate('/super'); setShowScanMenu(false); }}
                 className={`w-full text-left px-3 py-2.5 text-xs font-medium border-t border-white/5 transition-colors ${location.pathname === '/super' ? 'bg-sky-500/10 text-sky-300' : 'text-bright/70 hover:bg-white/5'}`}>
                 ⚡ Super Search
                 <span className="block text-[9px] text-muted/40 mt-0.5">Multi-source deep scan</span>
+              </button>
+              <button onClick={() => { navigate('/recurring'); setShowScanMenu(false); }}
+                className={`w-full text-left px-3 py-2.5 text-xs font-medium border-t border-white/5 transition-colors ${location.pathname === '/recurring' ? 'bg-purple-500/10 text-purple-300' : 'text-bright/70 hover:bg-white/5'}`}>
+                🔁 Recurring Scan Agent
+                <span className="block text-[9px] text-muted/40 mt-0.5">Scheduled automated scans</span>
               </button>
             </div>
           )}

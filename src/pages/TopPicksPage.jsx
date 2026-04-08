@@ -54,13 +54,10 @@ const PARTNERS = [
   { id: 'liam', name: 'Liam', emoji: '🦊' },
   { id: 'carlo', name: 'Carlo', emoji: '🐻' },
   { id: 'jake', name: 'Jake', emoji: '🐺' },
+  { id: 'serena', name: 'Serena', emoji: '🦋' },
 ];
 
-const ALL_TEAM = [
-  ...PARTNERS,
-  { id: 'dean', name: 'Dean', emoji: '🦈' },
-  { id: 'brett', name: 'Brett', emoji: '🐍' },
-];
+const ALL_TEAM = [...PARTNERS];
 
 function sourceInfo(source, sourceMeta) {
   if (!source && !sourceMeta) return null;

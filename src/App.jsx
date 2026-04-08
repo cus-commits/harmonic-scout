@@ -157,6 +157,7 @@ function AppContent({ ready, setReady }) {
           <Route path="/producthunt" element={<ProductHuntPage addFavorite={addFavorite} isFavorited={isFavorited} />} />
           <Route path="/airtable" element={<AirtablePage />} />
           <Route path="/portcos" element={<PortcosPage addFavorite={addFavorite} isFavorited={isFavorited} />} />
+          <Route path="/recurring" element={<div className="min-h-screen max-w-4xl mx-auto px-8 pt-8"><h1 className="text-xl font-bold">🔁 Recurring Scan Agent</h1><p className="text-muted/50 text-sm mt-2">Coming soon — scheduled automated scans</p></div>} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>

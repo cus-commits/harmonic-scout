@@ -8,8 +8,7 @@ const TEAM = [
   { id: 'joe', name: 'Joe', emoji: '🦁' },
   { id: 'carlo', name: 'Carlo', emoji: '🐻' },
   { id: 'liam', name: 'Liam', emoji: '🦊' },
-  { id: 'dean', name: 'Dean', emoji: '🦈', restricted: true },
-  { id: 'brett', name: 'Brett', emoji: '🐍', restricted: true },
+  { id: 'serena', name: 'Serena', emoji: '🦋' },
 ];
 
 const HISTORY_DAYS = 30;
