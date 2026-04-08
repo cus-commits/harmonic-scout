@@ -70,7 +70,6 @@ export function CrmIdentity() {
     const emoji = TEAM_EMOJIS[user] || '';
     return (
       <div className="flex items-center gap-1.5">
-        <span className="text-[10px] text-muted/40">Searching as</span>
         <span className="text-[10px] font-bold text-amber-400/70">{emoji} {user}</span>
         <button onClick={() => { setCrmUser(''); setUser(''); }} className="text-[8px] text-muted/40 hover:text-red-400/65">✕</button>
       </div>
