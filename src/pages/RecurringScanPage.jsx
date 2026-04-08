@@ -3,15 +3,59 @@ import { CrmButton } from '../components/CrmButton';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://pigeon-api.up.railway.app';
 
-function authHeaders() {
+function authHeaders(tier) {
   const anthropicKey = localStorage.getItem('scout_anthropic_key') || '';
-  return {
-    'Content-Type': 'application/json',
-    'x-anthropic-key': anthropicKey,
-  };
+  const h = { 'Content-Type': 'application/json', 'x-anthropic-key': anthropicKey };
+  if (tier) h['x-scan-tier'] = tier;
+  return h;
 }
 
-// ---- Progress Panel (adapted from AutoScanPage ScanProgressPanel) ----
+// ---- Scan Tiers ----
+
+const TIERS = [
+  { key: 'scout',    name: 'Quick Scout',  cost: '$5',  emoji: '⚡', color: 'sky',     desc: 'Haiku pre-screen → Sonnet top 200 → Sonnet deep top 10', time: '15-30 min' },
+  { key: 'standard', name: 'Standard',     cost: '$12', emoji: '🔍', color: 'violet',  desc: 'Sonnet pre-screen → Sonnet top 200 → Opus deep top 15', time: '30-60 min' },
+  { key: 'deep',     name: 'Deep Dive',    cost: '$25', emoji: '🔬', color: 'amber',   desc: 'Sonnet pre-screen all → Sonnet top 500 → Opus deep top 40', time: '1-2 hours' },
+  { key: 'sweep',    name: 'Full Sweep',   cost: '$35', emoji: '🌊', color: 'pink',    desc: 'Sonnet full pre-screen → Sonnet full scoring → Opus deep top 60', time: '2-3 hours' },
+  { key: 'maximum',  name: 'Maximum',      cost: '$50', emoji: '🚀', color: 'emerald', desc: 'Full pipeline — Sonnet all stages → Opus deep top 100', time: '3-5 hours' },
+];
+
+const tierColors = {
+  sky:     { bg: 'bg-sky-500/10', border: 'border-sky-400/25', text: 'text-sky-300', activeBg: 'bg-sky-500/20', activeBorder: 'border-sky-400/50' },
+  violet:  { bg: 'bg-violet-500/10', border: 'border-violet-400/25', text: 'text-violet-300', activeBg: 'bg-violet-500/20', activeBorder: 'border-violet-400/50' },
+  amber:   { bg: 'bg-amber-500/10', border: 'border-amber-400/25', text: 'text-amber-300', activeBg: 'bg-amber-500/20', activeBorder: 'border-amber-400/50' },
+  pink:    { bg: 'bg-pink-500/10', border: 'border-pink-400/25', text: 'text-pink-300', activeBg: 'bg-pink-500/20', activeBorder: 'border-pink-400/50' },
+  emerald: { bg: 'bg-emerald-500/10', border: 'border-emerald-400/25', text: 'text-emerald-300', activeBg: 'bg-emerald-500/20', activeBorder: 'border-emerald-400/50' },
+};
+
+function TierSelector({ selected, onSelect }) {
+  return (
+    <div className="space-y-2">
+      {TIERS.map(t => {
+        const c = tierColors[t.color];
+        const isActive = selected === t.key;
+        return (
+          <button key={t.key} onClick={() => onSelect(t.key)}
+            className={`w-full text-left rounded-xl border p-3 transition-all ${
+              isActive ? `${c.activeBg} ${c.activeBorder} ring-1 ring-white/5` : `${c.bg} ${c.border} hover:${c.activeBg}`
+            }`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">{t.emoji}</span>
+                <span className={`text-sm font-bold ${c.text}`}>{t.name}</span>
+                <span className="text-[10px] text-muted/40">~{t.time}</span>
+              </div>
+              <span className={`text-sm font-bold ${c.text}`}>{t.cost}</span>
+            </div>
+            <p className="text-[10px] text-muted/40 mt-1 ml-7">{t.desc}</p>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ---- Progress Panel ----
 
 function ScanProgress({ status, onCancel }) {
   const [tick, setTick] = useState(0);
@@ -24,7 +68,6 @@ function ScanProgress({ status, onCancel }) {
     return () => clearInterval(t);
   }, []);
 
-  // Build live feed from progress messages
   const lastMsg = useRef('');
   useEffect(() => {
     const msg = status?.progress || '';
@@ -34,20 +77,18 @@ function ScanProgress({ status, onCancel }) {
   }, [status?.progress]);
 
   const elapsed = status?.startedAt ? Math.floor((Date.now() - status.startedAt) / 1000) : 0;
-  const mins = Math.floor(elapsed / 60);
+  const hours = Math.floor(elapsed / 3600);
+  const mins = Math.floor((elapsed % 3600) / 60);
   const secs = elapsed % 60;
-  const hours = Math.floor(mins / 60);
-  const dispMins = mins % 60;
 
   const progress = status?.progress || '';
   const stats = status?.stats || {};
+  const tierInfo = status?.tier || {};
 
-  // Determine stage
   let stage = 'fetch';
   if (progress.includes('Opus') || progress.includes('deep')) stage = 'opus';
   else if (progress.includes('Sonnet scoring') || progress.includes('scoring batch')) stage = 'screen';
-  else if (progress.includes('Enriching') || progress.includes('Enriched')) stage = 'enrich';
-  else if (progress.includes('Filtered')) stage = 'enrich';
+  else if (progress.includes('Enriching') || progress.includes('Enriched') || progress.includes('Filtered')) stage = 'enrich';
   else if (progress.includes('Pre-screen') || progress.includes('pre-screen') || progress.includes('Screening')) stage = 'prescreen';
   else if (progress.includes('Fetching') || progress.includes('fetched') || progress.includes('search')) stage = 'fetch';
 
@@ -55,25 +96,26 @@ function ScanProgress({ status, onCancel }) {
     { id: 'fetch', emoji: '📡', label: 'Fetching', color: 'text-sky-400' },
     { id: 'prescreen', emoji: '⚡', label: 'Pre-Screen', color: 'text-violet-400' },
     { id: 'enrich', emoji: '🔬', label: 'Enriching', color: 'text-amber-400' },
-    { id: 'screen', emoji: '🎯', label: 'Sonnet Score', color: 'text-pink-400' },
-    { id: 'opus', emoji: '🧠', label: 'Opus Deep', color: 'text-emerald-400' },
+    { id: 'screen', emoji: '🎯', label: 'Scoring', color: 'text-pink-400' },
+    { id: 'opus', emoji: '🧠', label: 'Deep Analysis', color: 'text-emerald-400' },
   ];
 
   return (
     <div className="bg-ink/30 border border-sky-400/15 rounded-xl overflow-hidden">
-      {/* Header */}
       <div className="p-4 space-y-3">
+        {/* Tier badge + timer */}
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 border-2 border-sky-400 border-t-transparent rounded-full animate-spin flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm text-bright/70 font-medium">{progress || 'Starting scan agent...'}</p>
-            <p className="text-[10px] text-muted/40 mt-0.5">Scan runs in background — safe to close tab</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm text-bright/70 font-medium">{progress || 'Starting scan agent...'}</p>
+              {tierInfo.name && <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-muted/50">{tierInfo.name}</span>}
+            </div>
+            <p className="text-[10px] text-muted/40 mt-0.5">Scan runs in background — safe to close tab or refresh</p>
           </div>
-          <div className="text-right flex-shrink-0">
-            <span className="text-[11px] font-mono text-sky-400/60">
-              {hours > 0 ? `${hours}h ${String(dispMins).padStart(2, '0')}m` : `${mins}:${String(secs).padStart(2, '0')}`}
-            </span>
-          </div>
+          <span className="text-[11px] font-mono text-sky-400/60 flex-shrink-0">
+            {hours > 0 ? `${hours}h ${String(mins).padStart(2, '0')}m` : `${mins}:${String(secs).padStart(2, '0')}`}
+          </span>
         </div>
 
         {/* Stage pipeline */}
@@ -116,7 +158,7 @@ function ScanProgress({ status, onCancel }) {
             </button>
           ) : (
             <div className="flex items-center gap-2 bg-red-500/5 border border-red-400/20 rounded-lg px-3 py-2">
-              <span className="text-[10px] text-red-300/70">Cancel the recurring scan?</span>
+              <span className="text-[10px] text-red-300/70">Cancel the scan?</span>
               <button onClick={() => { onCancel(); setConfirmCancel(false); }}
                 className="text-[10px] px-2.5 py-1 rounded bg-red-500/20 border border-red-400/30 text-red-300 font-bold hover:bg-red-500/30 transition-all">
                 Yes, Cancel
@@ -166,7 +208,7 @@ function moneyFmt(val) {
   return `$${val}`;
 }
 
-function ResultCard({ result, addFavorite, isFavorited }) {
+function ResultCard({ result, rank, addFavorite, isFavorited }) {
   const [expanded, setExpanded] = useState(false);
   const card = result.card || {};
   const score = result.score || 0;
@@ -175,14 +217,21 @@ function ResultCard({ result, addFavorite, isFavorited }) {
 
   const scoreColor = score >= 9 ? 'bg-emerald-500/15 text-emerald-300 border-emerald-400/30'
     : score >= 7 ? 'bg-sky-500/15 text-sky-300 border-sky-400/30'
+    : score >= 5 ? 'bg-amber-500/12 text-amber-300/70 border-amber-400/25'
     : 'bg-surface/40 text-muted/60 border-border/20';
 
   const confidenceColor = result.confidence === 'High' ? 'text-emerald-400/70' : result.confidence === 'Low' ? 'text-red-400/60' : 'text-amber-400/60';
+
+  const rankColor = rank <= 3 ? 'text-amber-400' : rank <= 10 ? 'text-sky-400/70' : 'text-muted/40';
 
   return (
     <div className="rounded-xl border border-border/15 bg-surface/50 p-3.5 space-y-2.5">
       {/* Header */}
       <div className="flex items-start gap-3">
+        {/* Rank */}
+        <div className="flex flex-col items-center flex-shrink-0 w-7 pt-0.5">
+          <span className={`text-[13px] font-bold ${rankColor}`}>#{rank}</span>
+        </div>
         {card.logo_url ? (
           <img src={card.logo_url} alt="" className="w-9 h-9 rounded-lg bg-ink/50 flex-shrink-0" onError={e => { e.target.style.display = 'none'; }} />
         ) : (
@@ -194,7 +243,7 @@ function ResultCard({ result, addFavorite, isFavorited }) {
           <div className="flex items-center gap-2">
             <h3 className="font-bold text-bright text-sm truncate">{result.name}</h3>
             <span className={`text-[10px] px-2 py-0.5 rounded-md border font-bold ${scoreColor}`}>{score}/10</span>
-            <span className={`text-[9px] ${confidenceColor}`}>{result.confidence}</span>
+            {result.confidence && <span className={`text-[9px] ${confidenceColor}`}>{result.confidence}</span>}
             {webUrl && <a href={webUrl} target="_blank" rel="noopener" className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-400/30 hover:bg-sky-500/20 font-medium">🌐</a>}
           </div>
           <div className="flex gap-1.5 mt-0.5 flex-wrap">
@@ -207,14 +256,14 @@ function ResultCard({ result, addFavorite, isFavorited }) {
       </div>
 
       {/* Description */}
-      {card.description && <p className="text-[10px] text-muted/50 leading-relaxed line-clamp-2">{card.description}</p>}
+      {card.description && <p className="text-[10px] text-muted/50 leading-relaxed line-clamp-2 ml-10">{card.description}</p>}
 
       {/* Deep analysis — expandable */}
       {result.analysis && (
-        <div>
+        <div className="ml-10">
           <button onClick={() => setExpanded(!expanded)}
             className="text-[10px] text-violet-400/60 hover:text-violet-300 transition-colors font-medium">
-            {expanded ? '▾ Hide Analysis' : '▸ Show Opus Analysis'}
+            {expanded ? '▾ Hide Logic' : '▸ Why #' + rank + '?'}
           </button>
           {expanded && (
             <div className="mt-2 bg-violet-500/[0.03] border border-violet-400/12 rounded-lg p-3 text-[11px] text-bright/60 leading-relaxed whitespace-pre-wrap font-mono">
@@ -225,7 +274,7 @@ function ResultCard({ result, addFavorite, isFavorited }) {
       )}
 
       {/* Actions */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 ml-10">
         <button onClick={() => addFavorite && addFavorite({ ...card, name: result.name, _score: score })}
           className={`text-[10px] px-3 py-1 rounded-lg border font-bold transition-all active:scale-95 ${
             isFav
@@ -240,20 +289,151 @@ function ResultCard({ result, addFavorite, isFavorited }) {
   );
 }
 
+// ---- History Panel ----
+
+function HistoryPanel({ history, onViewScan }) {
+  if (!history || history.length === 0) {
+    return (
+      <div className="bg-surface/30 border border-border/15 rounded-xl p-6 text-center">
+        <p className="text-muted/40 text-sm">No scan history yet</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {history.map((scan, i) => {
+        const date = new Date(scan.timestamp);
+        const topCount = (scan.results || []).filter(r => r.score >= 7).length;
+        return (
+          <button key={scan.timestamp} onClick={() => onViewScan(scan)}
+            className="w-full text-left rounded-xl border border-border/15 bg-surface/40 p-3 hover:bg-surface/60 transition-all">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm">{scan.tier?.name ? (TIERS.find(t => t.key === scan.tier?.key)?.emoji || '🔁') : '🔁'}</span>
+                <span className="text-[11px] font-bold text-bright/70">{scan.tier?.name || 'Scan'}</span>
+                <span className="text-[10px] text-muted/40">{date.toLocaleDateString()} {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-emerald-400/60">{topCount} rated 7+</span>
+                <span className="text-[10px] text-muted/30">{(scan.results || []).length} total</span>
+                <span className="text-[10px] text-sky-400/50">{scan.tier?.cost || `$${scan.budgetUsed}`}</span>
+              </div>
+            </div>
+            <div className="flex gap-2 text-[9px] text-muted/30 mt-1 ml-6">
+              {scan.stats && (
+                <>
+                  <span>{scan.stats.totalCompanies} sourced</span>
+                  <span>→ {scan.stats.sonnetPassed} screened</span>
+                  <span>→ {scan.stats.deepScored} deep-scored</span>
+                </>
+              )}
+              {scan.duration && <span>· {Math.round(scan.duration / 60)}m</span>}
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ---- Results View ----
+
+function ResultsView({ data, addFavorite, isFavorited }) {
+  const [showCount, setShowCount] = useState(5);
+  const [tab, setTab] = useState('results');
+
+  const sortedResults = data?.results ? [...data.results].sort((a, b) => (b.score || 0) - (a.score || 0)) : [];
+  const shown = sortedResults.slice(0, showCount);
+  const hasMore = sortedResults.length > showCount;
+
+  return (
+    <div className="space-y-4">
+      {/* Funnel stats */}
+      {data.stats && (
+        <div className="bg-amber-500/5 border border-amber-400/12 rounded-xl p-3 flex items-center gap-2 text-[10px] text-amber-300/60 flex-wrap">
+          {data.tier?.name && <span className="text-muted/50">{data.tier.name}</span>}
+          {data.stats.savedSearches > 0 && <span>Ⓗ {data.stats.savedSearches} searches</span>}
+          <span>→ {data.stats.totalCompanies} sourced</span>
+          <span className="text-violet-300/60">→ {data.stats.sonnetPassed} pre-screened</span>
+          <span className="text-amber-300/60">→ {data.stats.enriched} enriched</span>
+          <span className="text-emerald-300/60">→ {data.stats.deepScored} deep-scored</span>
+          <span className="text-pink-300/60">→ {data.stats.topResults} rated 7+</span>
+          <span className="text-sky-300/50">· ${data.budgetUsed} spent</span>
+          {data.duration && <span className="text-muted/30">· {Math.round(data.duration / 60)}m</span>}
+        </div>
+      )}
+
+      {/* Tab switcher */}
+      <div className="flex gap-1 bg-ink/30 rounded-lg p-1">
+        <button onClick={() => setTab('results')}
+          className={`flex-1 text-[11px] py-2 rounded-md font-semibold transition-all ${
+            tab === 'results' ? 'bg-sky-500/15 text-sky-300 border border-sky-400/25' : 'text-muted/50 hover:text-muted/70'
+          }`}>
+          📊 Results ({sortedResults.length})
+        </button>
+        {data.screenAnalysis && (
+          <button onClick={() => setTab('logic')}
+            className={`flex-1 text-[11px] py-2 rounded-md font-semibold transition-all ${
+              tab === 'logic' ? 'bg-violet-500/15 text-violet-300 border border-violet-400/25' : 'text-muted/50 hover:text-muted/70'
+            }`}>
+            🧠 Full Logic
+          </button>
+        )}
+      </div>
+
+      {/* Results */}
+      {tab === 'results' && (
+        <div className="space-y-2.5">
+          {sortedResults.length === 0 && (
+            <p className="text-muted/40 text-sm text-center py-4">No results from this scan.</p>
+          )}
+          {shown.map((r, i) => (
+            <ResultCard key={r.name} result={r} rank={i + 1} addFavorite={addFavorite} isFavorited={isFavorited} />
+          ))}
+          {hasMore && (
+            <button onClick={() => setShowCount(prev => prev + 10)}
+              className="w-full py-3 rounded-xl border border-sky-400/15 bg-sky-500/[0.04] text-sky-400/60 text-xs font-medium hover:text-sky-300 hover:border-sky-400/25 transition-all">
+              Load 10 More ({sortedResults.length - showCount} remaining)
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Full analysis */}
+      {tab === 'logic' && data.screenAnalysis && (
+        <div className="bg-violet-500/[0.03] border border-violet-400/12 rounded-xl p-4 space-y-3 max-h-[80vh] overflow-y-auto">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] text-violet-400/50 uppercase tracking-widest font-bold">Full Screening & Scoring Logic</p>
+            <button onClick={() => navigator.clipboard.writeText(data.screenAnalysis).catch(() => {})}
+              className="text-[9px] px-2 py-0.5 rounded border border-violet-400/20 text-violet-300/60 hover:bg-violet-500/10 transition-all">
+              📋 Copy
+            </button>
+          </div>
+          <div className="text-[11px] text-bright/60 leading-relaxed whitespace-pre-wrap font-mono">{data.screenAnalysis}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ---- Main Page ----
 
 export default function RecurringScanPage({ addFavorite, isFavorited }) {
   const [status, setStatus] = useState(null);
   const [results, setResults] = useState(null);
+  const [history, setHistory] = useState([]);
   const [scanning, setScanning] = useState(false);
-  const [feed, setFeed] = useState([]);
-  const [tab, setTab] = useState('results');
+  const [selectedTier, setSelectedTier] = useState('standard');
+  const [pageTab, setPageTab] = useState('scan'); // scan | history
+  const [viewingScan, setViewingScan] = useState(null); // for viewing history item
   const abortRef = useRef(null);
 
-  // Poll status on mount
+  // Poll status on mount — reconnect if scan is running
   useEffect(() => {
     fetchStatus();
     fetchResults();
+    fetchHistory();
     const interval = setInterval(fetchStatus, 3000);
     return () => clearInterval(interval);
   }, []);
@@ -263,10 +443,13 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
       const r = await fetch(`${API_BASE}/api/recurring-scan/status`);
       const data = await r.json();
       setStatus(data);
-      if (data.status === 'scanning') setScanning(true);
-      else if (data.status === 'done' && scanning) {
+      if (data.status === 'scanning') {
+        setScanning(true);
+        setPageTab('scan');
+      } else if (data.status === 'done' && scanning) {
         setScanning(false);
         fetchResults();
+        fetchHistory();
       }
     } catch (e) {}
   };
@@ -279,9 +462,18 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
     } catch (e) {}
   };
 
+  const fetchHistory = async () => {
+    try {
+      const r = await fetch(`${API_BASE}/api/recurring-scan/history`);
+      const data = await r.json();
+      if (Array.isArray(data)) setHistory(data);
+    } catch (e) {}
+  };
+
   const startScan = async () => {
     setScanning(true);
-    setFeed([]);
+    setViewingScan(null);
+    setPageTab('scan');
 
     try {
       const controller = new AbortController();
@@ -289,7 +481,7 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
 
       const res = await fetch(`${API_BASE}/api/recurring-scan`, {
         method: 'POST',
-        headers: authHeaders(),
+        headers: authHeaders(selectedTier),
         signal: controller.signal,
       });
 
@@ -302,23 +494,12 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
         if (done) break;
         const chunk = decoder.decode(value, { stream: true });
         fullText += chunk;
-
-        const lines = chunk.split('\n');
-        for (const line of lines) {
-          if (line.startsWith(': ') && line.length > 2) {
-            const msg = line.slice(2).trim();
-            if (msg && msg !== 'keepalive') {
-              setFeed(prev => [{ msg, ts: Date.now(), id: Date.now() + Math.random() }, ...prev].slice(0, 50));
-            }
-          }
-        }
       }
 
-      // Extract final data
       const dataLine = fullText.split('\n').filter(l => l.startsWith('data: ')).pop();
       if (dataLine) {
         const data = JSON.parse(dataLine.slice(6));
-        setResults(data);
+        if (!data.error) setResults(data);
       }
     } catch (e) {
       if (e.name !== 'AbortError') console.error('Scan error:', e);
@@ -327,6 +508,7 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
     setScanning(false);
     fetchStatus();
     fetchResults();
+    fetchHistory();
   };
 
   const cancelScan = async () => {
@@ -337,140 +519,103 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
   };
 
   const isRunning = scanning || status?.status === 'scanning';
-  const sortedResults = results?.results ? [...results.results].sort((a, b) => (b.score || 0) - (a.score || 0)) : [];
-  const topResults = sortedResults.filter(r => r.score >= 7);
-
   const crmUser = localStorage.getItem('crm_user') || 'Mark';
+
+  // Determine what results to show
+  const activeResults = viewingScan || results;
 
   return (
     <div className="min-h-screen max-w-4xl mx-auto px-4 sm:px-8 pt-6 pb-20">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-xl font-bold text-bright">🔁 Recurring Scan Agent</h1>
-          <p className="text-[11px] text-muted/40 mt-1">Full pipeline: ALL saved searches → Sonnet pre-screen → Enrichment → Sonnet score → Opus deep analysis</p>
+          <p className="text-[11px] text-muted/40 mt-1">AI-powered pipeline across all Harmonic saved searches</p>
         </div>
         <span className="text-[11px] text-sky-400/70 font-medium">🦅 {crmUser}</span>
       </div>
 
-      {/* Controls */}
-      {!isRunning && (
-        <div className="mb-6">
-          <button onClick={startScan}
-            className="px-6 py-3 rounded-xl bg-sky-500/15 border border-sky-400/30 text-sky-300 font-bold text-sm hover:bg-sky-500/25 hover:border-sky-400/50 transition-all active:scale-[0.98]">
-            🚀 Start Recurring Scan
-          </button>
-          <p className="text-[10px] text-muted/30 mt-2">Runs all Harmonic saved searches through 5-stage AI pipeline. Budget capped at $50. Takes 1-3 hours.</p>
-        </div>
-      )}
+      {/* Page tabs */}
+      <div className="flex gap-1 bg-ink/30 rounded-lg p-1 mb-5">
+        <button onClick={() => { setPageTab('scan'); setViewingScan(null); }}
+          className={`flex-1 text-[11px] py-2 rounded-md font-semibold transition-all ${
+            pageTab === 'scan' ? 'bg-sky-500/15 text-sky-300 border border-sky-400/25' : 'text-muted/50 hover:text-muted/70'
+          }`}>
+          {isRunning ? '📡 Live Scan' : '🚀 New Scan'}
+        </button>
+        <button onClick={() => setPageTab('history')}
+          className={`flex-1 text-[11px] py-2 rounded-md font-semibold transition-all ${
+            pageTab === 'history' ? 'bg-violet-500/15 text-violet-300 border border-violet-400/25' : 'text-muted/50 hover:text-muted/70'
+          }`}>
+          📜 History ({history.length})
+        </button>
+      </div>
 
-      {/* Last run info */}
-      {results?.timestamp && !isRunning && (
-        <div className="mb-4 flex items-center gap-3 text-[10px] text-muted/40">
-          <span>Last run: {new Date(results.timestamp).toLocaleString()}</span>
-          {results.duration && <span>· {Math.round(results.duration / 60)}m</span>}
-          {results.budgetUsed && <span>· ${results.budgetUsed} spent</span>}
-          {results.stats && (
-            <span>· {results.stats.totalCompanies || 0} sourced → {results.stats.deepScored || 0} deep-scored → {results.stats.topResults || 0} rated 7+</span>
-          )}
-        </div>
-      )}
-
-      {/* Progress panel */}
-      {isRunning && (
-        <div className="mb-6">
-          <ScanProgress status={status} onCancel={cancelScan} />
-          {/* SSE feed as backup if status polling is slow */}
-          {feed.length > 0 && !status?.progress && (
-            <div className="mt-3 bg-black/20 rounded-lg p-3 max-h-[200px] overflow-y-auto">
-              {feed.slice(0, 20).map((f, i) => (
-                <div key={f.id} className={`text-[10px] ${i === 0 ? 'text-bright/60' : 'text-muted/30'}`}>
-                  <span className="font-mono text-[9px] text-muted/20 mr-2">{new Date(f.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
-                  {f.msg}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Results */}
-      {sortedResults.length > 0 && !isRunning && (
-        <div className="space-y-4">
-          {/* Funnel stats */}
-          {results.stats && (
-            <div className="bg-amber-500/5 border border-amber-400/12 rounded-xl p-3 flex items-center gap-2 text-[10px] text-amber-300/60 flex-wrap">
-              <span>Ⓗ {results.stats.savedSearches} searches</span>
-              <span>→ {results.stats.totalCompanies} sourced</span>
-              <span className="text-violet-300/60">→ {results.stats.sonnetPassed} pre-screened</span>
-              <span className="text-amber-300/60">→ {results.stats.enriched} enriched</span>
-              <span className="text-emerald-300/60">→ {results.stats.deepScored} Opus deep-scored</span>
-              <span className="text-pink-300/60">→ {results.stats.topResults} rated 7+</span>
-              <span className="text-sky-300/50">· ${results.budgetUsed} spent</span>
+      {/* ---- SCAN TAB ---- */}
+      {pageTab === 'scan' && (
+        <>
+          {/* Progress panel — always shows when running (even on refresh) */}
+          {isRunning && (
+            <div className="mb-6">
+              <ScanProgress status={status} onCancel={cancelScan} />
             </div>
           )}
 
-          {/* Tab switcher */}
-          <div className="flex gap-1 bg-ink/30 rounded-lg p-1">
-            <button onClick={() => setTab('results')}
-              className={`flex-1 text-[11px] py-2 rounded-md font-semibold transition-all ${
-                tab === 'results' ? 'bg-sky-500/15 text-sky-300 border border-sky-400/25' : 'text-muted/50 hover:text-muted/70'
-              }`}>
-              📊 Top Results ({topResults.length})
-            </button>
-            <button onClick={() => setTab('all')}
-              className={`flex-1 text-[11px] py-2 rounded-md font-semibold transition-all ${
-                tab === 'all' ? 'bg-violet-500/15 text-violet-300 border border-violet-400/25' : 'text-muted/50 hover:text-muted/70'
-              }`}>
-              📋 All Scored ({sortedResults.length})
-            </button>
-            {results.screenAnalysis && (
-              <button onClick={() => setTab('logic')}
-                className={`flex-1 text-[11px] py-2 rounded-md font-semibold transition-all ${
-                  tab === 'logic' ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-400/25' : 'text-muted/50 hover:text-muted/70'
-                }`}>
-                🧠 Full Analysis
+          {/* Tier selector + start — only when NOT running */}
+          {!isRunning && !activeResults && (
+            <div className="space-y-4">
+              <p className="text-[10px] text-muted/50 uppercase tracking-widest font-bold">Select Scan Depth</p>
+              <TierSelector selected={selectedTier} onSelect={setSelectedTier} />
+              <button onClick={startScan}
+                className="w-full px-6 py-3 rounded-xl bg-sky-500/15 border border-sky-400/30 text-sky-300 font-bold text-sm hover:bg-sky-500/25 hover:border-sky-400/50 transition-all active:scale-[0.98]">
+                🚀 Start {TIERS.find(t => t.key === selectedTier)?.name} Scan ({TIERS.find(t => t.key === selectedTier)?.cost})
               </button>
-            )}
-          </div>
-
-          {/* Results list */}
-          {(tab === 'results' || tab === 'all') && (
-            <div className="space-y-2.5">
-              <p className="text-[11px] text-muted/40">
-                {tab === 'results' ? `${topResults.length} companies scored 7+ · sorted by score` : `${sortedResults.length} total deep-scored companies`}
-              </p>
-              {(tab === 'results' ? topResults : sortedResults).map(r => (
-                <ResultCard key={r.name} result={r} addFavorite={addFavorite} isFavorited={isFavorited} />
-              ))}
-              {tab === 'results' && topResults.length === 0 && (
-                <p className="text-muted/40 text-sm text-center py-4">No companies scored 7+. Check "All Scored" tab.</p>
-              )}
             </div>
           )}
 
-          {/* Full analysis */}
-          {tab === 'logic' && results.screenAnalysis && (
-            <div className="bg-violet-500/[0.03] border border-violet-400/12 rounded-xl p-4 space-y-3 max-h-[80vh] overflow-y-auto">
+          {/* Results — show latest or viewed scan */}
+          {!isRunning && activeResults && (
+            <div className="space-y-4">
+              {/* Back to new scan */}
               <div className="flex items-center justify-between">
-                <p className="text-[10px] text-violet-400/50 uppercase tracking-widest font-bold">Sonnet Screening Analysis</p>
-                <button onClick={() => navigator.clipboard.writeText(results.screenAnalysis).catch(() => {})}
-                  className="text-[9px] px-2 py-0.5 rounded border border-violet-400/20 text-violet-300/60 hover:bg-violet-500/10 transition-all">
-                  📋 Copy
+                <div className="flex items-center gap-3">
+                  {viewingScan && (
+                    <button onClick={() => setViewingScan(null)} className="text-[10px] text-sky-400/60 hover:text-sky-300 font-medium">← Back</button>
+                  )}
+                  <p className="text-[10px] text-muted/40">
+                    {viewingScan ? `Viewing scan from ${new Date(viewingScan.timestamp).toLocaleString()}` : `Latest scan · ${new Date(activeResults.timestamp).toLocaleString()}`}
+                  </p>
+                </div>
+                <button onClick={() => { setResults(null); setViewingScan(null); }}
+                  className="text-[10px] px-3 py-1 rounded-lg border border-sky-400/20 text-sky-400/60 hover:text-sky-300 font-medium">
+                  + New Scan
                 </button>
               </div>
-              <div className="text-[11px] text-bright/60 leading-relaxed whitespace-pre-wrap font-mono">{results.screenAnalysis}</div>
+              <ResultsView data={activeResults} addFavorite={addFavorite} isFavorited={isFavorited} />
             </div>
           )}
-        </div>
+
+          {/* Empty — no results, not running, show tier selector */}
+          {!isRunning && !activeResults && !results && (
+            <div className="bg-surface/30 border border-border/15 rounded-xl p-8 text-center mt-6">
+              <p className="text-2xl mb-2">🔁</p>
+              <p className="text-muted/50 text-sm">Select a tier above and start scanning</p>
+            </div>
+          )}
+        </>
       )}
 
-      {/* Empty state */}
-      {!isRunning && sortedResults.length === 0 && (
-        <div className="bg-surface/30 border border-border/15 rounded-xl p-8 text-center mt-8">
-          <p className="text-2xl mb-2">🔁</p>
-          <p className="text-muted/50 text-sm">No scan results yet</p>
-          <p className="text-muted/30 text-[11px] mt-1">Start a recurring scan to run all Harmonic saved searches through the AI pipeline</p>
+      {/* ---- HISTORY TAB ---- */}
+      {pageTab === 'history' && (
+        <div className="space-y-4">
+          {viewingScan ? (
+            <>
+              <button onClick={() => setViewingScan(null)} className="text-[10px] text-sky-400/60 hover:text-sky-300 font-medium">← Back to History</button>
+              <ResultsView data={viewingScan} addFavorite={addFavorite} isFavorited={isFavorited} />
+            </>
+          ) : (
+            <HistoryPanel history={history} onViewScan={(scan) => setViewingScan(scan)} />
+          )}
         </div>
       )}
     </div>
