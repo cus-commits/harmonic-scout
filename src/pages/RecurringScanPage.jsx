@@ -3,11 +3,9 @@ import { CrmButton } from '../components/CrmButton';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://pigeon-api.up.railway.app';
 
-function authHeaders(tier) {
+function authHeaders() {
   const anthropicKey = localStorage.getItem('scout_anthropic_key') || '';
-  const h = { 'Content-Type': 'application/json', 'x-anthropic-key': anthropicKey };
-  if (tier) h['x-scan-tier'] = tier;
-  return h;
+  return { 'Content-Type': 'application/json', 'x-anthropic-key': anthropicKey };
 }
 
 // ---- Scan Tiers ----
@@ -516,10 +514,17 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
 
       const res = await fetch(`${API_BASE}/api/recurring-scan`, {
         method: 'POST',
-        headers: authHeaders(selectedTier),
+        headers: authHeaders(),
         body: JSON.stringify({ tier: selectedTier, includePortcos, crmStages, keywords }),
         signal: controller.signal,
       });
+
+      if (!res.ok) {
+        console.error('Scan request failed:', res.status);
+        setScanning(false);
+        fetchStatus();
+        return;
+      }
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -534,8 +539,10 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
 
       const dataLine = fullText.split('\n').filter(l => l.startsWith('data: ')).pop();
       if (dataLine) {
-        const data = JSON.parse(dataLine.slice(6));
-        if (!data.error) setResults(data);
+        try {
+          const data = JSON.parse(dataLine.slice(6));
+          if (!data.error) setResults(data);
+        } catch (e) {}
       }
     } catch (e) {
       if (e.name !== 'AbortError') console.error('Scan error:', e);
