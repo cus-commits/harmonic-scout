@@ -561,7 +561,7 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
       )}
 
       {/* Desktop bar */}
-      <div className="flex items-center h-16 max-w-4xl mx-auto relative overflow-visible">
+      <div className="flex items-center justify-evenly h-16 max-w-4xl mx-auto relative overflow-visible">
         {/* Home */}
         <button onClick={() => navigate('/')}
           className={`group relative flex flex-col items-center gap-0 px-1.5 py-1 transition-all duration-200 min-w-0 ${

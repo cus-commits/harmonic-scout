@@ -531,7 +531,10 @@ function ResultCard({ result, rank, addFavorite, isFavorited }) {
 
 // ---- History Panel ----
 
-function HistoryPanel({ history, onViewScan }) {
+function HistoryPanel({ history, onViewScan, addFavorite, isFavorited }) {
+  const [expanded, setExpanded] = useState(null); // scan timestamp
+  const [subTab, setSubTab] = useState({}); // { [timestamp]: 'results' | 'logic' }
+
   if (!history || history.length === 0) {
     return (
       <div className="bg-surface/30 border border-border/15 rounded-xl p-6 text-center">
@@ -545,32 +548,99 @@ function HistoryPanel({ history, onViewScan }) {
       {history.map((scan, i) => {
         const date = new Date(scan.timestamp);
         const topCount = (scan.results || []).filter(r => r.score >= 7).length;
+        const isExpanded = expanded === scan.timestamp;
+        const activeTab = subTab[scan.timestamp] || 'results';
+        const sortedResults = scan.results ? [...scan.results].sort((a, b) => (b.score || 0) - (a.score || 0)) : [];
+
         return (
-          <button key={scan.timestamp} onClick={() => onViewScan(scan)}
-            className="w-full text-left rounded-xl border border-border/15 bg-surface/40 p-3 hover:bg-surface/60 transition-all">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-sm">{scan.tier?.name ? (TIERS.find(t => t.key === scan.tier?.key)?.emoji || '🔬') : '🔬'}</span>
-                <span className="text-[11px] font-bold text-bright/70">{scan.tier?.name || 'Scan'}</span>
-                <span className="text-[10px] text-muted/40">{date.toLocaleDateString()} {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+          <div key={scan.timestamp} className="rounded-xl border border-border/15 bg-surface/40 overflow-hidden">
+            <button onClick={() => setExpanded(isExpanded ? null : scan.timestamp)}
+              className="w-full text-left p-3 hover:bg-surface/60 transition-all">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">{scan.tier?.name ? (TIERS.find(t => t.key === scan.tier?.key)?.emoji || '🔬') : '🔬'}</span>
+                  <span className="text-[11px] font-bold text-bright/70">{scan.tier?.name || 'Scan'}</span>
+                  <span className="text-[10px] text-muted/40">{date.toLocaleDateString()} {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-emerald-400/60">{topCount} rated 7+</span>
+                  <span className="text-[10px] text-muted/30">{(scan.results || []).length} total</span>
+                  <span className="text-[10px] text-sky-400/50">{scan.tier?.cost || `$${scan.budgetUsed}`}</span>
+                  <span className="text-[10px] text-muted/30">{isExpanded ? '▼' : '▶'}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] text-emerald-400/60">{topCount} rated 7+</span>
-                <span className="text-[10px] text-muted/30">{(scan.results || []).length} total</span>
-                <span className="text-[10px] text-sky-400/50">{scan.tier?.cost || `$${scan.budgetUsed}`}</span>
+              <div className="flex gap-2 text-[9px] text-muted/30 mt-1 ml-6">
+                {scan.stats && (
+                  <>
+                    <span>{scan.stats.totalCompanies} sourced</span>
+                    <span>→ {scan.stats.sonnetPassed} screened</span>
+                    <span>→ {scan.stats.deepScored} deep-scored</span>
+                  </>
+                )}
+                {scan.duration && <span>· {Math.round(scan.duration / 60)}m</span>}
               </div>
-            </div>
-            <div className="flex gap-2 text-[9px] text-muted/30 mt-1 ml-6">
-              {scan.stats && (
-                <>
-                  <span>{scan.stats.totalCompanies} sourced</span>
-                  <span>→ {scan.stats.sonnetPassed} screened</span>
-                  <span>→ {scan.stats.deepScored} deep-scored</span>
-                </>
-              )}
-              {scan.duration && <span>· {Math.round(scan.duration / 60)}m</span>}
-            </div>
-          </button>
+            </button>
+
+            {isExpanded && (
+              <div className="border-t border-border/15 p-3 space-y-3">
+                {/* Stats funnel */}
+                {scan.stats && (
+                  <div className="bg-amber-500/5 border border-amber-400/12 rounded-lg p-2 flex items-center gap-2 text-[10px] text-amber-300/60 flex-wrap justify-center">
+                    {scan.stats.savedSearches > 0 && <span>Ⓗ {scan.stats.savedSearches} searches</span>}
+                    <span>→ {scan.stats.totalCompanies} sourced</span>
+                    <span className="text-violet-300/60">→ {scan.stats.sonnetPassed} pre-screened</span>
+                    <span className="text-amber-300/60">→ {scan.stats.enriched} enriched</span>
+                    {scan.stats.filtered > 0 && <span className="text-orange-300/60">→ {scan.stats.filtered} filtered</span>}
+                    {scan.stats.scored > 0 && <span className="text-pink-300/60">→ {scan.stats.scored} scored 7+</span>}
+                    <span className="text-emerald-300/60">→ {scan.stats.deepScored} deep-scored</span>
+                    {scan.stats.ddPushed > 0 && <span className="text-emerald-400/70 font-medium">→ {scan.stats.ddPushed} to DD</span>}
+                    <span className="text-sky-300/50">· ${scan.budgetUsed} spent</span>
+                  </div>
+                )}
+
+                {/* Results / Logic tabs */}
+                <div className="flex gap-1 bg-ink/30 rounded-lg p-1">
+                  <button onClick={() => setSubTab(prev => ({ ...prev, [scan.timestamp]: 'results' }))}
+                    className={`flex-1 text-[10px] py-1.5 rounded-md font-semibold transition-all ${
+                      activeTab === 'results' ? 'bg-sky-500/15 text-sky-300 border border-sky-400/25' : 'text-muted/50 hover:text-muted/70'
+                    }`}>
+                    Results ({sortedResults.length})
+                  </button>
+                  {scan.screenAnalysis && (
+                    <button onClick={() => setSubTab(prev => ({ ...prev, [scan.timestamp]: 'logic' }))}
+                      className={`flex-1 text-[10px] py-1.5 rounded-md font-semibold transition-all ${
+                        activeTab === 'logic' ? 'bg-violet-500/15 text-violet-300 border border-violet-400/25' : 'text-muted/50 hover:text-muted/70'
+                      }`}>
+                      Full Logic
+                    </button>
+                  )}
+                </div>
+
+                {activeTab === 'results' && (
+                  <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+                    {sortedResults.length === 0 ? (
+                      <p className="text-muted/40 text-sm text-center py-4">No results from this scan.</p>
+                    ) : sortedResults.map((r, ri) => (
+                      <ResultCard key={r.name} result={r} rank={ri + 1} addFavorite={addFavorite} isFavorited={isFavorited} />
+                    ))}
+                  </div>
+                )}
+
+                {activeTab === 'logic' && scan.screenAnalysis && (
+                  <div className="bg-violet-500/[0.03] border border-violet-400/12 rounded-lg p-3 max-h-[60vh] overflow-y-auto">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-[9px] text-violet-400/50 uppercase tracking-widest font-bold">Screening & Scoring Logic</p>
+                      <button onClick={() => navigator.clipboard.writeText(scan.screenAnalysis).catch(() => {})}
+                        className="text-[9px] px-2 py-0.5 rounded border border-violet-400/20 text-violet-300/60 hover:bg-violet-500/10">
+                        Copy
+                      </button>
+                    </div>
+                    <pre className="text-[10px] text-muted/50 leading-relaxed whitespace-pre-wrap font-mono">{scan.screenAnalysis}</pre>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         );
       })}
     </div>
@@ -760,9 +830,7 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
       const data = await r.json();
       const scanList = data.scans || [];
       setScans(scanList);
-      if (scanList.some(s => s.status === 'scanning')) {
-        setPageTab('scan');
-      }
+      // Don't force user back to scan tab — they may be viewing history
     } catch (e) {}
     setInitialLoading(false);
   };
@@ -909,7 +977,7 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
           <h1 className="text-xl font-bold text-bright">🔬 Deep Scan Agent</h1>
           <p className="text-[11px] text-muted/40 mt-1">AI-powered pipeline across all Harmonic saved searches</p>
         </div>
-        <span className="text-[11px] text-sky-400/70 font-medium">🦅 {crmUser}</span>
+        <span className="text-[11px] text-sky-400/70 font-medium">{crmUser}</span>
       </div>
 
       {/* Loading state — prevents flash of create form on refresh */}
@@ -1103,7 +1171,7 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                   <ResultsView data={viewingScan} addFavorite={addFavorite} isFavorited={isFavorited} />
                 </>
               ) : (
-                <HistoryPanel history={history} onViewScan={(scan) => setViewingScan(scan)} />
+                <HistoryPanel history={history} onViewScan={(scan) => setViewingScan(scan)} addFavorite={addFavorite} isFavorited={isFavorited} />
               )}
             </div>
           )}
