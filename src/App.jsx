@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import SetupPage from './pages/SetupPage';
 import FavoritesPage from './pages/FavoritesPage';
 import SharedFavoritesPage from './pages/SharedFavoritesPage';
-import AutoScanPage from './pages/AutoScanPage';
+
 import RecurringScanPage from './pages/RecurringScanPage';
 import RealTimeScanPage from './pages/RealTimeScanPage';
 import GitHubPage from './pages/GitHubPage';
@@ -150,7 +150,7 @@ function AppContent({ ready, setReady }) {
             }
           />
           <Route path="/company/:id" element={<CompanyDetail addFavorite={addFavorite} isFavorited={isFavorited} />} />
-          <Route path="/autoscan" element={<AutoScanPage addFavorite={addFavorite} isFavorited={isFavorited} />} />
+          <Route path="/autoscan" element={<Navigate to="/searchagent" replace />} />
           <Route path="/github" element={<GitHubPage addFavorite={addFavorite} isFavorited={isFavorited} />} />
           <Route path="/farcaster" element={<FarcasterPage addFavorite={addFavorite} isFavorited={isFavorited} />} />
           <Route path="/twitter" element={<TwitterPage addFavorite={addFavorite} isFavorited={isFavorited} />} />

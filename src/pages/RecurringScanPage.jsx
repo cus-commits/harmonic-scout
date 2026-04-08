@@ -13,10 +13,10 @@ function authHeaders() {
 // ---- Scan Tiers ----
 
 const TIERS = [
-  { key: 'scout',    name: 'Quick Scout',  cost: '$5',  emoji: '⚡', color: 'sky',     ddPush: 2,  desc: 'Haiku pre-screen → Sonnet deep 10 → top 2 to DD', time: '15-30 min', estMinutes: 25 },
-  { key: 'standard', name: 'Standard',     cost: '$12', emoji: '🔍', color: 'violet',  ddPush: 5,  desc: 'Sonnet pre-screen → Opus deep 15 → top 5 to DD', time: '30-60 min', estMinutes: 45 },
-  { key: 'deep',     name: 'Deep Dive',    cost: '$25', emoji: '🔬', color: 'amber',   ddPush: 8,  desc: 'Sonnet all → Opus deep 40 → top 8 to DD', time: '1-2 hours', estMinutes: 90 },
-  { key: 'sweep',    name: 'Full Sweep',   cost: '$35', emoji: '🌊', color: 'pink',    ddPush: 12, desc: 'Sonnet full → Opus deep 60 → top 12 to DD', time: '2-3 hours', estMinutes: 150 },
+  { key: 'scout',    name: 'Quick Scout',  cost: '$12',  emoji: '⚡', color: 'sky',     ddPush: 2,  desc: 'Haiku pre-screen → Sonnet deep 10 → top 2 to DD', time: '15-30 min', estMinutes: 25 },
+  { key: 'standard', name: 'Standard',     cost: '$18', emoji: '🔍', color: 'violet',  ddPush: 5,  desc: 'Sonnet pre-screen → Opus deep 15 → top 5 to DD', time: '30-60 min', estMinutes: 45 },
+  { key: 'deep',     name: 'Deep Dive',    cost: '$28', emoji: '🔬', color: 'amber',   ddPush: 8,  desc: 'Sonnet all → Opus deep 40 → top 8 to DD', time: '1-2 hours', estMinutes: 90 },
+  { key: 'sweep',    name: 'Full Sweep',   cost: '$38', emoji: '🌊', color: 'pink',    ddPush: 12, desc: 'Sonnet full → Opus deep 60 → top 12 to DD', time: '2-3 hours', estMinutes: 150 },
   { key: 'maximum',  name: 'Maximum',      cost: '$50', emoji: '🚀', color: 'emerald', ddPush: 20, desc: 'Full pipeline → Opus deep 100 → top 20 to DD', time: '3-5 hours', estMinutes: 240 },
 ];
 
@@ -72,20 +72,20 @@ const tierColors = {
 
 function TierSelector({ selected, onSelect, totalCompanies }) {
   // Estimate cost based on company count and tier config
+  // Cost model: base overhead + variable per-company cost, with floor and ceiling per tier
   function estimateCost(tier, count) {
     if (!count) return null;
-    const sonnetCost = 0.12; // per batch
-    const opusCost = 0.03; // per company
-    const haikuCost = 0.02;
-    const preBatches = Math.ceil(count / (tier.key === 'scout' ? 200 : 120));
-    const prePhase = tier.key === 'scout' ? preBatches * haikuCost : preBatches * sonnetCost;
-    const passRate = 0.12;
-    const survivors = Math.round(count * passRate);
-    const screenBatches = Math.ceil(survivors / 50);
-    const screenPhase = screenBatches * sonnetCost;
-    const deepCount = Math.min(survivors, tier.key === 'scout' ? 10 : tier.key === 'standard' ? 15 : tier.key === 'deep' ? 40 : tier.key === 'sweep' ? 60 : 100);
-    const deepPhase = deepCount * (tier.key === 'scout' ? sonnetCost / 15 : opusCost);
-    return Math.min(parseFloat(tier.cost.replace('$', '')), prePhase + screenPhase + deepPhase).toFixed(2);
+    const maxCost = parseFloat(tier.cost.replace('$', ''));
+    // Base overhead (fixed cost regardless of company count — model loading, prompt setup)
+    const bases = { scout: 5, standard: 6, deep: 8, sweep: 10, maximum: 12 };
+    // Variable cost per company (pre-screen + scoring + deep analysis amortized)
+    const perCompany = { scout: 0.001, standard: 0.002, deep: 0.004, sweep: 0.006, maximum: 0.008 };
+    // Minimum spend floors — fewer companies = more expensive models per company
+    const floors = { scout: 7, standard: 10, deep: 18, sweep: 26, maximum: 35 };
+    const base = bases[tier.key] || 5;
+    const variable = count * (perCompany[tier.key] || 0.002);
+    const raw = base + variable;
+    return Math.max(floors[tier.key] || 7, Math.min(maxCost, raw)).toFixed(2);
   }
 
   return (
@@ -1207,16 +1207,12 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
   const selectedTierObj = TIERS.find(t => t.key === selectedTier);
   const dynamicCostEstimate = (() => {
     if (!selectedCompanyCount || !selectedTierObj) return null;
-    const sonnetCost = 0.12, opusCost = 0.03, haikuCost = 0.02;
-    const preBatches = Math.ceil(selectedCompanyCount / (selectedTier === 'scout' ? 200 : 120));
-    const prePhase = selectedTier === 'scout' ? preBatches * haikuCost : preBatches * sonnetCost;
-    const passRate = 0.12;
-    const survivors = Math.round(selectedCompanyCount * passRate);
-    const screenBatches = Math.ceil(survivors / 50);
-    const screenPhase = screenBatches * sonnetCost;
-    const deepCount = Math.min(survivors, selectedTier === 'scout' ? 10 : selectedTier === 'standard' ? 15 : selectedTier === 'deep' ? 40 : selectedTier === 'sweep' ? 60 : 100);
-    const deepPhase = deepCount * (selectedTier === 'scout' ? sonnetCost / 15 : opusCost);
-    return Math.min(parseFloat(selectedTierObj.cost.replace('$', '')), prePhase + screenPhase + deepPhase).toFixed(2);
+    const maxCost = parseFloat(selectedTierObj.cost.replace('$', ''));
+    const bases = { scout: 5, standard: 6, deep: 8, sweep: 10, maximum: 12 };
+    const perCompany = { scout: 0.001, standard: 0.002, deep: 0.004, sweep: 0.006, maximum: 0.008 };
+    const floors = { scout: 7, standard: 10, deep: 18, sweep: 26, maximum: 35 };
+    const raw = (bases[selectedTier] || 5) + selectedCompanyCount * (perCompany[selectedTier] || 0.002);
+    return Math.max(floors[selectedTier] || 7, Math.min(maxCost, raw)).toFixed(2);
   })();
 
   return (

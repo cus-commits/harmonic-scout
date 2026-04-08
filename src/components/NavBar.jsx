@@ -305,7 +305,6 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
 
     const allPages = [
       { path: '/', label: 'Home', icon: '🏠' },
-      { path: '/autoscan', label: 'H Screens', icon: '🔮' },
       { path: '/super', label: 'Super Search', icon: '⚡' },
       { path: '/searchagent', label: 'Scan Agent', icon: '🔬' },
       { path: '/chat', label: 'Harmonic Chat', icon: '💬' },
@@ -614,22 +613,17 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
           <button
             onClick={() => { setShowScanMenu(!showScanMenu); setShowApps(false); setShowSearch(false); setShowMenu(false); }}
             className={`group relative flex flex-col items-center gap-0 px-1.5 py-1 transition-all duration-200 min-w-0 ${
-              showScanMenu || ['/autoscan','/super','/searchagent'].includes(location.pathname) ? 'text-accent' : 'text-muted hover:text-bright'
+              showScanMenu || ['/super','/searchagent'].includes(location.pathname) ? 'text-accent' : 'text-muted hover:text-bright'
             }`}>
-            {['/autoscan','/super','/searchagent'].includes(location.pathname) && <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-accent" />}
-            <ScreenIcon active={showScanMenu || ['/autoscan','/super','/searchagent'].includes(location.pathname)} />
+            {['/super','/searchagent'].includes(location.pathname) && <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-accent" />}
+            <ScreenIcon active={showScanMenu || ['/super','/searchagent'].includes(location.pathname)} />
             <span className="text-[8px] font-medium tracking-wide uppercase leading-tight">Scan</span>
           </button>
           {showScanMenu && (
             <div className="absolute bottom-full left-0 mb-2 w-[180px] bg-[#1a1d2e] border border-amber-400/25 rounded-xl overflow-hidden z-[60]"
               style={{ boxShadow: '0 -8px 30px rgba(0,0,0,0.5)' }}>
-              <button onClick={() => { navigate('/autoscan'); setShowScanMenu(false); }}
-                className={`w-full text-left px-3 py-2.5 text-xs font-medium transition-colors ${location.pathname === '/autoscan' ? 'bg-amber-500/10 text-amber-300' : 'text-bright/70 hover:bg-white/5'}`}>
-                🔮 H Screens
-                <span className="block text-[9px] text-muted/40 mt-0.5">Auto-scan by profile</span>
-              </button>
               <button onClick={() => { navigate('/super'); setShowScanMenu(false); }}
-                className={`w-full text-left px-3 py-2.5 text-xs font-medium border-t border-white/5 transition-colors ${location.pathname === '/super' ? 'bg-sky-500/10 text-sky-300' : 'text-bright/70 hover:bg-white/5'}`}>
+                className={`w-full text-left px-3 py-2.5 text-xs font-medium transition-colors ${location.pathname === '/super' ? 'bg-sky-500/10 text-sky-300' : 'text-bright/70 hover:bg-white/5'}`}>
                 ⚡ Super Search
                 <span className="block text-[9px] text-muted/40 mt-0.5">Multi-source deep scan</span>
               </button>

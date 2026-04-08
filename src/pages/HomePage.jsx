@@ -143,11 +143,11 @@ export default function HomePage({ addFavorite, isFavorited }) {
       {/* Quick nav buttons — 2x2 grid */}
       <div className="grid grid-cols-2 gap-3 mb-6">
         {/* Row 1: Screener (big) + CRM (big) */}
-        <button onClick={() => navigate('/autoscan')}
+        <button onClick={() => navigate('/searchagent')}
           className="py-4 rounded-xl border border-sky-400/25 bg-sky-500/8 hover:bg-sky-500/15 transition-colors text-center">
-          <span className="text-2xl block mb-1">🔍</span>
-          <span className="text-sm font-bold text-sky-300">Screener</span>
-          <span className="text-[10px] text-muted/40 block">Auto-scan deals</span>
+          <span className="text-2xl block mb-1">🔬</span>
+          <span className="text-sm font-bold text-sky-300">Scan Agent</span>
+          <span className="text-[10px] text-muted/40 block">AI-powered discovery</span>
         </button>
         <button onClick={() => navigate('/airtable')}
           className="py-4 rounded-xl border border-amber-400/25 bg-amber-500/8 hover:bg-amber-500/15 transition-colors text-center">
@@ -187,11 +187,6 @@ export default function HomePage({ addFavorite, isFavorited }) {
                   className="w-full text-left px-3 py-2.5 text-xs font-medium text-bright/70 hover:bg-white/5 transition-colors">
                   ⚡ Super Search
                   <span className="block text-[9px] text-muted/40 mt-0.5">Multi-source deep scan</span>
-                </button>
-                <button onClick={() => { navigate('/autoscan'); setShowScanPicker(false); }}
-                  className="w-full text-left px-3 py-2.5 text-xs font-medium text-bright/70 hover:bg-white/5 border-t border-white/5 transition-colors">
-                  📡 Daily Screen
-                  <span className="block text-[9px] text-muted/40 mt-0.5">Auto-scan by profile</span>
                 </button>
               </div>
             )}
