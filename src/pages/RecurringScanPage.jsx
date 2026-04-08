@@ -13,11 +13,18 @@ function authHeaders(tier) {
 // ---- Scan Tiers ----
 
 const TIERS = [
-  { key: 'scout',    name: 'Quick Scout',  cost: '$5',  emoji: '⚡', color: 'sky',     desc: 'Haiku pre-screen → Sonnet top 200 → Sonnet deep top 10', time: '15-30 min' },
-  { key: 'standard', name: 'Standard',     cost: '$12', emoji: '🔍', color: 'violet',  desc: 'Sonnet pre-screen → Sonnet top 200 → Opus deep top 15', time: '30-60 min' },
-  { key: 'deep',     name: 'Deep Dive',    cost: '$25', emoji: '🔬', color: 'amber',   desc: 'Sonnet pre-screen all → Sonnet top 500 → Opus deep top 40', time: '1-2 hours' },
-  { key: 'sweep',    name: 'Full Sweep',   cost: '$35', emoji: '🌊', color: 'pink',    desc: 'Sonnet full pre-screen → Sonnet full scoring → Opus deep top 60', time: '2-3 hours' },
-  { key: 'maximum',  name: 'Maximum',      cost: '$50', emoji: '🚀', color: 'emerald', desc: 'Full pipeline — Sonnet all stages → Opus deep top 100', time: '3-5 hours' },
+  { key: 'scout',    name: 'Quick Scout',  cost: '$5',  emoji: '⚡', color: 'sky',     ddPush: 2,  desc: 'Haiku pre-screen → Sonnet deep 10 → top 2 to DD', time: '15-30 min' },
+  { key: 'standard', name: 'Standard',     cost: '$12', emoji: '🔍', color: 'violet',  ddPush: 5,  desc: 'Sonnet pre-screen → Opus deep 15 → top 5 to DD', time: '30-60 min' },
+  { key: 'deep',     name: 'Deep Dive',    cost: '$25', emoji: '🔬', color: 'amber',   ddPush: 8,  desc: 'Sonnet all → Opus deep 40 → top 8 to DD', time: '1-2 hours' },
+  { key: 'sweep',    name: 'Full Sweep',   cost: '$35', emoji: '🌊', color: 'pink',    ddPush: 12, desc: 'Sonnet full → Opus deep 60 → top 12 to DD', time: '2-3 hours' },
+  { key: 'maximum',  name: 'Maximum',      cost: '$50', emoji: '🚀', color: 'emerald', ddPush: 20, desc: 'Full pipeline → Opus deep 100 → top 20 to DD', time: '3-5 hours' },
+];
+
+const CRM_STAGES = [
+  { key: 'BO', label: 'BO', color: 'sky' },
+  { key: 'BORO', label: 'BORO', color: 'violet' },
+  { key: 'BORO-SM', label: 'BORO-SM', color: 'emerald' },
+  { key: 'Warm', label: 'Warm', color: 'amber' },
 ];
 
 const tierColors = {
@@ -45,7 +52,10 @@ function TierSelector({ selected, onSelect }) {
                 <span className={`text-sm font-bold ${c.text}`}>{t.name}</span>
                 <span className="text-[10px] text-muted/40">~{t.time}</span>
               </div>
-              <span className={`text-sm font-bold ${c.text}`}>{t.cost}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] text-muted/40">{t.ddPush} to DD</span>
+                <span className={`text-sm font-bold ${c.text}`}>{t.cost}</span>
+              </div>
             </div>
             <p className="text-[10px] text-muted/40 mt-1 ml-7">{t.desc}</p>
           </button>
@@ -359,8 +369,20 @@ function ResultsView({ data, addFavorite, isFavorited }) {
           <span className="text-amber-300/60">→ {data.stats.enriched} enriched</span>
           <span className="text-emerald-300/60">→ {data.stats.deepScored} deep-scored</span>
           <span className="text-pink-300/60">→ {data.stats.topResults} rated 7+</span>
+          {data.stats.ddPushed > 0 && <span className="text-emerald-400/70 font-medium">→ {data.stats.ddPushed} to DD</span>}
           <span className="text-sky-300/50">· ${data.budgetUsed} spent</span>
           {data.duration && <span className="text-muted/30">· {Math.round(data.duration / 60)}m</span>}
+        </div>
+      )}
+
+      {/* Options used */}
+      {data.options && (data.options.includePortcos || data.options.crmStages?.length > 0 || data.options.keywords) && (
+        <div className="flex gap-2 text-[9px] text-muted/30 flex-wrap">
+          {data.options.includePortcos && <span className="px-1.5 py-0.5 rounded bg-sky-500/8 border border-sky-400/15 text-sky-400/50">📂 Portcos</span>}
+          {data.options.crmStages?.map(s => (
+            <span key={s} className="px-1.5 py-0.5 rounded bg-violet-500/8 border border-violet-400/15 text-violet-400/50">{s}</span>
+          ))}
+          {data.options.keywords && <span className="px-1.5 py-0.5 rounded bg-amber-500/8 border border-amber-400/15 text-amber-400/50">🔑 {data.options.keywords.slice(0, 60)}{data.options.keywords.length > 60 ? '...' : ''}</span>}
         </div>
       )}
 
@@ -429,6 +451,19 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
   const [viewingScan, setViewingScan] = useState(null); // for viewing history item
   const abortRef = useRef(null);
 
+  // Scan options
+  const [includePortcos, setIncludePortcos] = useState(false);
+  const [crmStages, setCrmStages] = useState([]);
+  const [keywords, setKeywords] = useState('');
+
+  const toggleCrmStage = (stage) => {
+    setCrmStages(prev => prev.includes(stage) ? prev.filter(s => s !== stage) : [...prev, stage]);
+  };
+  const toggleAllCrm = () => {
+    const allKeys = CRM_STAGES.map(s => s.key);
+    setCrmStages(prev => prev.length === allKeys.length ? [] : allKeys);
+  };
+
   // Poll status on mount — reconnect if scan is running
   useEffect(() => {
     fetchStatus();
@@ -482,6 +517,7 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
       const res = await fetch(`${API_BASE}/api/recurring-scan`, {
         method: 'POST',
         headers: authHeaders(selectedTier),
+        body: JSON.stringify({ tier: selectedTier, includePortcos, crmStages, keywords }),
         signal: controller.signal,
       });
 
@@ -561,11 +597,72 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
             </div>
           )}
 
-          {/* Tier selector + start — only when NOT running */}
+          {/* Tier selector + options + start — only when NOT running */}
           {!isRunning && !activeResults && (
-            <div className="space-y-4">
-              <p className="text-[10px] text-muted/50 uppercase tracking-widest font-bold">Select Scan Depth</p>
-              <TierSelector selected={selectedTier} onSelect={setSelectedTier} />
+            <div className="space-y-5">
+              <div>
+                <p className="text-[10px] text-muted/50 uppercase tracking-widest font-bold mb-2">Select Scan Depth</p>
+                <TierSelector selected={selectedTier} onSelect={setSelectedTier} />
+              </div>
+
+              {/* Scan Options */}
+              <div className="rounded-xl border border-border/15 bg-surface/30 p-4 space-y-4">
+                <p className="text-[10px] text-muted/50 uppercase tracking-widest font-bold">Search Context</p>
+
+                {/* Portcos checkbox */}
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <input type="checkbox" checked={includePortcos} onChange={() => setIncludePortcos(!includePortcos)}
+                    className="w-4 h-4 rounded border-border/30 bg-ink/50 accent-sky-400" />
+                  <div>
+                    <span className="text-[11px] text-bright/70 font-medium group-hover:text-bright">Include Portfolio Companies</span>
+                    <p className="text-[9px] text-muted/35">Find companies similar to our portcos (Steel, Pump.fun, Bubblemaps, etc.)</p>
+                  </div>
+                </label>
+
+                {/* CRM Stages */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] text-bright/60 font-medium">Find Similar to CRM Pipeline</span>
+                    <button onClick={toggleAllCrm}
+                      className={`text-[9px] px-2 py-0.5 rounded border transition-all font-medium ${
+                        crmStages.length === CRM_STAGES.length
+                          ? 'bg-sky-500/15 border-sky-400/30 text-sky-300'
+                          : 'border-border/20 text-muted/40 hover:text-muted/60'
+                      }`}>
+                      {crmStages.length === CRM_STAGES.length ? '✓ All' : 'Select All'}
+                    </button>
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    {CRM_STAGES.map(s => {
+                      const isOn = crmStages.includes(s.key);
+                      const colors = tierColors[s.color];
+                      return (
+                        <button key={s.key} onClick={() => toggleCrmStage(s.key)}
+                          className={`text-[10px] px-3 py-1.5 rounded-lg border font-bold transition-all ${
+                            isOn ? `${colors.activeBg} ${colors.activeBorder} ${colors.text}` : `${colors.bg} ${colors.border} text-muted/50 hover:text-muted/70`
+                          }`}>
+                          {isOn ? '✓ ' : ''}{s.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[9px] text-muted/30">Boosts companies similar to those already in your pipeline stages</p>
+                </div>
+
+                {/* Keywords */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] text-bright/60 font-medium">Priority Keywords</label>
+                  <input
+                    type="text"
+                    value={keywords}
+                    onChange={e => setKeywords(e.target.value)}
+                    placeholder="e.g. prediction markets, AI agents, crypto exchange, stablecoin infra..."
+                    className="w-full bg-ink/50 border border-border/25 rounded-lg px-3 py-2 text-xs text-bright outline-none focus:border-sky-400/35 transition-colors placeholder:text-white/15"
+                  />
+                  <p className="text-[9px] text-muted/30">Companies matching these concepts/sectors will be scored higher</p>
+                </div>
+              </div>
+
               <button onClick={startScan}
                 className="w-full px-6 py-3 rounded-xl bg-sky-500/15 border border-sky-400/30 text-sky-300 font-bold text-sm hover:bg-sky-500/25 hover:border-sky-400/50 transition-all active:scale-[0.98]">
                 🚀 Start {TIERS.find(t => t.key === selectedTier)?.name} Scan ({TIERS.find(t => t.key === selectedTier)?.cost})
