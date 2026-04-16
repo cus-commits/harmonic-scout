@@ -11,6 +11,56 @@ const PLATFORM_META = {
   other:    { icon: '📋', label: 'Other',        color: 'amber',   gradient: 'from-amber-500/20 to-amber-500/5' },
 };
 
+const CONNECT_FIELDS = {
+  gmail: {
+    title: 'Connect Gmail (OAuth2)',
+    fields: [
+      { key: 'clientId', label: 'Google Client ID', placeholder: 'xxxx.apps.googleusercontent.com' },
+      { key: 'clientSecret', label: 'Client Secret', placeholder: 'GOCSPX-...', type: 'password' },
+      { key: 'refreshToken', label: 'Refresh Token', placeholder: '1//0...', type: 'password' },
+    ],
+    help: 'Create a Google Cloud project → Enable Gmail API → OAuth consent screen → Create OAuth2 credentials. Use Google OAuth Playground to get a refresh token with gmail.readonly scope.',
+    mode: '24/7 server polling',
+  },
+  telegram: {
+    title: 'Connect Telegram Bot',
+    fields: [
+      { key: 'botToken', label: 'Bot Token', placeholder: '123456:ABC-DEF...', type: 'password' },
+    ],
+    help: 'Message @BotFather on Telegram → /newbot → copy the token. Forward messages to this bot or add it to groups to track.',
+    mode: '24/7 server polling',
+  },
+  twitter: {
+    title: 'Connect Twitter / X (Session)',
+    fields: [
+      { key: 'ct0', label: 'ct0 Cookie', placeholder: 'abc123...', type: 'password' },
+      { key: 'authToken', label: 'auth_token Cookie', placeholder: 'abc123...', type: 'password' },
+    ],
+    help: 'Open x.com → DevTools → Application → Cookies → copy "ct0" and "auth_token". Sessions last ~months.',
+    mode: '24/7 server polling (free)',
+    warning: 'Uses internal Twitter API. No cost but sessions can expire.',
+  },
+  discord: {
+    title: 'Connect Discord (User Token)',
+    fields: [
+      { key: 'userToken', label: 'User Token', placeholder: 'mfa.abc123...', type: 'password' },
+    ],
+    help: 'Open discord.com → DevTools → Network → find any request → copy the "Authorization" header value.',
+    mode: '24/7 server polling',
+    warning: 'Self-bots violate Discord TOS. Risk of account ban. Use at your own risk.',
+  },
+  linkedin: {
+    title: 'Connect LinkedIn (Session)',
+    fields: [
+      { key: 'liAt', label: 'li_at Cookie', placeholder: 'AQE...', type: 'password' },
+      { key: 'jsessionid', label: 'JSESSIONID Cookie', placeholder: 'ajax:123...', type: 'password' },
+    ],
+    help: 'Open linkedin.com → DevTools → Application → Cookies → copy "li_at" and "JSESSIONID" (remove quotes). Sessions expire in ~1-2 weeks.',
+    mode: '24/7 server polling',
+    warning: 'LinkedIn aggressively detects automation. Sessions expire frequently.',
+  },
+};
+
 function timeSince(dateStr) {
   if (!dateStr) return '';
   const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
@@ -20,8 +70,14 @@ function timeSince(dateStr) {
   return `${Math.floor(seconds / 86400)}d ago`;
 }
 
-function PlatformCard({ platform, info }) {
+function PlatformCard({ platform, info, onConnect, onDisconnect, credentials }) {
   const meta = PLATFORM_META[platform];
+  const [expanded, setExpanded] = useState(false);
+  const [formData, setFormData] = useState({});
+  const [connecting, setConnecting] = useState(false);
+  const [connectResult, setConnectResult] = useState(null);
+  const config = CONNECT_FIELDS[platform];
+
   const colorMap = {
     sky: 'text-sky-400 border-sky-500/20',
     indigo: 'text-indigo-400 border-indigo-500/20',
@@ -31,33 +87,131 @@ function PlatformCard({ platform, info }) {
     amber: 'text-amber-400 border-amber-500/20',
   };
   const colors = colorMap[meta.color];
+  const isConnected = info.connected && !info.error;
+
+  const handleConnect = async () => {
+    setConnecting(true);
+    setConnectResult(null);
+    try {
+      const resp = await fetch(`${API_BASE}/api/reachouts/connect/${platform}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      const data = await resp.json();
+      if (resp.ok) {
+        setConnectResult({ ok: true, message: data.message });
+        setFormData({});
+        setTimeout(() => { setExpanded(false); setConnectResult(null); }, 2000);
+        onConnect();
+      } else {
+        setConnectResult({ ok: false, message: data.error });
+      }
+    } catch (e) {
+      setConnectResult({ ok: false, message: e.message });
+    }
+    setConnecting(false);
+  };
+
+  const handleDisconnect = async () => {
+    await fetch(`${API_BASE}/api/reachouts/disconnect/${platform}`, { method: 'POST' });
+    onDisconnect();
+  };
 
   return (
-    <div className={`glass-card p-4 bg-gradient-to-br ${meta.gradient} border ${colors.split(' ')[1]} transition-all hover:scale-[1.02]`}>
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2.5">
-          <span className="text-2xl">{meta.icon}</span>
-          <div>
-            <p className={`text-sm font-bold ${colors.split(' ')[0]}`}>{meta.label}</p>
-            <p className="text-[10px] text-muted/50">
-              {info.connected ? `Synced ${timeSince(info.lastSync)}` : 'Not connected'}
-            </p>
+    <div className={`glass-card bg-gradient-to-br ${meta.gradient} border ${colors.split(' ')[1]} transition-all`}>
+      <div className="p-4">
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2.5">
+            <span className="text-2xl">{meta.icon}</span>
+            <div>
+              <p className={`text-sm font-bold ${colors.split(' ')[0]}`}>{meta.label}</p>
+              <p className="text-[10px] text-muted/50">
+                {isConnected && info.mode && <span className="text-emerald-400/60">{info.mode} · </span>}
+                {isConnected ? `Synced ${timeSince(info.lastSync)}` : info.error ? 'Error' : 'Not connected'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {isConnected ? (
+              <div className={`min-w-[36px] h-9 flex items-center justify-center rounded-xl font-bold text-lg ${
+                info.unread > 0 ? `bg-white/10 ${colors.split(' ')[0]}` : 'bg-white/5 text-muted/40'
+              }`}>
+                {info.unread}
+              </div>
+            ) : (
+              <span className="text-[10px] text-muted/30 bg-white/5 px-2 py-1 rounded">offline</span>
+            )}
           </div>
         </div>
-        {info.connected ? (
-          <div className={`min-w-[36px] h-9 flex items-center justify-center rounded-xl font-bold text-lg ${
-            info.unread > 0 ? `bg-${meta.color}-500/20 ${colors.split(' ')[0]}` : 'bg-white/5 text-muted/40'
-          }`}>
-            {info.unread}
-          </div>
-        ) : (
-          <span className="text-[10px] text-muted/30 bg-white/5 px-2 py-1 rounded">offline</span>
+
+        {info.error && (
+          <p className="text-[10px] text-red-400/70 mt-1">{info.error}</p>
         )}
+
+        {info.unread > 0 && (
+          <div className="flex items-center gap-1.5 mt-1">
+            <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+            <span className="text-[10px] text-bright/60">{info.unread} unread</span>
+          </div>
+        )}
+
+        <div className="flex items-center gap-2 mt-2">
+          {config && (
+            <button onClick={() => setExpanded(!expanded)}
+              className={`text-[10px] px-2 py-0.5 rounded border transition-colors ${
+                isConnected
+                  ? 'border-emerald-500/20 text-emerald-400/60 hover:text-emerald-300'
+                  : 'border-accent/20 text-accent hover:bg-accent/10'
+              }`}>
+              {isConnected ? (expanded ? 'Hide' : 'Settings') : (expanded ? 'Cancel' : 'Connect')}
+            </button>
+          )}
+          {isConnected && (
+            <button onClick={handleDisconnect}
+              className="text-[10px] px-2 py-0.5 rounded border border-red-500/20 text-red-400/50 hover:text-red-400 transition-colors">
+              Disconnect
+            </button>
+          )}
+        </div>
       </div>
-      {info.unread > 0 && (
-        <div className="flex items-center gap-1.5 mt-1">
-          <div className={`w-1.5 h-1.5 rounded-full bg-${meta.color}-400 animate-pulse`} />
-          <span className="text-[10px] text-bright/60">{info.unread} unread message{info.unread !== 1 ? 's' : ''}</span>
+
+      {expanded && config && (
+        <div className="px-4 pb-4 pt-1 border-t border-white/5">
+          <p className="text-[10px] font-bold text-bright/60 mb-2">{config.title}</p>
+          {config.warning && (
+            <p className="text-[9px] text-amber-400/60 bg-amber-500/5 px-2 py-1 rounded mb-2">
+              ⚠️ {config.warning}
+            </p>
+          )}
+          <div className="space-y-2">
+            {config.fields.map(f => (
+              <div key={f.key}>
+                <label className="text-[9px] text-muted/50 block mb-0.5">{f.label}</label>
+                <input
+                  type={f.type || 'text'}
+                  placeholder={f.placeholder}
+                  value={formData[f.key] || ''}
+                  onChange={e => setFormData(d => ({ ...d, [f.key]: e.target.value }))}
+                  className="w-full bg-ink/60 border border-border/30 rounded-lg px-2 py-1.5 text-[11px] text-bright font-mono outline-none focus:border-accent/40"
+                  autoComplete="off"
+                />
+              </div>
+            ))}
+          </div>
+          <p className="text-[9px] text-muted/30 mt-2 leading-relaxed">{config.help}</p>
+          {config.mode && (
+            <p className="text-[9px] text-emerald-400/40 mt-1">Mode: {config.mode}</p>
+          )}
+          {connectResult && (
+            <p className={`text-[10px] mt-2 ${connectResult.ok ? 'text-emerald-400' : 'text-red-400'}`}>
+              {connectResult.message}
+            </p>
+          )}
+          <button onClick={handleConnect} disabled={connecting}
+            className="mt-2 w-full text-[11px] px-3 py-2 rounded-lg bg-accent/20 text-accent font-bold disabled:opacity-40 transition-colors hover:bg-accent/30">
+            {connecting ? 'Connecting...' : isConnected ? 'Reconnect' : 'Connect'}
+          </button>
         </div>
       )}
     </div>
@@ -71,7 +225,11 @@ function MessageRow({ msg, onMarkRead }) {
     <div className={`flex items-start gap-3 px-4 py-3 border-b border-border/20 transition-colors ${
       msg.unread && !msg.markedRead ? 'bg-white/[0.02]' : 'opacity-60'
     }`}>
-      <span className="text-lg mt-0.5 flex-shrink-0">{meta.icon}</span>
+      {msg.senderAvatar ? (
+        <img src={msg.senderAvatar} alt="" className="w-8 h-8 rounded-full flex-shrink-0 mt-0.5 bg-ink/60" />
+      ) : (
+        <span className="text-lg mt-0.5 flex-shrink-0">{meta.icon}</span>
+      )}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <p className="text-xs font-semibold text-bright truncate">{msg.senderName}</p>
@@ -82,8 +240,8 @@ function MessageRow({ msg, onMarkRead }) {
         </div>
         <p className="text-[11px] text-muted/60 truncate mt-0.5">{msg.lastMessage}</p>
         <div className="flex items-center gap-2 mt-1.5">
-          <span className={`text-[8px] px-1.5 py-0.5 rounded bg-${meta.color}-500/10 text-${meta.color}-300/60`}>
-            {meta.label}
+          <span className={`text-[8px] px-1.5 py-0.5 rounded bg-white/5 text-muted/40`}>
+            {meta.icon} {meta.label}
           </span>
           {msg.url && (
             <a href={msg.url} target="_blank" rel="noopener"
@@ -106,21 +264,25 @@ function MessageRow({ msg, onMarkRead }) {
 export default function ReachoutsPage() {
   const [summary, setSummary] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [credentials, setCredentials] = useState({});
   const [filter, setFilter] = useState('all');
   const [showUnreadOnly, setShowUnreadOnly] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [showSetup, setShowSetup] = useState(false);
   const [manualForm, setManualForm] = useState(false);
   const [manualData, setManualData] = useState({ platform: 'other', senderName: '', lastMessage: '', url: '' });
 
   const fetchData = useCallback(async () => {
     try {
-      const [sumResp, msgResp] = await Promise.all([
+      const [sumResp, msgResp, credResp] = await Promise.all([
         fetch(`${API_BASE}/api/reachouts/summary`),
         fetch(`${API_BASE}/api/reachouts/messages?${filter !== 'all' ? `platform=${filter}&` : ''}${showUnreadOnly ? 'unreadOnly=true' : ''}`),
+        fetch(`${API_BASE}/api/reachouts/credentials`),
       ]);
-      const [sumData, msgData] = await Promise.all([sumResp.json(), msgResp.json()]);
+      const [sumData, msgData, credData] = await Promise.all([sumResp.json(), msgResp.json(), credResp.json()]);
       setSummary(sumData);
       setMessages(msgData.messages || []);
+      setCredentials(credData);
     } catch (e) {
       console.error('Reachouts fetch error:', e);
     }
@@ -172,6 +334,7 @@ export default function ReachoutsPage() {
   }
 
   const totalUnread = summary?.totalUnread || 0;
+  const connectedCount = Object.values(credentials).filter(c => c.connected).length;
 
   return (
     <div className="max-w-3xl mx-auto px-4 pt-6 pb-24">
@@ -186,13 +349,64 @@ export default function ReachoutsPage() {
               </span>
             )}
           </h1>
-          <p className="text-xs text-muted/50 mt-1">Multi-platform DM tracker — never miss a message</p>
+          <p className="text-xs text-muted/50 mt-1">
+            {connectedCount > 0
+              ? `${connectedCount} platform${connectedCount !== 1 ? 's' : ''} connected — polling 24/7`
+              : 'Connect platforms below to start tracking DMs'}
+          </p>
         </div>
-        <button onClick={() => setManualForm(!manualForm)}
-          className="text-xs px-3 py-1.5 rounded-lg border border-accent/20 text-accent hover:bg-accent/10 transition-colors">
-          + Add Manual
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => setManualForm(!manualForm)}
+            className="text-xs px-3 py-1.5 rounded-lg border border-accent/20 text-accent hover:bg-accent/10 transition-colors">
+            + Manual
+          </button>
+          <button onClick={() => setShowSetup(!showSetup)}
+            className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+              showSetup ? 'border-accent/40 bg-accent/10 text-accent' : 'border-border/30 text-muted hover:text-bright'
+            }`}>
+            {showSetup ? 'Hide Setup' : 'Connect Platforms'}
+          </button>
+        </div>
       </div>
+
+      {/* Platform setup cards */}
+      {showSetup && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+          {Object.entries(PLATFORM_META).filter(([k]) => k !== 'other').map(([platform, meta]) => (
+            <PlatformCard
+              key={platform}
+              platform={platform}
+              info={summary?.summary?.[platform] || {}}
+              credentials={credentials[platform]}
+              onConnect={fetchData}
+              onDisconnect={fetchData}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Quick status row (when setup is hidden) */}
+      {!showSetup && summary && (
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
+          {Object.entries(summary.summary).filter(([_, info]) => info.connected || info.unread > 0).map(([platform, info]) => {
+            const meta = PLATFORM_META[platform];
+            return (
+              <div key={platform} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.03] border border-white/5">
+                <span className="text-sm">{meta.icon}</span>
+                {info.unread > 0 ? (
+                  <span className="text-[10px] font-bold text-amber-300">{info.unread}</span>
+                ) : (
+                  <span className="text-[10px] text-emerald-400/50">0</span>
+                )}
+                {info.connected && <div className="w-1 h-1 rounded-full bg-emerald-400/40" />}
+              </div>
+            );
+          })}
+          {connectedCount === 0 && (
+            <p className="text-[10px] text-muted/40">No platforms connected — click "Connect Platforms" above</p>
+          )}
+        </div>
+      )}
 
       {/* Manual entry form */}
       {manualForm && (
@@ -219,15 +433,6 @@ export default function ReachoutsPage() {
             <button onClick={() => setManualForm(false)} className="text-xs px-3 py-1.5 rounded-lg border border-border/30 text-muted">Cancel</button>
             <button onClick={addManual} className="text-xs px-3 py-1.5 rounded-lg bg-accent/20 text-accent font-bold">Add Message</button>
           </div>
-        </div>
-      )}
-
-      {/* Platform summary cards */}
-      {summary && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-          {Object.entries(summary.summary).map(([platform, info]) => (
-            <PlatformCard key={platform} platform={platform} info={info} />
-          ))}
         </div>
       )}
 
@@ -266,7 +471,7 @@ export default function ReachoutsPage() {
               {showUnreadOnly ? 'All caught up — no unread messages' : 'No messages yet'}
             </p>
             <p className="text-[10px] text-muted/30 mt-2">
-              Install the Chrome extension or add messages manually
+              {connectedCount === 0 ? 'Connect platforms above to start tracking' : 'Waiting for new messages...'}
             </p>
           </div>
         ) : (
@@ -274,17 +479,6 @@ export default function ReachoutsPage() {
             <MessageRow key={msg.conversationId} msg={msg} onMarkRead={markRead} />
           ))
         )}
-      </div>
-
-      {/* Extension install help */}
-      <div className="mt-6 glass-card p-4">
-        <p className="text-xs font-bold text-bright/70 mb-2">🔌 Chrome Extension Setup</p>
-        <ol className="text-[11px] text-muted/60 space-y-1.5 list-decimal list-inside">
-          <li>Open <code className="text-accent/60 bg-ink/40 px-1 rounded">chrome://extensions</code></li>
-          <li>Enable <strong className="text-bright/60">Developer mode</strong> (top right)</li>
-          <li>Click <strong className="text-bright/60">Load unpacked</strong> → select the <code className="text-accent/60 bg-ink/40 px-1 rounded">pigeon-reachouts-extension</code> folder</li>
-          <li>Open Twitter, Discord, LinkedIn — the extension scrapes DMs automatically</li>
-        </ol>
       </div>
     </div>
   );
