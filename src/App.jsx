@@ -17,6 +17,7 @@ import CompanyDetail from './pages/CompanyDetail';
 import TopPicksPage from './pages/TopPicksPage';
 import AirtablePage from './pages/AirtablePage';
 import PortcosPage from './pages/PortcosPage';
+import ReachoutsPage from './pages/ReachoutsPage';
 import NavBar from './components/NavBar';
 import Trollbox from './components/Trollbox';
 import { ScanProvider } from './components/ScanContext';
@@ -159,6 +160,7 @@ function AppContent({ ready, setReady }) {
           <Route path="/producthunt" element={<ProductHuntPage addFavorite={addFavorite} isFavorited={isFavorited} />} />
           <Route path="/airtable" element={<AirtablePage />} />
           <Route path="/portcos" element={<PortcosPage addFavorite={addFavorite} isFavorited={isFavorited} />} />
+          <Route path="/reachouts" element={<ReachoutsPage />} />
           <Route path="/recurring" element={<RecurringScanPage addFavorite={addFavorite} isFavorited={isFavorited} />} />
           <Route path="/searchagent" element={<RecurringScanPage addFavorite={addFavorite} isFavorited={isFavorited} />} />
           <Route path="/recurring/live/:scanId" element={<RealTimeScanPage />} />
