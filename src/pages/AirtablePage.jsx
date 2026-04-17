@@ -1133,7 +1133,7 @@ export default function AirtablePage() {
                     // Find text after bracket until next bracket or end
                     const afterStart = bracketPattern.lastIndex;
                     const nextBracket = raw.indexOf('[', afterStart);
-                    const nextInline = raw.slice(afterStart).search(/\(\d{1,2}\/\d{1,2}\/\d{2,4}\)/);
+                    const nextInline = raw.slice(afterStart).search(/\(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\)/);
                     let endPos = raw.length;
                     if (nextBracket > -1) endPos = Math.min(endPos, nextBracket);
                     // For bracket entries, grab text until next entry
@@ -1152,11 +1152,11 @@ export default function AirtablePage() {
                     } else if (seg.content) {
                       // Split inline-dated text: "text (M/D/YYYY) text (M/D/YYYY)"
                       // Dates appear at the END of each note, so split AFTER each date
-                      const inlineParts = seg.content.split(/(?<=\(\d{1,2}\/\d{1,2}\/\d{2,4}\))\s*/);
+                      const inlineParts = seg.content.split(/(?<=\(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\))\s*/);
                       inlineParts.forEach(part => {
                         const trimmed = part.trim();
                         if (!trimmed) return;
-                        const dateMatch = trimmed.match(/\((\d{1,2}\/\d{1,2}\/\d{2,4})\)\s*$/);
+                        const dateMatch = trimmed.match(/\((\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)\)\s*$/);
                         if (dateMatch) {
                           const noteText = trimmed.slice(0, dateMatch.index).trim();
                           entries.push({ author: '', date: dateMatch[1], text: noteText || '(no details)' });
@@ -1173,8 +1173,10 @@ export default function AirtablePage() {
                     if (!a.date) return 1;
                     if (!b.date) return -1;
                     const parseDate = (d) => {
-                      // Handle "Mar 17, 2026 2:30 PM" and "3/17/2026" formats
-                      const ts = new Date(d.replace(' EST', ''));
+                      const clean = d.replace(' EST', '').trim();
+                      const short = clean.match(/^(\d{1,2})\/(\d{1,2})$/);
+                      if (short) return new Date(new Date().getFullYear(), parseInt(short[1]) - 1, parseInt(short[2])).getTime();
+                      const ts = new Date(clean);
                       return isNaN(ts) ? 0 : ts.getTime();
                     };
                     return parseDate(b.date) - parseDate(a.date);
