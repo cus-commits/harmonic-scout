@@ -275,14 +275,14 @@ export function CrmHistory() {
         ...(smR.companies || []).map(c => ({ ...c, _stage: 'BORO-SM' })),
       ];
 
-      // Filter to last 7 days using Airtable's created_time
-      const cutoff = Date.now() - (7 * 24 * 60 * 60 * 1000);
+      // Filter to last 30 days using last stage modification time
+      const cutoff = Date.now() - (30 * 24 * 60 * 60 * 1000);
       const recent = all.filter(c => {
         if (!c.created_time) return false;
         return new Date(c.created_time).getTime() >= cutoff;
       });
 
-      // Sort most recently created first
+      // Sort most recently modified first
       recent.sort((a, b) => new Date(b.created_time).getTime() - new Date(a.created_time).getTime());
 
       // Optionally enrich with local crm_history for "added by" info
@@ -366,14 +366,14 @@ export function CrmHistory() {
           {/* Recently added (72h) */}
           <div className="px-3 pt-2 pb-1 flex items-center justify-between">
             <p className="text-[9px] text-muted/40 uppercase tracking-wider font-bold">
-              Added last 7d {recentCompanies.length > 0 && <span className="text-amber-400/60">({recentCompanies.length})</span>}
+              Recent activity (30d) {recentCompanies.length > 0 && <span className="text-amber-400/60">({recentCompanies.length})</span>}
             </p>
             {loading && <span className="text-[9px] text-amber-400/50 animate-pulse">loading…</span>}
             {!loading && <button onClick={loadData} className="text-[9px] text-muted/30 hover:text-amber-400/60">↻</button>}
           </div>
           <div className="max-h-[400px] overflow-y-auto">
             {recentCompanies.length === 0 && !loading ? (
-              <p className="text-muted/40 text-[10px] text-center py-4">No new additions in the last 7 days</p>
+              <p className="text-muted/40 text-[10px] text-center py-4">No activity in the last 30 days</p>
             ) : (
               recentCompanies.map((c, i) => {
                 const { inVotes, outVotes } = parseVotes(c.in_or_out);
