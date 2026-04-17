@@ -3,6 +3,31 @@ import FindSimilar from '../components/FindSimilar';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://pigeon-api.up.railway.app';
 
+function parseReachoutDate(raw) {
+  const cleaned = raw.replace(/[\[\]()]/g, '').replace(/.*·\s*/, '').replace(' EST', '').trim();
+  // Handle M/D without year — assume current year
+  const shortMatch = cleaned.match(/^(\d{1,2})\/(\d{1,2})$/);
+  if (shortMatch) {
+    const d = new Date(new Date().getFullYear(), parseInt(shortMatch[1]) - 1, parseInt(shortMatch[2]));
+    return isNaN(d.getTime()) ? null : d;
+  }
+  // Handle M/D/YY or M/D/YYYY
+  const d = new Date(cleaned);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function getLastReachoutDate(notes) {
+  if (!notes) return null;
+  let latest = null;
+  // Match (M/D/YYYY), (M/D/YY), (M/D), and [Author · Date] formats
+  const matches = notes.match(/\(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\)|\[.*?·\s*([A-Za-z]+ \d+,?\s*\d{4}.*?)\]/g) || [];
+  for (const m of matches) {
+    const d = parseReachoutDate(m);
+    if (d && (!latest || d > latest)) latest = d;
+  }
+  return latest;
+}
+
 function WebGrowthBadge({ traction, harmonicId }) {
   const t = traction || {};
   const g30 = t.webGrowth30d;
@@ -234,25 +259,8 @@ export default function AirtablePage() {
         const withNotes = all.filter(c => c.reachout_notes && c.reachout_notes.trim());
         // Sort: entries with actual dates first (newest up), legacy/no-date at bottom
         withNotes.sort((a, b) => {
-          const getLastDate = (company) => {
-            const notes = company.reachout_notes || '';
-            let latest = null;
-            // Check [Author · Date] brackets
-            const bracketMatches = notes.match(/\[.*?·\s*([A-Za-z]+ \d+,?\s*\d{4}.*?)\]/g) || [];
-            for (const m of bracketMatches) {
-              const dateStr = m.match(/·\s*(.+)\]/);
-              if (dateStr) { const d = new Date(dateStr[1].replace(' EST','').trim()); if (!isNaN(d.getTime()) && (!latest || d > latest)) latest = d; }
-            }
-            // Check (M/D/YYYY) inline dates
-            const inlineMatches = notes.match(/\(\d{1,2}\/\d{1,2}\/\d{2,4}\)/g) || [];
-            for (const m of inlineMatches) {
-              const d = new Date(m.replace(/[()]/g, ''));
-              if (!isNaN(d.getTime()) && (!latest || d > latest)) latest = d;
-            }
-            return latest ? latest.getTime() : -1; // -1 = no date found
-          };
-          const dateA = getLastDate(a);
-          const dateB = getLastDate(b);
+          const dateA = (getLastReachoutDate(a.reachout_notes) || new Date(0)).getTime();
+          const dateB = (getLastReachoutDate(b.reachout_notes) || new Date(0)).getTime();
           // Both have dates: sort newest first
           if (dateA > 0 && dateB > 0) return dateB - dateA;
           // One has date, other doesn't: dated first
@@ -294,15 +302,8 @@ export default function AirtablePage() {
         const now = Date.now();
         const ONE_WEEK = 7 * 86400000;
         const ONE_MONTH = 30 * 86400000;
-        const getLastDate = (notes) => {
-          let latest = null;
-          for (const m of ((notes||'').match(/\(\d{1,2}\/\d{1,2}\/\d{2,4}\)|\[.*?·\s*([A-Za-z]+ \d+,?\s*\d{4}[^]*?)\]/g) || [])) {
-            try { const d = new Date(m.replace(/[\[\]()]/g,'').replace(/.*·\s*/,'').replace(' EST','').trim()); if (!isNaN(d.getTime()) && (!latest||d>latest)) latest=d; } catch(e){}
-          }
-          return latest;
-        };
-        const missingSM = (sm.companies||[]).filter(c => { const d = getLastDate(c.reachout_notes); return !d || now - d.getTime() > ONE_WEEK; });
-        const missingBORO = (boro.companies||[]).filter(c => { const d = getLastDate(c.reachout_notes); return !d || now - d.getTime() > ONE_MONTH; });
+        const missingSM = (sm.companies||[]).filter(c => { const d = getLastReachoutDate(c.reachout_notes); return !d || now - d.getTime() > ONE_WEEK; });
+        const missingBORO = (boro.companies||[]).filter(c => { const d = getLastReachoutDate(c.reachout_notes); return !d || now - d.getTime() > ONE_MONTH; });
         if (missingSM.length > 0 || missingBORO.length > 0) {
           setSerenaMissing({ sm: missingSM.map(c => c.company), boro: missingBORO.map(c => c.company) });
         }
@@ -704,19 +705,7 @@ export default function AirtablePage() {
             const ONE_MONTH = 30 * 86400000;
             const allBoroSmCompanies = allReachouts || [];
 
-            // Get last reachout date for each company
-            function getLastReachoutDate(notes) {
-              let latest = null;
-              const dateMatches = (notes || '').match(/\(\d{1,2}\/\d{1,2}\/\d{2,4}\)|\[.*?·\s*([A-Za-z]+ \d+,?\s*\d{4}[^]*?)\]/g) || [];
-              for (const dm of dateMatches) {
-                try {
-                  const cleaned = dm.replace(/[\[\]()]/g, '').replace(/.*·\s*/, '').replace(' EST', '').trim();
-                  const d = new Date(cleaned);
-                  if (!isNaN(d.getTime()) && (!latest || d > latest)) latest = d;
-                } catch(e) {}
-              }
-              return latest;
-            }
+            // Uses shared getLastReachoutDate() from top of file
 
             const missingSM = [];
             const missingBORO = [];
@@ -775,16 +764,8 @@ export default function AirtablePage() {
               {filtered.map((c, i) => {
                 const notes = c.reachout_notes || '';
                 // Extract most recent date
-                const dateMatches = notes.match(/\(\d{1,2}\/\d{1,2}\/\d{2,4}\)|\[.*?·\s*([A-Za-z]+ \d+,?\s*\d{4}[^]]*?)\]/g) || [];
-                let lastDate = null;
+                let lastDate = getLastReachoutDate(notes);
                 let lastDateStr = 'No date';
-                for (const dm of dateMatches) {
-                  try {
-                    const cleaned = dm.replace(/[\[\]()]/g, '').replace(/.*·\s*/, '').replace(' EST', '').trim();
-                    const d = new Date(cleaned);
-                    if (!isNaN(d.getTime()) && (!lastDate || d > lastDate)) { lastDate = d; }
-                  } catch(e) {}
-                }
                 if (lastDate) {
                   lastDateStr = lastDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                   const timeStr = lastDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
