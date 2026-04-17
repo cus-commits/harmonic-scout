@@ -749,51 +749,68 @@ export default function AirtablePage() {
             );
           })()}
 
-          {/* Reachout history list with date/time column */}
-          {filtered.length === 0 ? (
-            <p className="text-muted/35 text-xs text-center py-8">No reachout notes found across pipeline</p>
-          ) : (
-            <div className="space-y-1.5">
-              {/* Header */}
-              <div className="flex items-center gap-3 px-3 py-1.5 text-[9px] text-muted/30 uppercase tracking-wider font-bold border-b border-border/15">
-                <span className="w-[90px]">Last Contact</span>
-                <span className="flex-1">Company</span>
-                <span className="w-[50px] text-center">Stage</span>
-                <span className="w-[60px] text-right">Action</span>
-              </div>
-              {filtered.map((c, i) => {
-                const notes = c.reachout_notes || '';
-                // Extract most recent date
-                let lastDate = getLastReachoutDate(notes);
-                let lastDateStr = 'No date';
-                if (lastDate) {
-                  lastDateStr = lastDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                  const timeStr = lastDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-                  if (timeStr !== '12:00 AM') lastDateStr += ' ' + timeStr;
+          {/* Reachout history — every individual entry as its own row */}
+          {(() => {
+            const allEntries = [];
+            filtered.forEach(c => {
+              const notes = c.reachout_notes || '';
+              const dateMatches = notes.match(/\(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\)|\[.*?·\s*([A-Za-z]+ \d+,?\s*\d{4}.*?)\]/g) || [];
+              const parts = notes.split(/(?<=\(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\))\s*/);
+              parts.forEach(part => {
+                const trimmed = part.trim();
+                if (!trimmed) return;
+                const dm = trimmed.match(/\((\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)\)\s*$/);
+                if (dm) {
+                  const text = trimmed.slice(0, dm.index).trim();
+                  const parsed = parseReachoutDate(dm[0]);
+                  allEntries.push({ company: c.company, stage: c.crm_stage, date: parsed, dateRaw: dm[1], text: text || '(no details)', notes: c.reachout_notes });
                 }
-                // Get first line of notes as preview
-                const firstLine = notes.split('\n').filter(l => l.trim() && !l.startsWith('---'))[0] || '';
-                const preview = firstLine.replace(/^\[.*?\]\s*/, '').slice(0, 80);
+              });
+              const bracketPattern = /\[([^\]]+?)\s*·\s*([^\]]+)\]([\s\S]*?)(?=\[|$)/g;
+              let bm;
+              while ((bm = bracketPattern.exec(notes)) !== null) {
+                const parsed = parseReachoutDate(bm[2]);
+                allEntries.push({ company: c.company, stage: c.crm_stage, date: parsed, dateRaw: bm[2].replace(' EST', '').trim(), text: bm[3].trim() || '(no details)', author: bm[1].trim(), notes: c.reachout_notes });
+              }
+            });
+            allEntries.sort((a, b) => ((b.date ? b.date.getTime() : 0) - (a.date ? a.date.getTime() : 0)));
 
-                return (
-                  <div key={i} className="flex items-center gap-3 px-3 py-2 rounded-lg border border-border/10 bg-surface/30 hover:bg-surface/50 transition-colors">
-                    <span className={`w-[90px] text-[10px] font-mono flex-shrink-0 ${lastDate ? 'text-bright/60' : 'text-red-400/50'}`}>{lastDateStr}</span>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-xs font-semibold text-bright">{c.company}</span>
-                      <p className="text-[10px] text-muted/40 truncate">{preview}</p>
+            if (allEntries.length === 0) return <p className="text-muted/35 text-xs text-center py-8">No reachout notes found across pipeline</p>;
+
+            return (
+              <div className="space-y-1">
+                <div className="flex items-center gap-3 px-3 py-1.5 text-[9px] text-muted/30 uppercase tracking-wider font-bold border-b border-border/15">
+                  <span className="w-[70px]">Date</span>
+                  <span className="w-[100px]">Company</span>
+                  <span className="flex-1">Reachout</span>
+                  <span className="w-[50px] text-center">Stage</span>
+                </div>
+                {allEntries.map((e, i) => {
+                  const dateStr = e.date ? e.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No date';
+                  const now = Date.now();
+                  const ago = e.date ? Math.floor((now - e.date.getTime()) / 86400000) : null;
+                  const agoStr = ago !== null ? (ago === 0 ? 'Today' : ago === 1 ? '1d ago' : `${ago}d ago`) : '';
+
+                  return (
+                    <div key={i} className="flex items-center gap-3 px-3 py-1.5 rounded-lg border border-border/10 bg-surface/30 hover:bg-surface/50 transition-colors cursor-pointer"
+                      onClick={() => setReachoutModal({ company: e.company, stage: e.stage, notes: e.notes || '', loading: false })}>
+                      <div className="w-[70px] flex-shrink-0">
+                        <span className={`text-[10px] font-mono block ${e.date ? 'text-bright/60' : 'text-red-400/50'}`}>{dateStr}</span>
+                        {agoStr && <span className="text-[8px] text-muted/30 block">{agoStr}</span>}
+                      </div>
+                      <span className="w-[100px] text-[10px] font-semibold text-bright truncate flex-shrink-0">{e.company}</span>
+                      <p className="flex-1 text-[10px] text-muted/50 truncate">{e.text}</p>
+                      <span className={`w-[50px] text-center text-[8px] px-1.5 py-0.5 rounded-full font-bold flex-shrink-0 ${
+                        e.stage === 'BO' ? 'bg-sky-500/20 text-sky-300' :
+                        e.stage === 'BORO' ? 'bg-violet-500/20 text-violet-300' :
+                        'bg-emerald-500/20 text-emerald-300'
+                      }`}>{e.stage}</span>
                     </div>
-                    <span className={`w-[50px] text-center text-[8px] px-1.5 py-0.5 rounded-full font-bold ${
-                      c.crm_stage === 'BO' ? 'bg-sky-500/20 text-sky-300' :
-                      c.crm_stage === 'BORO' ? 'bg-violet-500/20 text-violet-300' :
-                      'bg-emerald-500/20 text-emerald-300'
-                    }`}>{c.crm_stage}</span>
-                    <button onClick={() => setReachoutModal({ company: c.company, stage: c.crm_stage, notes: c.reachout_notes || '', loading: false })}
-                      className="w-[60px] text-right text-[9px] text-amber-400/70 hover:text-amber-300">View →</button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       ) : filtered.length === 0 ? (
         <p className="text-muted/35 text-xs text-center py-8">No companies</p>
