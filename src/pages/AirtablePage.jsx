@@ -787,16 +787,15 @@ export default function AirtablePage() {
                 </div>
                 {allEntries.map((e, i) => {
                   const dateStr = e.date ? e.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No date';
-                  const now = Date.now();
-                  const ago = e.date ? Math.floor((now - e.date.getTime()) / 86400000) : null;
-                  const agoStr = ago !== null ? (ago === 0 ? 'Today' : ago === 1 ? '1d ago' : `${ago}d ago`) : '';
+                  const hasTime = e.date && (e.date.getHours() !== 0 || e.date.getMinutes() !== 0);
+                  const timeStr = hasTime ? e.date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : '';
 
                   return (
                     <div key={i} className="flex items-center gap-3 px-3 py-1.5 rounded-lg border border-border/10 bg-surface/30 hover:bg-surface/50 transition-colors cursor-pointer"
                       onClick={() => setReachoutModal({ company: e.company, stage: e.stage, notes: e.notes || '', loading: false })}>
                       <div className="w-[70px] flex-shrink-0">
                         <span className={`text-[10px] font-mono block ${e.date ? 'text-bright/60' : 'text-red-400/50'}`}>{dateStr}</span>
-                        {agoStr && <span className="text-[8px] text-muted/30 block">{agoStr}</span>}
+                        {timeStr && <span className="text-[8px] text-muted/30 block">{timeStr}</span>}
                       </div>
                       <span className="w-[100px] text-[10px] font-semibold text-bright truncate flex-shrink-0">{e.company}</span>
                       <p className="flex-1 text-[10px] text-muted/50 truncate">{e.text}</p>
