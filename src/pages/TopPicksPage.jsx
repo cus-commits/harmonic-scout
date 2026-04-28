@@ -117,6 +117,7 @@ function stageFmt(s) {
 function sourceBadge(source) {
   if (!source) return null;
   if (source.includes('scan-agent') || source.includes('recurring-scan')) return { label: '🔬 Scan Agent', color: 'bg-emerald-500/12 text-emerald-400 border-emerald-400/20' };
+  if (source.includes('super-search')) return { label: '⚡ Super Search', color: 'bg-violet-500/12 text-violet-400 border-violet-400/20' };
   if (source.includes('savedSearch')) return { label: 'Ⓗ Saved Search', color: 'bg-amber-500/12 text-amber-400 border-amber-400/20' };
   if (source.includes('batch2-promoted')) return { label: '📦 Batch 2', color: 'bg-amber-500/12 text-amber-300 border-amber-400/20' };
   if (source.includes('daily')) return { label: 'Daily', color: 'bg-sky-500/12 text-sky-400 border-sky-400/20' };

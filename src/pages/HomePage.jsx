@@ -237,7 +237,8 @@ export default function HomePage({ addFavorite, isFavorited }) {
           </div>
           <div className="space-y-1.5">
             {scanWinners.map((r, i) => {
-              const card = r.card || {};
+              const card = r.card || r;
+              const cardId = card.id || r.id;
               const rawWeb = typeof card.website === 'object' ? (card.website?.url || card.website?.domain || '') : (card.website || '');
               const webUrl = rawWeb ? (rawWeb.startsWith('http') ? rawWeb : `https://${rawWeb}`) : null;
               const scoreColor = r.score >= 9 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
@@ -261,6 +262,7 @@ export default function HomePage({ addFavorite, isFavorited }) {
                       <span className="text-xs font-bold text-bright truncate">{r.name}</span>
                       <span className={`text-[9px] px-1.5 py-0.5 rounded-md border font-bold ${scoreColor}`}>{r.score}/10</span>
                       {webUrl && <a href={webUrl} target="_blank" rel="noopener" onClick={e => e.stopPropagation()} className="text-blue-400 text-[9px] hover:text-blue-300 flex-shrink-0">🌐</a>}
+                      {cardId && typeof cardId === 'number' && <a href={`/company/${cardId}`} onClick={e => e.stopPropagation()} className="text-[9px] px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-400 border border-pink-400/15 font-bold hover:bg-pink-500/20 flex-shrink-0">H</a>}
                     </div>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       {card.funding_total > 0 && <span className="text-[9px] text-sky-400/50">💰 {moneyFmt(card.funding_total)}</span>}
