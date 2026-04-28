@@ -509,26 +509,30 @@ function WebGrowthBadge({ company }) {
   ));
 }
 
-function ScanResultCard({ company, onFavorite, isFavorited, onDismiss, onShowLogic }) {
+function ScanResultCard({ company: raw, onFavorite, isFavorited, onDismiss, onShowLogic }) {
+  const card = raw.card || {};
+  const company = raw.card ? { ...card, ...raw, _score: raw.score, score: raw.score } : raw;
   const stage = stageFmt(company.funding_stage);
   const total = moneyFmt(company.funding_total);
-  const webUrl = company.website ? (company.website.startsWith('http') ? company.website : `https://${company.website}`) : null;
+  const rawWeb = typeof company.website === 'object' ? (company.website?.url || company.website?.domain || '') : (company.website || '');
+  const webUrl = rawWeb ? (rawWeb.startsWith('http') ? rawWeb : `https://${rawWeb}`) : null;
+  const companyId = company.id || card.id;
   return (
     <div className="rounded-xl border border-border/25 bg-surface/50 p-3.5 space-y-2 fade-in">
       <div className="flex items-start gap-3">
-        {company.logo_url ? <img src={company.logo_url} alt="" className="w-9 h-9 rounded-lg bg-surface object-contain flex-shrink-0" onError={e => { e.target.style.display = 'none'; }} />
+        {(company.logo_url || card.logo_url) ? <img src={company.logo_url || card.logo_url} alt="" className="w-9 h-9 rounded-lg bg-surface object-contain flex-shrink-0" onError={e => { e.target.style.display = 'none'; }} />
           : <div className="w-9 h-9 rounded-lg bg-sky-500/10 flex items-center justify-center flex-shrink-0"><span className="text-sky-400 font-bold text-sm">{(company.name||'?')[0]}</span></div>}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h3 className="font-bold text-bright text-sm truncate">{company.name}</h3>
-            {company.id && typeof company.id === "number" && <a href={`/company/${company.id}`} className="text-[9px] px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-400 border border-pink-400/15 hover:bg-pink-500/20 font-bold" title="Harmonic Card">H</a>}
+            {companyId && typeof companyId === "number" && <a href={`/company/${companyId}`} className="text-[9px] px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-400 border border-pink-400/15 hover:bg-pink-500/20 font-bold" title="Harmonic Card">H</a>}
             {webUrl && (
               <a href={webUrl} target="_blank" rel="noopener"
                 className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded-md bg-blue-500/15 text-blue-400 border border-blue-400/30 hover:bg-sky-500/20 font-medium">
                 🌐
               </a>
             )}
-            {company.socials?.linkedin && <a href={company.socials.linkedin} target="_blank" rel="noopener" className="text-[9px] px-1.5 py-0.5 rounded-md bg-surface/40 border border-border/20 text-muted/50 hover:text-sky-400 font-medium">💼</a>}
+            {(company.socials?.linkedin || card.socials?.linkedin) && <a href={company.socials?.linkedin || card.socials?.linkedin} target="_blank" rel="noopener" className="text-[9px] px-1.5 py-0.5 rounded-md bg-surface/40 border border-border/20 text-muted/50 hover:text-sky-400 font-medium">💼</a>}
           </div>
         </div>
         {(company._score || company.score) > 0 && (
