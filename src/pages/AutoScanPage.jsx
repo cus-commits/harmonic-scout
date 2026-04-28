@@ -565,6 +565,18 @@ function ScanResultCard({ company, onFavorite, isFavorited, onDismiss, onShowLog
   );
 }
 
+function normalizeResults(data) {
+  if (!data?.results) return data;
+  return {
+    ...data,
+    results: data.results.map(r => {
+      if (!r.card) return r;
+      const { card, ...rest } = r;
+      return { ...card, ...rest, _score: r.score, score: r.score };
+    }),
+  };
+}
+
 function HistoryPanel({ personId }) {
   const { loadHistory, setScanResults } = useScan();
   const localHistory = loadHistory(personId);
@@ -623,10 +635,11 @@ function HistoryPanel({ personId }) {
       {history.map((h, i) => {
         const isExpanded = expandedIdx === i;
         const isWinners = winnersIdx === i;
-        const results = h._localResults || h.results || {};
-        const analysis = results.analysis || h.analysis || '';
-        const companies = results.results || [];
-        const funnel = h.funnel || results.funnel || {};
+        const isRecurringScan = Array.isArray(h.results);
+        const results = h._localResults || (isRecurringScan ? {} : h.results) || {};
+        const analysis = h.screenAnalysis || results.analysis || h.analysis || '';
+        const companies = isRecurringScan ? h.results : (results.results || []);
+        const funnel = h.funnel || h.stats || results.funnel || {};
         const meta = results.savedSearchMeta || null;
         const topCos = h.topCompanies || [];
         // All scored companies sorted by score (winners = score ≥ 6, but we show all scored progressively)
@@ -644,22 +657,25 @@ function HistoryPanel({ personId }) {
               <button onClick={() => { setExpandedIdx(isExpanded ? null : i); setWinnersIdx(null); }} className="flex-1 text-left min-w-0">
                 <p className="text-xs font-medium text-bright/80 truncate">
                   {h.personId && h.personId !== personId && <span className="text-[9px] text-sky-400/60 mr-1">[{h.personId}]</span>}
-                  {h.profileName || 'Scan'}
-                  {h.totalResults > 0 && <span className="text-[9px] text-muted/30 ml-1">({h.totalResults} results)</span>}
+                  {h.profileName || (h.tier?.name ? `${h.tier.name} Scan` : 'Scan')}
+                  {(h.totalResults > 0 || companies.length > 0) && <span className="text-[9px] text-muted/30 ml-1">({h.totalResults || companies.length} results)</span>}
                 </p>
                 <p className="text-[10px] text-muted/40">
                   {new Date(h.timestamp).toLocaleDateString()} {new Date(h.timestamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}
                   {meta?.totalBeforeDedup > 0 && ` · ${meta.totalBeforeDedup} found`}
                 </p>
-                {(funnel.totalUrns > 0 || funnel.sonnetPassed > 0 || funnel.preFiltered > 0) && (
+                {(funnel.totalUrns > 0 || funnel.sonnetPassed > 0 || funnel.preFiltered > 0 || funnel.totalCompanies > 0) && (
                   <p className="text-[9px] text-muted/30 mt-0.5">
+                    {funnel.totalCompanies > 0 && `${funnel.totalCompanies} sourced`}
                     {funnel.totalUrns > 0 && `${funnel.totalUrns} URNs`}
                     {funnel.newCompanies > 0 && ` → ${funnel.newCompanies} new`}
                     {funnel.preFiltered > 0 && ` → ${funnel.preFiltered} filtered`}
                     {funnel.sonnetPassed > 0 && ` → ${funnel.sonnetPassed} Sonnet`}
-                    {funnel.opusScored > 0 && ` → ${funnel.opusScored} Opus`}
+                    {(funnel.opusScored > 0 || funnel.deepScored > 0) && ` → ${funnel.opusScored || funnel.deepScored} deep-scored`}
+                    {funnel.ddPushed > 0 && ` → ${funnel.ddPushed} to DD`}
                   </p>
                 )}
+                {h.budgetUsed && <p className="text-[9px] text-muted/25 mt-0.5">💰 ${h.budgetUsed} spent{h.tier?.name ? ` (${h.tier.name})` : ''}{h.duration ? ` · ${Math.round(h.duration / 60)}m` : ''}</p>}
               </button>
               <div className="flex items-center gap-1.5 flex-shrink-0">
                 {allScored.length > 0 && (
@@ -677,9 +693,15 @@ function HistoryPanel({ personId }) {
                     </span>
                     <button onClick={async () => {
                       setConfirmLoad(null);
+                      // If this history entry has inline results (recurring scan format), use them directly
+                      if (h.results?.length > 0 && h.results[0]?.score !== undefined) {
+                        const normalized = normalizeResults({ results: h.results, analysis: h.screenAnalysis || analysis || '', funnel });
+                        setScanResults(prev => ({ ...prev, [personId]: normalized }));
+                        return;
+                      }
                       // If we have local results with companies, use them directly
                       if (companies.length > 0) {
-                        setScanResults(prev => ({ ...prev, [personId]: { ...results, analysis } }));
+                        setScanResults(prev => ({ ...prev, [personId]: normalizeResults({ ...results, analysis }) }));
                         return;
                       }
                       // Try fetching from server (last-results for this person)
@@ -690,7 +712,19 @@ function HistoryPanel({ personId }) {
                         if (r.ok) {
                           const data = await r.json();
                           if (data.results && !data.error) {
-                            setScanResults(prev => ({ ...prev, [personId]: data }));
+                            setScanResults(prev => ({ ...prev, [personId]: normalizeResults(data) }));
+                            setLoadingResults(null);
+                            return;
+                          }
+                        }
+                      } catch (e) {}
+                      // Try fetching recurring scan results
+                      try {
+                        const r = await fetch(`${API_BASE}/api/recurring-scan/results`);
+                        if (r.ok) {
+                          const data = await r.json();
+                          if (data.results?.length > 0) {
+                            setScanResults(prev => ({ ...prev, [personId]: normalizeResults(data) }));
                             setLoadingResults(null);
                             return;
                           }
@@ -735,9 +769,12 @@ function HistoryPanel({ personId }) {
                 {visibleScored.map((c, wi) => {
                   const score = c._score || c.score || 0;
                   const isWinner = score >= 6;
+                  const cardId = c.id || c.card?.id;
+                  const cardWebsite = c.website || c.card?.website;
+                  const webUrl = cardWebsite ? (typeof cardWebsite === 'string' ? (cardWebsite.startsWith('http') ? cardWebsite : `https://${cardWebsite}`) : cardWebsite.url || cardWebsite.domain ? `https://${cardWebsite.url || cardWebsite.domain}` : null) : null;
                   return (
                     <div key={wi} className={`flex items-center gap-3 px-3 py-2 rounded-lg border ${isWinner ? 'border-border/10 bg-surface/30' : 'border-border/8 bg-surface/15'}`}>
-                      {c.logo_url && <img src={c.logo_url} alt="" className="w-7 h-7 rounded-md bg-ink/50 object-contain flex-shrink-0" onError={e => { e.target.style.display='none'; }} />}
+                      {(c.logo_url || c.card?.logo_url) && <img src={c.logo_url || c.card?.logo_url} alt="" className="w-7 h-7 rounded-md bg-ink/50 object-contain flex-shrink-0" onError={e => { e.target.style.display='none'; }} />}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className={`text-[11px] font-bold ${isWinner ? 'text-bright' : 'text-bright/60'}`}>{c.name}</span>
@@ -747,10 +784,11 @@ function HistoryPanel({ personId }) {
                             score >= 4 ? 'bg-amber-500/15 text-amber-400 border-amber-400/20' :
                             'bg-muted/10 text-muted/50 border-border/15'
                           }`}>★ {score}/10</span>
+                          {webUrl && <a href={webUrl} target="_blank" rel="noopener" className="text-[8px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-400/20 font-medium hover:bg-blue-500/25">🌐</a>}
                         </div>
-                        {c.description && <p className="text-[9px] text-muted/45 line-clamp-1 mt-0.5">{c.description}</p>}
+                        {(c.description || c.card?.description) && <p className="text-[9px] text-muted/45 line-clamp-1 mt-0.5">{c.description || c.card?.description}</p>}
                       </div>
-                      {c.id && typeof c.id === 'number' && <a href={`/company/${c.id}`} className="text-[8px] px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-400 border border-pink-400/15 font-bold">H</a>}
+                      {cardId && typeof cardId === 'number' && <a href={`/company/${cardId}`} className="text-[8px] px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-400 border border-pink-400/15 font-bold hover:bg-pink-500/20">H</a>}
                     </div>
                   );
                 })}
