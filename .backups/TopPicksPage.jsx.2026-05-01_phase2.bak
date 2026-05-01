@@ -13,19 +13,21 @@ function WebGrowthBadge({ company }) {
 
   const badges = [];
 
+  // 30d growth badge
   if (g30 !== null && g30 !== undefined) {
     if (g30 >= 50) {
-      badges.push({ label: `🌐▲${Math.round(g30)}%`, period: '1mo', color: 'bg-sm/15 text-sm border-sm/25', url: harmonicUrl });
+      badges.push({ label: `🌐▲${Math.round(g30)}%`, period: '1mo', color: 'bg-emerald-500/15 text-emerald-400 border-emerald-400/25', url: harmonicUrl });
     } else if (g30 <= -30) {
-      badges.push({ label: `🌐▼${Math.abs(Math.round(g30))}%`, period: '1mo', color: 'bg-rose/12 text-rose border-rose/20', url: harmonicUrl });
+      badges.push({ label: `🌐▼${Math.abs(Math.round(g30))}%`, period: '1mo', color: 'bg-red-500/12 text-red-400 border-red-400/20', url: harmonicUrl });
     }
   }
 
+  // 90d growth badge (using as proxy for ~3mo, closest to 6mo available)
   if (g90 !== null && g90 !== undefined) {
     if (g90 >= 50) {
-      badges.push({ label: `🌐▲${Math.round(g90)}%`, period: '3mo', color: 'bg-sm/12 text-sm/70 border-sm/20', url: harmonicUrl });
+      badges.push({ label: `🌐▲${Math.round(g90)}%`, period: '3mo', color: 'bg-emerald-500/12 text-emerald-300/70 border-emerald-400/20', url: harmonicUrl });
     } else if (g90 <= -30) {
-      badges.push({ label: `🌐▼${Math.abs(Math.round(g90))}%`, period: '3mo', color: 'bg-rose/10 text-rose/70 border-rose/15', url: harmonicUrl });
+      badges.push({ label: `🌐▼${Math.abs(Math.round(g90))}%`, period: '3mo', color: 'bg-red-500/10 text-red-300/70 border-red-400/15', url: harmonicUrl });
     }
   }
 
@@ -70,19 +72,19 @@ function sourceInfo(source, sourceMeta) {
 
   if (source?.includes('scan-agent') || source?.includes('recurring-scan')) {
     typeLabel = 'Scan Agent';
-    color = 'text-sm/60';
+    color = 'text-emerald-400/60';
   } else if (source?.includes('savedSearch-scan') || sourceMeta?.scanMode === 'savedSearch') {
     typeLabel = 'Saved Search Scan';
-    color = 'text-amber/60';
+    color = 'text-amber-400/60';
   } else if (source?.includes('batch2-promoted')) {
     typeLabel = 'Batch 2';
-    color = 'text-amber/50';
+    color = 'text-amber-300/50';
   } else if (source?.includes('daily') || sourceMeta?.scanMode === 'daily') {
     typeLabel = 'Daily Screen';
-    color = 'text-bo/60';
+    color = 'text-sky-400/60';
   } else if (source?.includes('weekly') || sourceMeta?.scanMode === 'weekly') {
     typeLabel = 'Weekly Screen';
-    color = 'text-boro/50';
+    color = 'text-purple-400/50';
   }
 
   // Build the two-line display
@@ -102,10 +104,10 @@ function moneyFmt(n) {
 
 function stageColor(s) {
   const st = (s||'').toLowerCase();
-  if (st.includes('pre')) return 'bg-amber/12 text-amber border-amber/25';
-  if (st.includes('seed')) return 'bg-sm/12 text-sm border-sm/25';
-  if (st.includes('series_a') || st.includes('series a')) return 'bg-bo/12 text-bo border-bo/25';
-  return 'bg-muted/12 text-muted border-muted/25';
+  if (st.includes('pre')) return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+  if (st.includes('seed')) return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+  if (st.includes('series_a') || st.includes('series a')) return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+  return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
 }
 
 function stageFmt(s) {
@@ -114,13 +116,13 @@ function stageFmt(s) {
 
 function sourceBadge(source) {
   if (!source) return null;
-  if (source.includes('scan-agent') || source.includes('recurring-scan')) return { label: '🔬 Scan Agent', color: 'bg-sm/12 text-sm border-sm/20' };
-  if (source.includes('super-search')) return { label: '⚡ Super Search', color: 'bg-boro/12 text-boro border-boro/20' };
-  if (source.includes('savedSearch')) return { label: 'Ⓗ Saved Search', color: 'bg-amber/12 text-amber border-amber/20' };
-  if (source.includes('batch2-promoted')) return { label: '📦 Batch 2', color: 'bg-amber/12 text-amber border-amber/20' };
-  if (source.includes('daily')) return { label: 'Daily', color: 'bg-bo/12 text-bo border-bo/20' };
-  if (source.includes('weekly')) return { label: 'Weekly', color: 'bg-boro/12 text-boro border-boro/20' };
-  return { label: 'Manual', color: 'bg-muted/12 text-muted border-muted/20' };
+  if (source.includes('scan-agent') || source.includes('recurring-scan')) return { label: '🔬 Scan Agent', color: 'bg-emerald-500/12 text-emerald-400 border-emerald-400/20' };
+  if (source.includes('super-search')) return { label: '⚡ Super Search', color: 'bg-violet-500/12 text-violet-400 border-violet-400/20' };
+  if (source.includes('savedSearch')) return { label: 'Ⓗ Saved Search', color: 'bg-amber-500/12 text-amber-400 border-amber-400/20' };
+  if (source.includes('batch2-promoted')) return { label: '📦 Batch 2', color: 'bg-amber-500/12 text-amber-300 border-amber-400/20' };
+  if (source.includes('daily')) return { label: 'Daily', color: 'bg-sky-500/12 text-sky-400 border-sky-400/20' };
+  if (source.includes('weekly')) return { label: 'Weekly', color: 'bg-purple-500/12 text-purple-400 border-purple-400/20' };
+  return { label: 'Manual', color: 'bg-gray-500/12 text-gray-400 border-gray-400/20' };
 }
 
 function ClaudeLogic({ reasoning, fullAnalysis, score, company }) {
@@ -136,20 +138,20 @@ function ClaudeLogic({ reasoning, fullAnalysis, score, company }) {
     <div>
       <button onClick={() => setOpen(!open)}
         className={`text-[10px] px-2 py-0.5 rounded-lg border transition-all font-medium ${
-          open ? 'bg-boro/10 border-boro/25 text-boro' : 'border-border/15 text-muted/40 hover:text-boro hover:border-boro/20'
+          open ? 'bg-violet-500/10 border-violet-400/25 text-violet-300' : 'border-border/15 text-muted/40 hover:text-violet-300 hover:border-violet-400/20'
         }`}>
         🧠 {open ? 'Hide' : 'Claude'} Logic{score ? ` (${score}/10)` : ''}
       </button>
       {open && (
-        <div className="mt-2 bg-boro/[0.04] border border-boro/10 rounded-xl px-4 py-3 space-y-2 max-h-[600px] overflow-y-auto">
+        <div className="mt-2 bg-violet-500/[0.04] border border-violet-400/10 rounded-xl px-4 py-3 space-y-2 max-h-[600px] overflow-y-auto">
           {hasFullAnalysis ? (
             <>
-              <p className="text-[9px] uppercase tracking-widest text-boro/45 font-bold">Full Opus Analysis</p>
+              <p className="text-[9px] uppercase tracking-widest text-violet-400/45 font-bold">Full Opus Analysis</p>
               <div className="text-[11px] text-bright/60 leading-relaxed whitespace-pre-wrap">{fullAnalysis}</div>
             </>
           ) : (
             <>
-              <p className="text-[9px] uppercase tracking-widest text-boro/45 font-bold">Reasoning Snippet</p>
+              <p className="text-[9px] uppercase tracking-widest text-violet-400/45 font-bold">Reasoning Snippet</p>
               <p className="text-[11px] text-bright/55 leading-relaxed whitespace-pre-wrap">{reasoning.replace(/^[\s\-—·]+/, '').trim()}</p>
             </>
           )}
@@ -169,13 +171,13 @@ function RemoveMenu({ company, onHide, onBackburn }) {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute top-full right-0 mt-1 z-50 bg-card border border-border/30 rounded-lg shadow-xl py-1 min-w-[140px]">
+          <div className="absolute top-full right-0 mt-1 z-50 bg-[#1a1d2e] border border-border/30 rounded-lg shadow-xl py-1 min-w-[140px]">
             <button onClick={() => { onHide(company); setOpen(false); }}
               className="w-full text-left px-3 py-2 text-[11px] text-muted/60 hover:text-bright hover:bg-white/5 transition-colors">
               👁‍🗨 Hide for me
             </button>
             <button onClick={() => { onBackburn(company); setOpen(false); }}
-              className="w-full text-left px-3 py-2 text-[11px] text-rose/70 hover:text-rose hover:bg-rose/5 transition-colors border-t border-border/10">
+              className="w-full text-left px-3 py-2 text-[11px] text-red-400/70 hover:text-red-400 hover:bg-red-500/5 transition-colors border-t border-border/10">
               🔥 Backburn
             </button>
           </div>
@@ -195,14 +197,14 @@ function VettingCard({ company, onHide, onBackburn, addFavorite, isFavorited }) 
   const linkedinUrl = company.socials?.linkedin || null;
 
   return (
-    <div className="rounded-[14px] border border-border/[0.06] hover:border-accent/18 transition-all" style={{ background: 'rgba(46, 42, 37, 0.55)' }}>
+    <div className="rounded-xl border border-border/25 bg-surface/50 transition-all">
       <div className="p-4 space-y-2.5">
         <div className="flex items-start gap-3">
           {company.logo_url ? (
-            <img src={company.logo_url} alt="" className="w-11 h-11 rounded-[10px] bg-ink-2 object-contain flex-shrink-0" onError={e => { e.target.style.display='none'; }} />
+            <img src={company.logo_url} alt="" className="w-11 h-11 rounded-xl bg-ink/50 object-contain flex-shrink-0 shadow-md" onError={e => { e.target.style.display='none'; }} />
           ) : (
-            <div className="w-11 h-11 rounded-[10px] bg-ink-2 flex items-center justify-center flex-shrink-0">
-              <span className="font-serif italic font-semibold text-accent text-lg">{(company.name||'?')[0]}</span>
+            <div className="w-11 h-11 rounded-xl bg-sky-500/10 flex items-center justify-center flex-shrink-0 shadow-md">
+              <span className="text-sky-400 font-bold text-lg">{(company.name||'?')[0]}</span>
             </div>
           )}
           <div className="flex-1 min-w-0">
@@ -210,17 +212,17 @@ function VettingCard({ company, onHide, onBackburn, addFavorite, isFavorited }) 
             <div className="flex items-center gap-1.5 flex-wrap">
               <h3 className="font-bold text-bright text-sm">{company.name}</h3>
               {company.id && typeof company.id === "number" && (
-                <a href={`/company/${company.id}`} className="text-[9px] px-1.5 py-0.5 rounded bg-rose/10 text-rose border border-rose/15 hover:bg-rose/20 font-bold" title="Harmonic Card">H</a>
+                <a href={`/company/${company.id}`} className="text-[9px] px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-400 border border-pink-400/15 hover:bg-pink-500/20 font-bold" title="Harmonic Card">H</a>
               )}
               {webUrl && (
                 <a href={webUrl} target="_blank" rel="noopener"
-                  className="text-[9px] px-1.5 py-0.5 rounded-md bg-bo/12 text-bo border border-bo/20 hover:bg-bo/20 font-medium">
+                  className="text-[9px] px-1.5 py-0.5 rounded-md bg-blue-500/15 text-blue-400 border border-blue-400/30 hover:bg-sky-500/20 font-medium">
                   🌐
                 </a>
               )}
               {linkedinUrl && (
                 <a href={linkedinUrl} target="_blank" rel="noopener"
-                  className="text-[9px] px-1.5 py-0.5 rounded-md bg-card/40 border border-border/20 text-muted/50 hover:text-bo font-medium">
+                  className="text-[9px] px-1.5 py-0.5 rounded-md bg-surface/40 border border-border/20 text-muted/50 hover:text-sky-400 font-medium">
                   💼
                 </a>
               )}
@@ -228,14 +230,14 @@ function VettingCard({ company, onHide, onBackburn, addFavorite, isFavorited }) 
             {/* Badges row */}
             <div className="flex items-center gap-1.5 mt-1 flex-wrap">
               {scoreDisplay && (
-                <span className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded-[5px] border ${
-                  company.score >= 8 ? 'bg-sm/15 text-sm border-sm/25'
-                  : company.score >= 7 ? 'bg-bo/15 text-bo border-bo/25'
-                  : 'bg-muted/12 text-muted border-muted/20'
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                  company.score >= 8 ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25' 
+                  : company.score >= 7 ? 'bg-sky-500/15 text-sky-400 border-sky-500/25'
+                  : 'bg-gray-500/12 text-gray-400 border-gray-400/20'
                 }`}>⭐ {scoreDisplay}</span>
               )}
-              {stage && <span className={`font-mono text-[10px] font-semibold px-2 py-0.5 rounded-[5px] border ${stageColor(company.funding_stage)}`}>{stage}</span>}
-              {total && <span className="font-mono text-[10px] font-semibold px-2 py-0.5 rounded-[5px] border bg-bo/12 text-bo border-bo/20">💰 {total}</span>}
+              {stage && <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${stageColor(company.funding_stage)}`}>{stage}</span>}
+              {total && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md border bg-sky-500/12 text-sky-400 border-sky-500/20">💰 {total}</span>}
               <WebGrowthBadge company={company} />
               {badge && <span className={`text-[9px] px-1.5 py-0.5 rounded border font-medium ${badge.color}`}>{badge.label}</span>}
             </div>
@@ -244,11 +246,11 @@ function VettingCard({ company, onHide, onBackburn, addFavorite, isFavorited }) 
           <RemoveMenu company={company} onHide={onHide} onBackburn={onBackburn} />
         </div>
 
-        {company.description && <p className="text-bright/42 text-xs leading-relaxed line-clamp-2">{company.description}</p>}
+        {company.description && <p className="text-muted/60 text-xs leading-relaxed line-clamp-2">{company.description}</p>}
 
         <div className="flex flex-wrap gap-1.5 text-[10px]">
-          {company.location && <span className="px-2 py-0.5 rounded-md border bg-card/40 border-border/[0.06] text-muted/50">📍 {company.location}</span>}
-          {company.headcount && <span className="px-2 py-0.5 rounded-md border bg-card/40 border-border/[0.06] text-muted/50">👥 {company.headcount}</span>}
+          {company.location && <span className="px-2 py-0.5 rounded-md border bg-surface/40 border-border/20 text-muted/50">📍 {company.location}</span>}
+          {company.headcount && <span className="px-2 py-0.5 rounded-md border bg-surface/40 border-border/20 text-muted/50">👥 {company.headcount}</span>}
           {company.investors?.length > 0 && <span className="text-muted/40">Backed by: {company.investors.join(', ')}</span>}
         </div>
 
@@ -276,10 +278,10 @@ function VettingCard({ company, onHide, onBackburn, addFavorite, isFavorited }) 
         <div className="flex items-center gap-2 pt-1">
           {addFavorite && (
             <button onClick={() => { if (!saved) addFavorite({ ...company }); }}
-              className={`text-[11px] px-4 py-1.5 rounded-lg border font-bold transition-all active:scale-95 ${
+              className={`text-[11px] px-4 py-1.5 rounded-lg border-2 font-bold transition-all active:scale-95 ${
                 saved
-                  ? 'bg-rose/15 border-rose/40 text-rose'
-                  : 'border-rose/20 text-rose/60 hover:bg-rose/15 hover:border-rose/40 hover:text-rose'
+                  ? 'bg-pink-500/15 border-pink-400/40 text-pink-400'
+                  : 'border-pink-400/25 text-pink-400/70 hover:bg-pink-500/15 hover:border-pink-400/50 hover:text-pink-400'
               }`}>
               {saved ? '❤️ Favorited' : '🤍 Favorite'}
             </button>
@@ -440,19 +442,22 @@ export default function TopPicksPage({ addFavorite, isFavorited }) {
   const totalBatch2 = Object.values(batchStatus).reduce((sum, b) => sum + (b.batch2Count || 0), 0);
 
   return (
-    <div className="min-h-screen max-w-[1080px] mx-auto px-7 pt-6 pb-28 fade-in">
-      <div className="mb-5">
-        <h1 className="font-serif text-xl font-semibold text-bright tracking-tight">Top Picks</h1>
-        <p className="text-muted/50 text-xs mt-1 font-mono tracking-wide">Shared DD pipeline · auto-populated from scans</p>
+    <div className="min-h-screen max-w-4xl mx-auto px-8 pt-4 pb-4">
+      <div className="mb-4">
+        <h1 className="text-xl font-bold tracking-tight">
+          <span className="text-sky-400" style={{ fontFamily: "'Courier New', monospace" }}>dc</span>{' '}
+          <span style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Top Picks</span>
+        </h1>
+        <p className="text-muted/50 text-xs mt-0.5">Shared DD pipeline — auto-populated from daily & weekly scans</p>
       </div>
 
       {/* Batch Indicator */}
       {totalBatch2 > 0 && (
-        <div className="mb-4 bg-amber/5 border border-amber/15 rounded-[14px] p-3.5 space-y-2">
+        <div className="mb-4 bg-amber-500/5 border border-amber-400/15 rounded-xl p-3.5 space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="font-mono text-[10px] uppercase tracking-widest text-amber/60 font-bold">📦 Batch Queue</span>
-              <span className="font-mono text-[10px] px-2 py-0.5 rounded-full bg-amber/12 text-amber border border-amber/20 font-medium">
+              <span className="text-[10px] uppercase tracking-widest text-amber-400/60 font-bold">📦 Batch Queue</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/12 text-amber-300 border border-amber-400/20 font-medium">
                 {totalBatch2} waiting
               </span>
             </div>
@@ -474,7 +479,7 @@ export default function TopPicksPage({ addFavorite, isFavorited }) {
                   </div>
                 </div>
                 <button onClick={() => handlePromoteBatch(personId)} disabled={promoting}
-                  className="font-mono text-[10px] px-3 py-1.5 rounded-lg bg-amber/15 border border-amber/25 text-amber font-semibold hover:bg-amber/25 transition-all disabled:opacity-40">
+                  className="text-[10px] px-3 py-1.5 rounded-lg bg-amber-500/15 border border-amber-400/25 text-amber-300 font-semibold hover:bg-amber-500/25 transition-all disabled:opacity-40">
                   {promoting ? '...' : '⬆ Promote'}
                 </button>
               </div>
@@ -484,9 +489,9 @@ export default function TopPicksPage({ addFavorite, isFavorited }) {
       )}
 
       {/* Stats */}
-      <div className="flex items-center gap-3 mb-4 font-mono text-[10px]">
+      <div className="flex items-center gap-3 mb-4 text-[10px]">
         <span className="text-muted/40">{companies.filter(c => !c.dismissed).length} in pipeline</span>
-        {scanAgentCount > 0 && <span className="text-sm/65">🔬 {scanAgentCount} from Scan Agent</span>}
+        {scanAgentCount > 0 && <span className="text-emerald-400/65">🔬 {scanAgentCount} from Scan Agent</span>}
       </div>
 
       {/* Sort options */}
@@ -499,7 +504,7 @@ export default function TopPicksPage({ addFavorite, isFavorited }) {
         ].map(f => (
           <button key={f.key} onClick={() => setSortBy(f.key)}
             className={`text-[11px] px-3 py-1.5 rounded-lg border whitespace-nowrap transition-all ${
-              sortBy === f.key ? 'bg-accent/12 border-accent/30 text-accent font-medium' : 'border-border/[0.06] text-muted/50 hover:border-accent/18'
+              sortBy === f.key ? 'bg-sky-500/12 border-sky-400/30 text-sky-300 font-medium' : 'border-border/20 text-muted/50 hover:border-border/40'
             }`}>
             {f.label}
           </button>
@@ -509,7 +514,7 @@ export default function TopPicksPage({ addFavorite, isFavorited }) {
       {/* Companies */}
       {loading ? (
         <div className="flex justify-center py-8">
-          <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+          <div className="w-6 h-6 border-2 border-sky-400 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : filtered.length > 0 ? (
         <div className="space-y-3">
@@ -529,19 +534,19 @@ export default function TopPicksPage({ addFavorite, isFavorited }) {
         <div className="mt-8">
           <button onClick={() => setShowBackburn(!showBackburn)}
             className="flex items-center gap-2 mb-3 text-muted/40 hover:text-muted/60 transition-colors">
-            <h2 className="text-sm font-bold text-rose/50">🔥 Backburned</h2>
+            <h2 className="text-sm font-bold text-red-400/50">🔥 Backburned</h2>
             <span className="text-[10px] text-muted/30">{backburned.length} companies</span>
             <span className="text-[10px] text-muted/30">{showBackburn ? '(hide)' : '(show)'}</span>
           </button>
           {showBackburn && (
             <div className="space-y-2 opacity-50">
               {backburned.map(c => (
-                <div key={c.name} className="rounded-[14px] border border-rose/10 bg-card/30 p-3 flex items-center gap-3">
+                <div key={c.name} className="rounded-xl border border-red-500/10 bg-surface/30 p-3 flex items-center gap-3">
                   {c.logo_url ? (
-                    <img src={c.logo_url} alt="" className="w-8 h-8 rounded-lg bg-ink-2 object-contain flex-shrink-0" onError={e => { e.target.style.display='none'; }} />
+                    <img src={c.logo_url} alt="" className="w-8 h-8 rounded-lg bg-ink/50 object-contain flex-shrink-0" onError={e => { e.target.style.display='none'; }} />
                   ) : (
-                    <div className="w-8 h-8 rounded-lg bg-rose/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-rose/60 font-bold text-xs">{(c.name||'?')[0]}</span>
+                    <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-red-400/60 font-bold text-xs">{(c.name||'?')[0]}</span>
                     </div>
                   )}
                   <div className="flex-1 min-w-0">

@@ -15,6 +15,8 @@ function moneyFmt(val) {
   return `$${val}`;
 }
 
+const dayName = () => new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+
 export default function HomePage({ addFavorite, isFavorited }) {
   const navigate = useNavigate();
   const [pending, setPending] = useState([]);
@@ -30,7 +32,6 @@ export default function HomePage({ addFavorite, isFavorited }) {
   });
   const user = typeof window !== 'undefined' ? localStorage.getItem('crm_user') || '' : '';
 
-  // Fetch all BO + BORO + SM companies, filter to ones user hasn't voted on
   useEffect(() => {
     if (!user) { setLoading(false); return; }
     const fetchPending = async () => {
@@ -45,18 +46,12 @@ export default function HomePage({ addFavorite, isFavorited }) {
         setLoadingStage('');
         const all = [...(boRes.companies || []), ...(boroRes.companies || []), ...(smRes.companies || [])];
         const voterName = getAirtableVoter(user).toLowerCase();
-        console.log(`[Home] Fetched ${all.length} companies, user=${user}, voterName=${voterName}`);
         const needsVote = all.filter(c => {
           const raw = c.in_or_out;
           const votes = Array.isArray(raw) ? raw : (raw && typeof raw === 'string' ? [raw] : []);
           const hasVoted = votes.some(v => typeof v === 'string' && v.toLowerCase().startsWith(`${voterName}:`));
-          // Log first few for debugging
-          if (votes.length > 0 && all.indexOf(c) < 5) {
-            console.log(`[Home] ${c.company}: votes=${JSON.stringify(votes)}, checking "${voterName}:", hasVoted=${hasVoted}`);
-          }
           return !hasVoted && c.company;
         });
-        console.log(`[Home] ${needsVote.length} companies need ${user}'s vote`);
         setPending(needsVote);
       } catch (e) { console.error('Fetch pending error:', e); }
       setLoading(false);
@@ -64,20 +59,18 @@ export default function HomePage({ addFavorite, isFavorited }) {
     fetchPending();
   }, [user]);
 
-  // Fetch funding round alerts
   useEffect(() => {
     fetch(`${API_BASE}/api/alerts/funding-rounds`).then(r => r.json()).then(d => {
       setFundingAlerts(d.alerts || []);
     }).catch(() => {});
   }, []);
 
-  // Fetch scan winners from last 3 recurring scans — top 2 from latest, top 3 from next two
   useEffect(() => {
     fetch(`${API_BASE}/api/recurring-scan/history`).then(r => r.json()).then(history => {
       if (!Array.isArray(history) || history.length === 0) return;
       const winners = [];
       const seen = new Set();
-      const caps = [2, 3, 3]; // top 2 from scan 1, top 3 from scan 2, top 3 from scan 3
+      const caps = [2, 3, 3];
       for (let i = 0; i < Math.min(history.length, 3); i++) {
         const scan = history[i];
         const sorted = (scan.results || []).filter(r => r.score >= 6).sort((a, b) => (b.score || 0) - (a.score || 0));
@@ -112,7 +105,6 @@ export default function HomePage({ addFavorite, isFavorited }) {
       });
       const data = await r.json();
       if (data.success) {
-        // Remove from pending list
         setPending(prev => prev.filter(c => c.company !== company.company));
       }
     } catch (e) {}
@@ -120,9 +112,9 @@ export default function HomePage({ addFavorite, isFavorited }) {
   };
 
   const stageColor = (s) => {
-    if (s === 'BORO-SM') return 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30';
-    if (s === 'BORO') return 'bg-violet-500/20 text-violet-300 border-violet-400/30';
-    return 'bg-sky-500/20 text-sky-300 border-sky-400/30';
+    if (s === 'BORO-SM') return 'bg-sm/12 text-sm border-sm/28';
+    if (s === 'BORO') return 'bg-boro/12 text-boro border-boro/28';
+    return 'bg-bo/12 text-bo border-bo/28';
   };
 
   const pendingBO = pending.filter(c => c.crm_stage === 'BO');
@@ -130,110 +122,106 @@ export default function HomePage({ addFavorite, isFavorited }) {
   const pendingSM = pending.filter(c => c.crm_stage === 'BORO-SM');
 
   return (
-    <div className="max-w-4xl mx-auto px-8 pt-6 pb-24">
-      {/* Header */}
-      <div className="text-center mb-6">
-        <div className="text-center mb-2">
-          <h1 className="text-2xl font-bold text-accent tracking-[6px] uppercase">Daxos Capital</h1>
-          <p className="text-[10px] font-medium text-bright/40 mt-1.5 tracking-wide">🐦 Pigeon Finder</p>
-        </div>
-        <p className="text-xs text-muted/40 mt-1">{user ? `Welcome, ${user}` : 'Claim your identity below'}</p>
+    <div className="max-w-[1080px] mx-auto px-7 pt-8 pb-28 fade-in">
+      {/* Brand header — v2 style */}
+      <div className="text-center mb-8 select-none">
+        <p className="font-mono text-[9px] text-muted/58 tracking-[0.32em] uppercase mb-2">🐦 pigeon finder</p>
+        <h1 className="text-[22px] font-bold text-accent tracking-[0.42em] uppercase">Daxos Capital</h1>
+        <p className="font-serif italic text-sm text-bright/62 mt-1.5 tracking-wide">
+          {user ? `Welcome back, ${user}` : 'Claim your identity below'} · {dayName()}
+        </p>
       </div>
 
-      {/* Quick nav buttons — 2x2 grid */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        {/* Row 1: Screener (big) + CRM (big) */}
+      {/* Quick nav — glass tiles */}
+      <div className="grid grid-cols-2 gap-2.5 mb-5">
         <button onClick={() => navigate('/searchagent')}
-          className="py-4 rounded-xl border border-sky-400/25 bg-sky-500/8 hover:bg-sky-500/15 transition-colors text-center">
-          <span className="text-2xl block mb-1">🔬</span>
-          <span className="text-sm font-bold text-sky-300">Scan Agent</span>
-          <span className="text-[10px] text-muted/40 block">AI-powered discovery</span>
+          className="glass-card py-5 px-4 text-center hover:border-bo/22 transition-all hover:-translate-y-px group"
+          style={{ borderColor: 'rgba(125, 211, 252, 0.15)', background: 'rgba(46, 42, 37, 0.4)' }}>
+          <div className="w-6 h-6 mx-auto mb-1.5 text-bo flex items-center justify-center">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          </div>
+          <span className="text-[13px] font-semibold text-bo tracking-wide">Scan</span>
+          <span className="text-[10px] text-muted/58 block mt-0.5">Weekly digest</span>
         </button>
         <button onClick={() => navigate('/airtable')}
-          className="py-4 rounded-xl border border-amber-400/25 bg-amber-500/8 hover:bg-amber-500/15 transition-colors text-center">
-          <span className="text-2xl block mb-1">📋</span>
-          <span className="text-sm font-bold text-amber-300">CRM Pipeline</span>
-          <span className="text-[10px] text-muted/40 block">BO · BORO · SM</span>
-        </button>
-        {/* Row 2: Favs+Team (half) + DD+Super (half) */}
-        <div className="grid grid-cols-2 gap-2">
-          <button onClick={() => navigate('/favorites')}
-            className="py-3 rounded-xl border border-amber-400/20 bg-amber-500/5 hover:bg-amber-500/10 transition-colors text-center">
-            <span className="text-lg block mb-0.5">⭐</span>
-            <span className="text-[10px] font-bold text-amber-300">Favs</span>
-          </button>
-          <button onClick={() => navigate('/community')}
-            className="py-3 rounded-xl border border-violet-400/20 bg-violet-500/5 hover:bg-violet-500/10 transition-colors text-center">
-            <span className="text-lg block mb-0.5">👥</span>
-            <span className="text-[10px] font-bold text-violet-300">Team</span>
-          </button>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <button onClick={() => navigate('/toppicks')}
-            className="py-3 rounded-xl border border-emerald-400/20 bg-emerald-500/5 hover:bg-emerald-500/10 transition-colors text-center">
-            <span className="text-lg block mb-0.5">🎯</span>
-            <span className="text-[10px] font-bold text-emerald-300">DD</span>
-          </button>
-          <div className="relative">
-            <button onClick={() => setShowScanPicker(!showScanPicker)}
-              className="w-full py-3 rounded-xl border border-sky-400/20 bg-sky-500/5 hover:bg-sky-500/10 transition-colors text-center">
-              <span className="text-lg block mb-0.5">📡</span>
-              <span className="text-[10px] font-bold text-sky-300">Scan</span>
-            </button>
-            {showScanPicker && (
-              <div className="absolute bottom-full left-0 right-0 mb-2 bg-[#1a1d2e] border border-amber-400/25 rounded-xl overflow-hidden z-50"
-                style={{ boxShadow: '0 -8px 30px rgba(0,0,0,0.5)' }}>
-                <button onClick={() => { navigate('/super'); setShowScanPicker(false); }}
-                  className="w-full text-left px-3 py-2.5 text-xs font-medium text-bright/70 hover:bg-white/5 transition-colors">
-                  ⚡ Super Search
-                  <span className="block text-[9px] text-muted/40 mt-0.5">Multi-source deep scan</span>
-                </button>
-              </div>
-            )}
+          className="glass-card py-5 px-4 text-center hover:border-accent/22 transition-all hover:-translate-y-px group"
+          style={{ borderColor: 'rgba(210, 180, 140, 0.18)', background: 'rgba(46, 42, 37, 0.4)' }}>
+          <div className="w-6 h-6 mx-auto mb-1.5 text-accent flex items-center justify-center">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
           </div>
-        </div>
+          <span className="text-[13px] font-semibold text-accent tracking-wide">Pipeline</span>
+          <span className="text-[10px] text-muted/58 block mt-0.5">BO · BORO · SM</span>
+        </button>
+      </div>
+      <div className="grid grid-cols-2 gap-1.5 mb-6">
+        <button onClick={() => navigate('/chat')}
+          className="py-3 px-3 rounded-xl border border-border/50 bg-card/30 hover:bg-card/60 transition-all text-center flex items-center justify-center gap-2">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span className="text-[10px] font-bold text-muted tracking-wide">Ask Pigeon</span>
+        </button>
+        <button onClick={() => navigate('/favorites')}
+          className="py-3 px-3 rounded-xl border border-border/50 bg-card/30 hover:bg-card/60 transition-all text-center flex items-center justify-center gap-2">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span className="text-[10px] font-bold text-accent/80 tracking-wide">Favorites</span>
+        </button>
       </div>
 
-      {/* Funding round alerts */}
+      {/* Funding alerts panel */}
       {visibleAlerts.length > 0 && (
-        <div className="mb-4 p-3 bg-emerald-500/5 border border-emerald-400/15 rounded-xl">
-          <p className="text-[10px] text-emerald-400/70 font-bold uppercase tracking-wider mb-2">💰 Recent Funding Rounds — Pipeline Companies</p>
+        <div className="mb-4 p-3.5 rounded-[14px] border border-sm/15" style={{ background: 'rgba(110, 231, 183, 0.04)' }}>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-sm inline-block" />
+              <span className="font-mono text-[9.5px] font-bold tracking-[0.16em] uppercase text-sm/75">Funding alerts</span>
+              <span className="font-mono text-[9px] text-sm/40">{visibleAlerts.length} this week</span>
+            </div>
+          </div>
           <div className="space-y-1.5">
             {visibleAlerts.map((a, i) => (
-              <div key={i} className="flex items-center gap-3 px-2.5 py-2 rounded-lg bg-surface/30 border border-border/10">
-                {a.logo && <img src={a.logo} alt="" className="w-6 h-6 rounded bg-ink/50 object-contain flex-shrink-0" onError={e => { e.target.style.display='none'; }} />}
+              <div key={i} className="flex items-center gap-2.5 px-2.5 py-2 rounded-[10px] border border-border/[0.06]" style={{ background: 'rgba(38, 35, 32, 0.4)' }}>
+                {a.logo ? (
+                  <img src={a.logo} alt="" className="w-7 h-7 rounded-[7px] bg-ink-2 flex-shrink-0 object-contain" onError={e => { e.target.style.display='none'; }} />
+                ) : (
+                  <div className="w-7 h-7 rounded-[7px] bg-ink-2 flex items-center justify-center flex-shrink-0">
+                    <span className="font-serif italic font-semibold text-sm text-accent">{(a.company || '?')[0]}</span>
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-semibold text-bright">{a.company}</span>
-                    <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-bold ${
-                      a.stage === 'BO' ? 'bg-sky-500/20 text-sky-300' :
-                      a.stage === 'BORO' ? 'bg-violet-500/20 text-violet-300' :
-                      'bg-emerald-500/20 text-emerald-300'
+                    <span className="text-[13px] font-semibold text-bright leading-tight">{a.company}</span>
+                    <span className={`font-mono text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${
+                      a.stage === 'BO' ? 'bg-bo/12 text-bo border-bo/28' :
+                      a.stage === 'BORO' ? 'bg-boro/12 text-boro border-boro/28' :
+                      'bg-sm/12 text-sm border-sm/28'
                     }`}>{a.stage}</span>
                   </div>
-                  <p className="text-[10px] text-muted/50">
+                  <p className="text-[10.5px] text-bright/42 mt-0.5">
                     {a.round.replace(/_/g, ' ')}
                     {a.amount && ` · $${a.amount >= 1e6 ? (a.amount/1e6).toFixed(1) + 'M' : a.amount >= 1e3 ? (a.amount/1e3).toFixed(0) + 'K' : a.amount}`}
                     {a.totalFunding && ` · Total: ${a.totalFunding}`}
-                    <span className="text-bright/40 font-medium ml-1.5">{(() => {
+                    <span className="font-mono text-[9.5px] text-bright/30 font-medium ml-1.5">{(() => {
                       const d = Math.round((Date.now() - new Date(a.date).getTime()) / 86400000);
                       return d === 0 ? 'today' : d === 1 ? '1d ago' : d + 'd ago';
                     })()}</span>
                   </p>
                 </div>
-                <button onClick={() => hideAlert(a.company)} className="text-muted/25 hover:text-muted/60 text-sm flex-shrink-0" title="Hide this alert">×</button>
+                <button onClick={() => hideAlert(a.company)} className="text-muted/25 hover:text-muted/60 text-sm flex-shrink-0" title="Hide">×</button>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Scan Winners */}
+      {/* Scan Winners panel */}
       {scanWinners.length > 0 && (
-        <div className="mb-5 p-3.5 bg-violet-500/5 border border-violet-400/15 rounded-xl">
+        <div className="mb-5 p-3.5 rounded-[14px] border border-boro/15" style={{ background: 'rgba(196, 181, 253, 0.04)' }}>
           <div className="flex items-center justify-between mb-2.5">
-            <p className="text-[10px] text-violet-400/70 font-bold uppercase tracking-wider">🏆 Scan Winners</p>
-            <button onClick={() => navigate('/searchagent')} className="text-[9px] text-violet-400/50 hover:text-violet-300 font-medium">View All →</button>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-boro inline-block" />
+              <span className="font-mono text-[9.5px] font-bold tracking-[0.16em] uppercase text-boro/78">Last-week winners</span>
+              <span className="font-mono text-[9px] text-boro/40">Top {scanWinners.length}</span>
+            </div>
+            <button onClick={() => navigate('/searchagent')} className="font-mono text-[9px] text-boro/55 hover:text-boro font-medium tracking-wide">Scan →</button>
           </div>
           <div className="space-y-1.5">
             {scanWinners.map((r, i) => {
@@ -241,39 +229,39 @@ export default function HomePage({ addFavorite, isFavorited }) {
               const cardId = card.id || r.id;
               const rawWeb = typeof card.website === 'object' ? (card.website?.url || card.website?.domain || '') : (card.website || '');
               const webUrl = rawWeb ? (rawWeb.startsWith('http') ? rawWeb : `https://${rawWeb}`) : null;
-              const scoreColor = r.score >= 9 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
-                : r.score >= 7 ? 'bg-sky-500/20 text-sky-300 border-sky-400/30'
-                : 'bg-amber-500/15 text-amber-300/70 border-amber-400/25';
-              const rankColor = i === 0 ? 'text-amber-400' : i < 3 ? 'text-sky-400/70' : 'text-muted/40';
+              const scoreClass = r.score >= 9 ? 'bg-sm/15 text-sm border-sm/30'
+                : r.score >= 7 ? 'bg-bo/15 text-bo border-bo/30'
+                : 'bg-amber/12 text-amber border-amber/25';
+              const rankColor = i === 0 ? 'text-accent' : i < 3 ? 'text-bo/70' : 'text-muted/40';
               const isFav = isFavorited ? isFavorited(r.name) : false;
 
               return (
-                <div key={r.name} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg bg-surface/30 border border-border/10">
-                  <span className={`text-[11px] font-bold w-5 text-center flex-shrink-0 ${rankColor}`}>#{i + 1}</span>
+                <div key={r.name} className="flex items-center gap-2.5 px-2.5 py-2 rounded-[10px] border border-border/[0.06] hover:border-accent/18 transition-colors" style={{ background: 'rgba(38, 35, 32, 0.4)' }}>
+                  <span className={`font-mono text-[11px] font-bold w-5 text-center flex-shrink-0 ${rankColor}`}>#{i + 1}</span>
                   {card.logo_url ? (
-                    <img src={card.logo_url} alt="" className="w-7 h-7 rounded-md bg-ink/50 flex-shrink-0" onError={e => { e.target.style.display='none'; }} />
+                    <img src={card.logo_url} alt="" className="w-7 h-7 rounded-[7px] bg-ink-2 flex-shrink-0" onError={e => { e.target.style.display='none'; }} />
                   ) : (
-                    <div className="w-7 h-7 rounded-md bg-violet-500/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-violet-400 font-bold text-[10px]">{(r.name || '?')[0]}</span>
+                    <div className="w-7 h-7 rounded-[7px] bg-ink-2 flex items-center justify-center flex-shrink-0">
+                      <span className="font-serif italic font-semibold text-sm text-accent">{(r.name || '?')[0]}</span>
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold text-bright truncate">{r.name}</span>
-                      <span className={`text-[9px] px-1.5 py-0.5 rounded-md border font-bold ${scoreColor}`}>{r.score}/10</span>
-                      {webUrl && <a href={webUrl} target="_blank" rel="noopener" onClick={e => e.stopPropagation()} className="text-blue-400 text-[9px] hover:text-blue-300 flex-shrink-0">🌐</a>}
-                      {cardId && typeof cardId === 'number' && <a href={`/company/${cardId}`} onClick={e => e.stopPropagation()} className="text-[9px] px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-400 border border-pink-400/15 font-bold hover:bg-pink-500/20 flex-shrink-0">H</a>}
+                      <span className="text-[13px] font-semibold text-bright truncate">{r.name}</span>
+                      <span className={`font-mono text-[9.5px] font-bold px-1.5 py-0.5 rounded-[5px] border ${scoreClass}`}>{r.score}/10</span>
+                      {webUrl && <a href={webUrl} target="_blank" rel="noopener" onClick={e => e.stopPropagation()} className="text-bo text-[9px] hover:text-bo/80 flex-shrink-0">🌐</a>}
+                      {cardId && typeof cardId === 'number' && <a href={`/company/${cardId}`} onClick={e => e.stopPropagation()} className="text-[9px] px-1.5 py-0.5 rounded bg-rose/10 text-rose border border-rose/15 font-bold hover:bg-rose/20 flex-shrink-0">H</a>}
                     </div>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      {card.funding_total > 0 && <span className="text-[9px] text-sky-400/50">💰 {moneyFmt(card.funding_total)}</span>}
+                      {card.funding_total > 0 && <span className="text-[9px] text-bo/50">💰 {moneyFmt(card.funding_total)}</span>}
                       {card.funding_stage && <span className="text-[9px] text-muted/30">{card.funding_stage}</span>}
                       {r._sourceSearch && <span className="text-[9px] text-muted/25 truncate">· {r._sourceSearch}</span>}
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     <button onClick={() => addFavorite && addFavorite({ ...card, name: r.name, _score: r.score })}
-                      className={`text-[9px] px-2 py-0.5 rounded border font-bold ${
-                        isFav ? 'bg-pink-500/15 border-pink-400/40 text-pink-400' : 'border-pink-400/20 text-pink-400/50 hover:text-pink-400'
+                      className={`text-[9px] px-2 py-0.5 rounded border font-bold transition-colors ${
+                        isFav ? 'bg-rose/15 border-rose/40 text-rose' : 'border-rose/20 text-rose/50 hover:text-rose'
                       }`}>
                       {isFav ? '❤️' : '🤍'}
                     </button>
@@ -286,51 +274,52 @@ export default function HomePage({ addFavorite, isFavorited }) {
         </div>
       )}
 
-      {/* Pending votes section */}
+      {/* Pending votes */}
       {!user ? (
-        <div className="text-center py-8 border border-border/15 rounded-xl bg-surface/30">
-          <p className="text-muted/40 text-sm">Claim your identity to see pending votes</p>
+        <div className="text-center py-10 rounded-[14px] border border-border/[0.06]" style={{ background: 'rgba(38, 35, 32, 0.42)' }}>
+          <p className="text-muted/50 text-sm">Claim your identity to see pending votes</p>
           <p className="text-[10px] text-muted/35 mt-1">Use the name selector at bottom right</p>
         </div>
       ) : loading ? (
-        <div className="flex flex-col items-center py-12 gap-2">
-          <div className="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
-          <p className="text-[11px] text-muted/40">Loading {loadingStage || 'pipeline'}...</p>
+        <div className="flex flex-col items-center py-14 gap-2">
+          <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+          <p className="text-[11px] text-muted/40 font-mono">Loading {loadingStage || 'pipeline'}...</p>
           <div className="flex gap-1.5 mt-1">
-            <span className={`text-[9px] px-2 py-0.5 rounded-full border ${!loadingStage || loadingStage === 'BO' ? 'border-sky-400/30 text-sky-400' : 'border-emerald-400/20 text-emerald-400/50'}`}>
-              {loadingStage === 'BO' ? '◌' : !loadingStage ? '◌' : '✓'} BO
-            </span>
-            <span className={`text-[9px] px-2 py-0.5 rounded-full border ${loadingStage === 'BORO' ? 'border-violet-400/30 text-violet-400' : loadingStage === 'SM' || !loadingStage ? 'border-emerald-400/20 text-emerald-400/50' : 'border-border/15 text-muted/40'}`}>
-              {loadingStage === 'BORO' ? '◌' : (loadingStage === 'SM' || !loadingStage) ? '✓' : '·'} BORO
-            </span>
-            <span className={`text-[9px] px-2 py-0.5 rounded-full border ${loadingStage === 'SM' ? 'border-emerald-400/30 text-emerald-400' : !loadingStage ? 'border-emerald-400/20 text-emerald-400/50' : 'border-border/15 text-muted/40'}`}>
-              {loadingStage === 'SM' ? '◌' : !loadingStage ? '✓' : '·'} SM
-            </span>
+            {['BO', 'BORO', 'SM'].map(s => {
+              const done = (s === 'BO' && loadingStage !== 'BO') || (s === 'BORO' && (loadingStage === 'SM' || !loadingStage)) || (s === 'SM' && !loadingStage);
+              const active = loadingStage === s;
+              return (
+                <span key={s} className={`font-mono text-[9px] px-2 py-0.5 rounded-full border ${
+                  active ? stageColor(s === 'SM' ? 'BORO-SM' : s) :
+                  done ? 'border-sm/20 text-sm/50' : 'border-border/15 text-muted/40'
+                }`}>{active ? '◌' : done ? '✓' : '·'} {s}</span>
+              );
+            })}
           </div>
         </div>
       ) : pending.length === 0 ? (
-        <div className="text-center py-8 border border-emerald-400/15 rounded-xl bg-emerald-500/5">
-          <p className="text-emerald-400 text-sm font-medium">✓ All caught up!</p>
+        <div className="text-center py-10 rounded-[14px] border border-sm/15" style={{ background: 'rgba(110, 231, 183, 0.04)' }}>
+          <p className="text-sm text-sm font-semibold">✓ All caught up!</p>
           <p className="text-[10px] text-muted/40 mt-1">No companies waiting for your vote</p>
         </div>
       ) : (
         <div className="space-y-4">
-          {/* Pending counts */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-bold text-bright">Needs your vote</span>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-400/20 font-bold">{pending.length}</span>
+          {/* Section heading */}
+          <div className="flex items-center gap-2 mt-2">
+            <h2 className="text-sm font-bold text-bright tracking-tight">Needs your vote</h2>
+            <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent/12 text-accent border border-accent/22">{pending.length}</span>
           </div>
 
-          {/* Stage sections */}
+          {/* Stage groups */}
           {[
-            { label: '🏆 BORO-SM', items: pendingSM, stage: 'BORO-SM' },
+            { label: '🏆 SM', items: pendingSM, stage: 'BORO-SM' },
             { label: 'BORO', items: pendingBORO, stage: 'BORO' },
             { label: 'BO', items: pendingBO, stage: 'BO' },
           ].filter(s => s.items.length > 0).map(section => (
             <div key={section.stage}>
               <div className="flex items-center gap-2 mb-2">
-                <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold ${stageColor(section.stage)}`}>{section.label}</span>
-                <span className="text-[10px] text-muted/40">{section.items.length} pending</span>
+                <span className={`font-mono text-[9.5px] font-bold px-2 py-0.5 rounded-full border tracking-wide ${stageColor(section.stage)}`}>{section.label}</span>
+                <span className="font-mono text-[10px] text-muted/40">{section.items.length}</span>
               </div>
               <div className="space-y-1.5">
                 {section.items.map((c, i) => {
@@ -340,65 +329,80 @@ export default function HomePage({ addFavorite, isFavorited }) {
                   const votes = Array.isArray(c.in_or_out) ? c.in_or_out : [];
 
                   return (
-                    <div key={c.airtable_id || i} className="border border-border/18 rounded-xl bg-surface/30 overflow-hidden">
-                      {/* Main row — clickable to expand */}
+                    <div key={c.airtable_id || i}
+                      className={`rounded-[14px] border overflow-hidden transition-all ${
+                        isExpanded ? 'border-accent/28' : 'border-border/[0.06] hover:border-accent/18'
+                      }`}
+                      style={{ background: isExpanded ? 'rgba(46, 42, 37, 0.6)' : 'rgba(38, 35, 32, 0.42)' }}>
                       <button onClick={() => setExpandedCompany(isExpanded ? null : c.company)}
-                        className="w-full text-left px-3.5 py-3 flex items-center gap-3 hover:bg-white/[0.02] transition-colors">
+                        className="w-full text-left px-4 py-3.5 flex items-center gap-3 hover:bg-bright/[0.02] transition-colors">
+                        <div className="w-7 h-7 rounded-[7px] bg-ink-2 flex items-center justify-center flex-shrink-0">
+                          <span className="font-serif italic font-semibold text-sm text-accent">{(c.company || '?')[0]}</span>
+                        </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-bold text-bright">{c.company}</span>
-                            {webUrl && <a href={webUrl} target="_blank" rel="noopener" onClick={e => e.stopPropagation()} className="text-blue-400 text-xs hover:text-blue-300">🌐</a>}
-                            {c.twitter_link && <a href={c.twitter_link} target="_blank" rel="noopener" onClick={e => e.stopPropagation()} className="text-blue-400/65 text-xs hover:text-blue-300">𝕏</a>}
+                            {webUrl && <a href={webUrl} target="_blank" rel="noopener" onClick={e => e.stopPropagation()} className="text-bo text-xs hover:text-bo/80">🌐</a>}
+                            {c.twitter_link && <a href={c.twitter_link} target="_blank" rel="noopener" onClick={e => e.stopPropagation()} className="text-muted/50 text-xs hover:text-bright/60">𝕏</a>}
                           </div>
-                          {tagline && <p className="text-[10px] text-bright/40 truncate mt-0.5">{tagline}</p>}
-                          {/* Existing votes */}
+                          {tagline && <p className="text-[11px] text-bright/42 truncate mt-0.5 leading-snug">{tagline}</p>}
                           {votes.length > 0 && (
-                            <div className="flex gap-1 mt-1 flex-wrap">
+                            <div className="flex gap-1 mt-1.5 flex-wrap">
                               {votes.map((v, j) => {
                                 const isIn = typeof v === 'string' && v.toUpperCase().includes('IN');
                                 const name = typeof v === 'string' ? v.split(':')[0].trim() : '';
                                 return (
-                                  <span key={j} className={`text-[9px] px-2 py-0.5 rounded font-bold text-white ${isIn ? 'bg-emerald-500' : 'bg-red-500/80'}`}>
-                                    {name}{isIn ? '✓' : '✗'}
+                                  <span key={j} className={`font-mono text-[9px] px-2 py-0.5 rounded-full font-bold border ${
+                                    isIn ? 'bg-sm/15 text-sm border-sm/30' : 'bg-rose/15 text-rose border-rose/30'
+                                  }`}>
+                                    {name} {isIn ? '✓' : '✕'}
                                   </span>
                                 );
                               })}
                             </div>
                           )}
                         </div>
-                        {/* Vote indicator */}
                         <div className="flex-shrink-0 flex items-center gap-1.5">
-                          <span className="text-amber-400 text-lg animate-pulse">⚡</span>
+                          {votes.length === 0 && <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />}
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`text-muted/40 transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
                             <polyline points="6 9 12 15 18 9" />
                           </svg>
                         </div>
                       </button>
 
-                      {/* Expanded — vote buttons + details */}
                       {isExpanded && (
-                        <div className="px-3.5 pb-3.5 border-t border-border/18 pt-3 space-y-3">
-                          {c.total_funding && (
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] text-sky-400/65">💰</span>
-                              <span className="text-xs text-sky-300 font-semibold">{c.total_funding}</span>
-                            </div>
-                          )}
-                          {c.sector && <span className="text-[9px] text-muted/40">{c.sector}</span>}
-
-                          {/* Vote buttons */}
+                        <div className="px-4 pb-4 border-t border-border/[0.06] pt-3.5 space-y-3">
+                          <div className="flex flex-wrap gap-3">
+                            {c.total_funding && (
+                              <div className="text-xs">
+                                <span className="font-mono text-[9px] text-muted/50 block mb-0.5">Total</span>
+                                <span className="text-bo font-semibold">{c.total_funding}</span>
+                              </div>
+                            )}
+                            {c.sector && (
+                              <div className="text-xs">
+                                <span className="font-mono text-[9px] text-muted/50 block mb-0.5">Sector</span>
+                                <span className="text-bright/60">{c.sector}</span>
+                              </div>
+                            )}
+                          </div>
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleVote(c, 'IN')}
                               disabled={!!voting}
-                              className="flex-1 py-3 rounded-xl bg-emerald-500/15 border border-emerald-400/30 text-emerald-400 font-bold text-sm hover:bg-emerald-500/25 transition-colors disabled:opacity-30">
-                              {voting === `${c.company}-IN` ? '...' : '✓ IN'}
+                              className="flex-1 py-3 rounded-xl bg-sm/12 border border-sm/30 text-sm font-bold text-sm hover:bg-sm/22 transition-colors disabled:opacity-30">
+                              {voting === `${c.company}-IN` ? '...' : "I'M IN"}
                             </button>
                             <button
                               onClick={() => handleVote(c, 'OUT')}
                               disabled={!!voting}
-                              className="flex-1 py-3 rounded-xl bg-red-500/15 border border-red-400/30 text-red-400 font-bold text-sm hover:bg-red-500/25 transition-colors disabled:opacity-30">
-                              {voting === `${c.company}-OUT` ? '...' : '✗ OUT'}
+                              className="flex-1 py-3 rounded-xl bg-rose/12 border border-rose/30 text-rose font-bold text-sm hover:bg-rose/22 transition-colors disabled:opacity-30">
+                              {voting === `${c.company}-OUT` ? '...' : 'OUT'}
+                            </button>
+                            <button
+                              onClick={() => navigate(`/company/${c.airtable_id || c.company}`)}
+                              className="px-4 py-3 rounded-xl border border-border/50 text-muted/60 font-bold text-sm hover:text-bright/60 hover:border-accent/22 transition-colors">
+                              Open →
                             </button>
                           </div>
                         </div>

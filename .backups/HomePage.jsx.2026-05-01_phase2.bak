@@ -1,0 +1,416 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { CrmButton } from '../components/CrmButton';
+
+const API_BASE = import.meta.env?.VITE_API_URL || 'https://pigeon-api.up.railway.app';
+
+const VOTER_MAP = { 'Joe': 'Joe C', 'Mark': 'Mark', 'Carlo': 'Carlo', 'Jake': 'Jake', 'Liam': 'Liam' };
+const getAirtableVoter = (u) => VOTER_MAP[u] || u;
+
+function moneyFmt(val) {
+  if (!val) return '';
+  if (val >= 1e9) return `$${(val / 1e9).toFixed(1)}B`;
+  if (val >= 1e6) return `$${(val / 1e6).toFixed(1)}M`;
+  if (val >= 1e3) return `$${(val / 1e3).toFixed(0)}K`;
+  return `$${val}`;
+}
+
+export default function HomePage({ addFavorite, isFavorited }) {
+  const navigate = useNavigate();
+  const [pending, setPending] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingStage, setLoadingStage] = useState('');
+  const [voting, setVoting] = useState(null);
+  const [expandedCompany, setExpandedCompany] = useState(null);
+  const [showScanPicker, setShowScanPicker] = useState(false);
+  const [fundingAlerts, setFundingAlerts] = useState([]);
+  const [scanWinners, setScanWinners] = useState([]);
+  const [hiddenAlerts, setHiddenAlerts] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('hidden_funding_alerts') || '[]'); } catch { return []; }
+  });
+  const user = typeof window !== 'undefined' ? localStorage.getItem('crm_user') || '' : '';
+
+  // Fetch all BO + BORO + SM companies, filter to ones user hasn't voted on
+  useEffect(() => {
+    if (!user) { setLoading(false); return; }
+    const fetchPending = async () => {
+      setLoading(true);
+      setLoadingStage('BO');
+      try {
+        const boRes = await fetch(`${API_BASE}/api/airtable/companies?stage=BO&limit=200`).then(r => r.json());
+        setLoadingStage('BORO');
+        const boroRes = await fetch(`${API_BASE}/api/airtable/companies?stage=BORO&limit=200`).then(r => r.json());
+        setLoadingStage('SM');
+        const smRes = await fetch(`${API_BASE}/api/airtable/companies?stage=BORO-SM&limit=200`).then(r => r.json());
+        setLoadingStage('');
+        const all = [...(boRes.companies || []), ...(boroRes.companies || []), ...(smRes.companies || [])];
+        const voterName = getAirtableVoter(user).toLowerCase();
+        console.log(`[Home] Fetched ${all.length} companies, user=${user}, voterName=${voterName}`);
+        const needsVote = all.filter(c => {
+          const raw = c.in_or_out;
+          const votes = Array.isArray(raw) ? raw : (raw && typeof raw === 'string' ? [raw] : []);
+          const hasVoted = votes.some(v => typeof v === 'string' && v.toLowerCase().startsWith(`${voterName}:`));
+          // Log first few for debugging
+          if (votes.length > 0 && all.indexOf(c) < 5) {
+            console.log(`[Home] ${c.company}: votes=${JSON.stringify(votes)}, checking "${voterName}:", hasVoted=${hasVoted}`);
+          }
+          return !hasVoted && c.company;
+        });
+        console.log(`[Home] ${needsVote.length} companies need ${user}'s vote`);
+        setPending(needsVote);
+      } catch (e) { console.error('Fetch pending error:', e); }
+      setLoading(false);
+    };
+    fetchPending();
+  }, [user]);
+
+  // Fetch funding round alerts
+  useEffect(() => {
+    fetch(`${API_BASE}/api/alerts/funding-rounds`).then(r => r.json()).then(d => {
+      setFundingAlerts(d.alerts || []);
+    }).catch(() => {});
+  }, []);
+
+  // Fetch scan winners from last 3 recurring scans — top 2 from latest, top 3 from next two
+  useEffect(() => {
+    fetch(`${API_BASE}/api/recurring-scan/history`).then(r => r.json()).then(history => {
+      if (!Array.isArray(history) || history.length === 0) return;
+      const winners = [];
+      const seen = new Set();
+      const caps = [2, 3, 3]; // top 2 from scan 1, top 3 from scan 2, top 3 from scan 3
+      for (let i = 0; i < Math.min(history.length, 3); i++) {
+        const scan = history[i];
+        const sorted = (scan.results || []).filter(r => r.score >= 6).sort((a, b) => (b.score || 0) - (a.score || 0));
+        let added = 0;
+        for (const r of sorted) {
+          if (added >= caps[i] || winners.length >= 8) break;
+          if (seen.has(r.name?.toLowerCase())) continue;
+          seen.add(r.name?.toLowerCase());
+          winners.push({ ...r, _scanDate: scan.timestamp, _tierName: scan.tier?.name || 'Scan' });
+          added++;
+        }
+      }
+      setScanWinners(winners);
+    }).catch(() => {});
+  }, []);
+
+  const hideAlert = (company) => {
+    const updated = [...hiddenAlerts, company];
+    setHiddenAlerts(updated);
+    localStorage.setItem('hidden_funding_alerts', JSON.stringify(updated));
+  };
+
+  const visibleAlerts = fundingAlerts.filter(a => !hiddenAlerts.includes(a.company));
+
+  const handleVote = async (company, vote) => {
+    setVoting(`${company.company}-${vote}`);
+    try {
+      const r = await fetch(`${API_BASE}/api/airtable/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ company: company.company, voter: user, vote }),
+      });
+      const data = await r.json();
+      if (data.success) {
+        // Remove from pending list
+        setPending(prev => prev.filter(c => c.company !== company.company));
+      }
+    } catch (e) {}
+    setVoting(null);
+  };
+
+  const stageColor = (s) => {
+    if (s === 'BORO-SM') return 'bg-sm/20 text-sm border-sm/30';
+    if (s === 'BORO') return 'bg-boro/20 text-boro border-boro/30';
+    return 'bg-bo/20 text-bo border-bo/30';
+  };
+
+  const pendingBO = pending.filter(c => c.crm_stage === 'BO');
+  const pendingBORO = pending.filter(c => c.crm_stage === 'BORO');
+  const pendingSM = pending.filter(c => c.crm_stage === 'BORO-SM');
+
+  return (
+    <div className="max-w-4xl mx-auto px-8 pt-6 pb-24">
+      {/* Header */}
+      <div className="text-center mb-6">
+        <div className="text-center mb-2">
+          <h1 className="text-2xl font-bold text-accent tracking-[6px] uppercase">Daxos Capital</h1>
+          <p className="text-[10px] font-medium text-bright/40 mt-1.5 tracking-wide">🐦 Pigeon Finder</p>
+        </div>
+        <p className="text-xs text-muted/40 mt-1">{user ? `Welcome, ${user}` : 'Claim your identity below'}</p>
+      </div>
+
+      {/* Quick nav buttons — 2x2 grid */}
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        {/* Row 1: Screener (big) + CRM (big) */}
+        <button onClick={() => navigate('/searchagent')}
+          className="py-4 rounded-xl border border-sky-400/25 bg-sky-500/8 hover:bg-sky-500/15 transition-colors text-center">
+          <span className="text-2xl block mb-1">🔬</span>
+          <span className="text-sm font-bold text-sky-300">Scan Agent</span>
+          <span className="text-[10px] text-muted/40 block">AI-powered discovery</span>
+        </button>
+        <button onClick={() => navigate('/airtable')}
+          className="py-4 rounded-xl border border-amber-400/25 bg-amber-500/8 hover:bg-amber-500/15 transition-colors text-center">
+          <span className="text-2xl block mb-1">📋</span>
+          <span className="text-sm font-bold text-amber-300">CRM Pipeline</span>
+          <span className="text-[10px] text-muted/40 block">BO · BORO · SM</span>
+        </button>
+        {/* Row 2: Favs+Team (half) + DD+Super (half) */}
+        <div className="grid grid-cols-2 gap-2">
+          <button onClick={() => navigate('/favorites')}
+            className="py-3 rounded-xl border border-amber-400/20 bg-amber-500/5 hover:bg-amber-500/10 transition-colors text-center">
+            <span className="text-lg block mb-0.5">⭐</span>
+            <span className="text-[10px] font-bold text-amber-300">Favs</span>
+          </button>
+          <button onClick={() => navigate('/community')}
+            className="py-3 rounded-xl border border-violet-400/20 bg-violet-500/5 hover:bg-violet-500/10 transition-colors text-center">
+            <span className="text-lg block mb-0.5">👥</span>
+            <span className="text-[10px] font-bold text-violet-300">Team</span>
+          </button>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <button onClick={() => navigate('/toppicks')}
+            className="py-3 rounded-xl border border-emerald-400/20 bg-emerald-500/5 hover:bg-emerald-500/10 transition-colors text-center">
+            <span className="text-lg block mb-0.5">🎯</span>
+            <span className="text-[10px] font-bold text-emerald-300">DD</span>
+          </button>
+          <div className="relative">
+            <button onClick={() => setShowScanPicker(!showScanPicker)}
+              className="w-full py-3 rounded-xl border border-sky-400/20 bg-sky-500/5 hover:bg-sky-500/10 transition-colors text-center">
+              <span className="text-lg block mb-0.5">📡</span>
+              <span className="text-[10px] font-bold text-sky-300">Scan</span>
+            </button>
+            {showScanPicker && (
+              <div className="absolute bottom-full left-0 right-0 mb-2 bg-[#1a1d2e] border border-amber-400/25 rounded-xl overflow-hidden z-50"
+                style={{ boxShadow: '0 -8px 30px rgba(0,0,0,0.5)' }}>
+                <button onClick={() => { navigate('/super'); setShowScanPicker(false); }}
+                  className="w-full text-left px-3 py-2.5 text-xs font-medium text-bright/70 hover:bg-white/5 transition-colors">
+                  ⚡ Super Search
+                  <span className="block text-[9px] text-muted/40 mt-0.5">Multi-source deep scan</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Funding round alerts */}
+      {visibleAlerts.length > 0 && (
+        <div className="mb-4 p-3 bg-emerald-500/5 border border-emerald-400/15 rounded-xl">
+          <p className="text-[10px] text-emerald-400/70 font-bold uppercase tracking-wider mb-2">💰 Recent Funding Rounds — Pipeline Companies</p>
+          <div className="space-y-1.5">
+            {visibleAlerts.map((a, i) => (
+              <div key={i} className="flex items-center gap-3 px-2.5 py-2 rounded-lg bg-surface/30 border border-border/10">
+                {a.logo && <img src={a.logo} alt="" className="w-6 h-6 rounded bg-ink/50 object-contain flex-shrink-0" onError={e => { e.target.style.display='none'; }} />}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-semibold text-bright">{a.company}</span>
+                    <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-bold ${
+                      a.stage === 'BO' ? 'bg-sky-500/20 text-sky-300' :
+                      a.stage === 'BORO' ? 'bg-violet-500/20 text-violet-300' :
+                      'bg-emerald-500/20 text-emerald-300'
+                    }`}>{a.stage}</span>
+                  </div>
+                  <p className="text-[10px] text-muted/50">
+                    {a.round.replace(/_/g, ' ')}
+                    {a.amount && ` · $${a.amount >= 1e6 ? (a.amount/1e6).toFixed(1) + 'M' : a.amount >= 1e3 ? (a.amount/1e3).toFixed(0) + 'K' : a.amount}`}
+                    {a.totalFunding && ` · Total: ${a.totalFunding}`}
+                    <span className="text-bright/40 font-medium ml-1.5">{(() => {
+                      const d = Math.round((Date.now() - new Date(a.date).getTime()) / 86400000);
+                      return d === 0 ? 'today' : d === 1 ? '1d ago' : d + 'd ago';
+                    })()}</span>
+                  </p>
+                </div>
+                <button onClick={() => hideAlert(a.company)} className="text-muted/25 hover:text-muted/60 text-sm flex-shrink-0" title="Hide this alert">×</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Scan Winners */}
+      {scanWinners.length > 0 && (
+        <div className="mb-5 p-3.5 bg-violet-500/5 border border-violet-400/15 rounded-xl">
+          <div className="flex items-center justify-between mb-2.5">
+            <p className="text-[10px] text-violet-400/70 font-bold uppercase tracking-wider">🏆 Scan Winners</p>
+            <button onClick={() => navigate('/searchagent')} className="text-[9px] text-violet-400/50 hover:text-violet-300 font-medium">View All →</button>
+          </div>
+          <div className="space-y-1.5">
+            {scanWinners.map((r, i) => {
+              const card = r.card || r;
+              const cardId = card.id || r.id;
+              const rawWeb = typeof card.website === 'object' ? (card.website?.url || card.website?.domain || '') : (card.website || '');
+              const webUrl = rawWeb ? (rawWeb.startsWith('http') ? rawWeb : `https://${rawWeb}`) : null;
+              const scoreColor = r.score >= 9 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
+                : r.score >= 7 ? 'bg-sky-500/20 text-sky-300 border-sky-400/30'
+                : 'bg-amber-500/15 text-amber-300/70 border-amber-400/25';
+              const rankColor = i === 0 ? 'text-amber-400' : i < 3 ? 'text-sky-400/70' : 'text-muted/40';
+              const isFav = isFavorited ? isFavorited(r.name) : false;
+
+              return (
+                <div key={r.name} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg bg-surface/30 border border-border/10">
+                  <span className={`text-[11px] font-bold w-5 text-center flex-shrink-0 ${rankColor}`}>#{i + 1}</span>
+                  {card.logo_url ? (
+                    <img src={card.logo_url} alt="" className="w-7 h-7 rounded-md bg-ink/50 flex-shrink-0" onError={e => { e.target.style.display='none'; }} />
+                  ) : (
+                    <div className="w-7 h-7 rounded-md bg-violet-500/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-violet-400 font-bold text-[10px]">{(r.name || '?')[0]}</span>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-bright truncate">{r.name}</span>
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded-md border font-bold ${scoreColor}`}>{r.score}/10</span>
+                      {webUrl && <a href={webUrl} target="_blank" rel="noopener" onClick={e => e.stopPropagation()} className="text-blue-400 text-[9px] hover:text-blue-300 flex-shrink-0">🌐</a>}
+                      {cardId && typeof cardId === 'number' && <a href={`/company/${cardId}`} onClick={e => e.stopPropagation()} className="text-[9px] px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-400 border border-pink-400/15 font-bold hover:bg-pink-500/20 flex-shrink-0">H</a>}
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      {card.funding_total > 0 && <span className="text-[9px] text-sky-400/50">💰 {moneyFmt(card.funding_total)}</span>}
+                      {card.funding_stage && <span className="text-[9px] text-muted/30">{card.funding_stage}</span>}
+                      {r._sourceSearch && <span className="text-[9px] text-muted/25 truncate">· {r._sourceSearch}</span>}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <button onClick={() => addFavorite && addFavorite({ ...card, name: r.name, _score: r.score })}
+                      className={`text-[9px] px-2 py-0.5 rounded border font-bold ${
+                        isFav ? 'bg-pink-500/15 border-pink-400/40 text-pink-400' : 'border-pink-400/20 text-pink-400/50 hover:text-pink-400'
+                      }`}>
+                      {isFav ? '❤️' : '🤍'}
+                    </button>
+                    <CrmButton company={{ ...card, name: r.name }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Pending votes section */}
+      {!user ? (
+        <div className="text-center py-8 border border-border/15 rounded-xl bg-surface/30">
+          <p className="text-muted/40 text-sm">Claim your identity to see pending votes</p>
+          <p className="text-[10px] text-muted/35 mt-1">Use the name selector at bottom right</p>
+        </div>
+      ) : loading ? (
+        <div className="flex flex-col items-center py-12 gap-2">
+          <div className="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+          <p className="text-[11px] text-muted/40">Loading {loadingStage || 'pipeline'}...</p>
+          <div className="flex gap-1.5 mt-1">
+            <span className={`text-[9px] px-2 py-0.5 rounded-full border ${!loadingStage || loadingStage === 'BO' ? 'border-sky-400/30 text-sky-400' : 'border-emerald-400/20 text-emerald-400/50'}`}>
+              {loadingStage === 'BO' ? '◌' : !loadingStage ? '◌' : '✓'} BO
+            </span>
+            <span className={`text-[9px] px-2 py-0.5 rounded-full border ${loadingStage === 'BORO' ? 'border-violet-400/30 text-violet-400' : loadingStage === 'SM' || !loadingStage ? 'border-emerald-400/20 text-emerald-400/50' : 'border-border/15 text-muted/40'}`}>
+              {loadingStage === 'BORO' ? '◌' : (loadingStage === 'SM' || !loadingStage) ? '✓' : '·'} BORO
+            </span>
+            <span className={`text-[9px] px-2 py-0.5 rounded-full border ${loadingStage === 'SM' ? 'border-emerald-400/30 text-emerald-400' : !loadingStage ? 'border-emerald-400/20 text-emerald-400/50' : 'border-border/15 text-muted/40'}`}>
+              {loadingStage === 'SM' ? '◌' : !loadingStage ? '✓' : '·'} SM
+            </span>
+          </div>
+        </div>
+      ) : pending.length === 0 ? (
+        <div className="text-center py-8 border border-emerald-400/15 rounded-xl bg-emerald-500/5">
+          <p className="text-emerald-400 text-sm font-medium">✓ All caught up!</p>
+          <p className="text-[10px] text-muted/40 mt-1">No companies waiting for your vote</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {/* Pending counts */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold text-bright">Needs your vote</span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-400/20 font-bold">{pending.length}</span>
+          </div>
+
+          {/* Stage sections */}
+          {[
+            { label: '🏆 BORO-SM', items: pendingSM, stage: 'BORO-SM' },
+            { label: 'BORO', items: pendingBORO, stage: 'BORO' },
+            { label: 'BO', items: pendingBO, stage: 'BO' },
+          ].filter(s => s.items.length > 0).map(section => (
+            <div key={section.stage}>
+              <div className="flex items-center gap-2 mb-2">
+                <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold ${stageColor(section.stage)}`}>{section.label}</span>
+                <span className="text-[10px] text-muted/40">{section.items.length} pending</span>
+              </div>
+              <div className="space-y-1.5">
+                {section.items.map((c, i) => {
+                  const isExpanded = expandedCompany === c.company;
+                  const webUrl = c.company_link ? (c.company_link.startsWith('http') ? c.company_link : `https://${c.company_link}`) : null;
+                  const tagline = c.notes ? c.notes.replace(/^\[.*?\]\s*/, '').split(' · ')[0].slice(0, 100) : '';
+                  const votes = Array.isArray(c.in_or_out) ? c.in_or_out : [];
+
+                  return (
+                    <div key={c.airtable_id || i} className="border border-border/18 rounded-xl bg-surface/30 overflow-hidden">
+                      {/* Main row — clickable to expand */}
+                      <button onClick={() => setExpandedCompany(isExpanded ? null : c.company)}
+                        className="w-full text-left px-3.5 py-3 flex items-center gap-3 hover:bg-white/[0.02] transition-colors">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-bright">{c.company}</span>
+                            {webUrl && <a href={webUrl} target="_blank" rel="noopener" onClick={e => e.stopPropagation()} className="text-blue-400 text-xs hover:text-blue-300">🌐</a>}
+                            {c.twitter_link && <a href={c.twitter_link} target="_blank" rel="noopener" onClick={e => e.stopPropagation()} className="text-blue-400/65 text-xs hover:text-blue-300">𝕏</a>}
+                          </div>
+                          {tagline && <p className="text-[10px] text-bright/40 truncate mt-0.5">{tagline}</p>}
+                          {/* Existing votes */}
+                          {votes.length > 0 && (
+                            <div className="flex gap-1 mt-1 flex-wrap">
+                              {votes.map((v, j) => {
+                                const isIn = typeof v === 'string' && v.toUpperCase().includes('IN');
+                                const name = typeof v === 'string' ? v.split(':')[0].trim() : '';
+                                return (
+                                  <span key={j} className={`text-[9px] px-2 py-0.5 rounded font-bold text-white ${isIn ? 'bg-emerald-500' : 'bg-red-500/80'}`}>
+                                    {name}{isIn ? '✓' : '✗'}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                        {/* Vote indicator */}
+                        <div className="flex-shrink-0 flex items-center gap-1.5">
+                          <span className="text-amber-400 text-lg animate-pulse">⚡</span>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`text-muted/40 transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
+                            <polyline points="6 9 12 15 18 9" />
+                          </svg>
+                        </div>
+                      </button>
+
+                      {/* Expanded — vote buttons + details */}
+                      {isExpanded && (
+                        <div className="px-3.5 pb-3.5 border-t border-border/18 pt-3 space-y-3">
+                          {c.total_funding && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] text-sky-400/65">💰</span>
+                              <span className="text-xs text-sky-300 font-semibold">{c.total_funding}</span>
+                            </div>
+                          )}
+                          {c.sector && <span className="text-[9px] text-muted/40">{c.sector}</span>}
+
+                          {/* Vote buttons */}
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleVote(c, 'IN')}
+                              disabled={!!voting}
+                              className="flex-1 py-3 rounded-xl bg-emerald-500/15 border border-emerald-400/30 text-emerald-400 font-bold text-sm hover:bg-emerald-500/25 transition-colors disabled:opacity-30">
+                              {voting === `${c.company}-IN` ? '...' : '✓ IN'}
+                            </button>
+                            <button
+                              onClick={() => handleVote(c, 'OUT')}
+                              disabled={!!voting}
+                              className="flex-1 py-3 rounded-xl bg-red-500/15 border border-red-400/30 text-red-400 font-bold text-sm hover:bg-red-500/25 transition-colors disabled:opacity-30">
+                              {voting === `${c.company}-OUT` ? '...' : '✗ OUT'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
