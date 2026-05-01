@@ -2,14 +2,14 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { getTrollboxMessages, postTrollboxMessage } from '../utils/api';
 
 const AVATAR_COLORS = [
-  'bg-pink-500/40 text-pink-200',
-  'bg-cyan-500/40 text-cyan-200',
-  'bg-amber-500/40 text-amber-200',
-  'bg-violet-500/40 text-violet-200',
-  'bg-emerald-500/40 text-emerald-200',
-  'bg-rose-500/40 text-rose-200',
-  'bg-blue-500/40 text-blue-200',
-  'bg-orange-500/40 text-orange-200',
+  'bg-rose/40 text-rose',
+  'bg-bo/40 text-bo',
+  'bg-accent/40 text-accent',
+  'bg-boro/40 text-boro',
+  'bg-sm/40 text-sm',
+  'bg-rose/40 text-rose',
+  'bg-bo/40 text-bo',
+  'bg-accent/40 text-accent',
 ];
 
 function userColor(userId) {
@@ -155,7 +155,7 @@ export default function Trollbox({ userId, nickname }) {
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
           </svg>
           {unread > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center animate-pulse">
+            <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-rose text-bright text-[10px] font-bold flex items-center justify-center animate-pulse">
               {unread > 9 ? '9+' : unread}
             </span>
           )}

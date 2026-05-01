@@ -70,8 +70,8 @@ export function CrmIdentity() {
     const emoji = TEAM_EMOJIS[user] || '';
     return (
       <div className="flex items-center gap-1.5">
-        <span className="text-[10px] font-bold text-amber-400/70">{emoji} {user}</span>
-        <button onClick={() => { setCrmUser(''); setUser(''); }} className="text-[8px] text-muted/40 hover:text-red-400/65">✕</button>
+        <span className="text-[10px] font-bold text-accent/70">{emoji} {user}</span>
+        <button onClick={() => { setCrmUser(''); setUser(''); }} className="text-[8px] text-muted/40 hover:text-rose/65">✕</button>
       </div>
     );
   }
@@ -79,15 +79,15 @@ export function CrmIdentity() {
   return (
     <div ref={ref} className="relative">
       <button onClick={() => setPicking(!picking)}
-        className="text-[9px] px-2 py-1 rounded-md border border-amber-400/20 text-amber-400/60 hover:text-amber-300 hover:border-amber-400/30 font-medium animate-pulse">
+        className="text-[9px] px-2 py-1 rounded-md border border-accent/20 text-accent/60 hover:text-accent hover:border-accent/30 font-medium animate-pulse">
         Claim your name
       </button>
       {picking && (
-        <div className="absolute z-[100] bottom-full left-1/2 -translate-x-1/2 mb-1 bg-[#1a1d2e] border border-amber-400/20 rounded-lg overflow-hidden shadow-xl" style={{ minWidth: '140px', boxShadow: '0 -8px 30px rgba(0,0,0,0.6)' }}>
+        <div className="absolute z-[100] bottom-full left-1/2 -translate-x-1/2 mb-1 bg-card border border-accent/20 rounded-lg overflow-hidden shadow-xl" style={{ minWidth: '140px', boxShadow: '0 -8px 30px rgba(0,0,0,0.6)' }}>
           <p className="text-[8px] text-muted/40 uppercase tracking-wider font-bold px-2.5 pt-2 pb-1">Who are you?</p>
           {TEAM_MEMBERS.map(name => (
             <button key={name} onClick={() => handlePick(name)}
-              className="w-full text-left text-[11px] px-2.5 py-1.5 border-t border-white/5 font-medium transition-colors text-bright/70 hover:bg-amber-500/10">
+              className="w-full text-left text-[11px] px-2.5 py-1.5 border-t border-border/5 font-medium transition-colors text-bright/70 hover:bg-accent/10">
               {TEAM_EMOJIS[name] || ''} {name}
             </button>
           ))}
@@ -172,10 +172,10 @@ export function CrmButton({ company }) {
   };
 
   const stageColors = {
-    'BO': 'bg-sky-500/15 text-sky-400 border-sky-400/25 hover:bg-sky-500/25',
-    'BORO': 'bg-violet-500/15 text-violet-400 border-violet-400/25 hover:bg-violet-500/25',
-    'BORO-SM': 'bg-emerald-500/15 text-emerald-400 border-emerald-400/25 hover:bg-emerald-500/25',
-    'Backburn': 'bg-red-500/10 text-red-400/60 border-red-400/15 hover:bg-red-500/20',
+    'BO': 'bg-bo/15 text-bo border-bo/25 hover:bg-bo/25',
+    'BORO': 'bg-boro/15 text-boro border-boro/25 hover:bg-boro/25',
+    'BORO-SM': 'bg-sm/15 text-sm border-sm/25 hover:bg-sm/25',
+    'Backburn': 'bg-rose/10 text-rose/60 border-rose/15 hover:bg-rose/20',
   };
 
   return (
@@ -184,13 +184,13 @@ export function CrmButton({ company }) {
 
       <button onClick={handleClick}
         className={`text-[9px] px-2 py-0.5 rounded-md border transition-all font-medium ${
-          result?.stage ? 'bg-emerald-500/12 border-emerald-400/25 text-emerald-300'
-          : isRestricted ? 'bg-gray-500/6 border-gray-400/10 text-gray-400/30 cursor-not-allowed'
-          : !user ? 'bg-gray-500/6 border-gray-400/15 text-gray-400/40'
-          : 'bg-yellow-500/6 border-yellow-400/15 text-yellow-400/60 hover:border-yellow-400/30 hover:text-yellow-300'
+          result?.stage ? 'bg-sm/12 border-sm/25 text-sm'
+          : isRestricted ? 'bg-muted/6 border-muted/10 text-muted/30 cursor-not-allowed'
+          : !user ? 'bg-muted/6 border-muted/15 text-muted/40'
+          : 'bg-accent/6 border-accent/15 text-accent/60 hover:border-accent/30 hover:text-accent'
         }`}>
         {loading ? (
-          <span className="flex items-center gap-1"><span className="w-2 h-2 border border-yellow-400 border-t-transparent rounded-full animate-spin" /> Saving...</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 border border-accent border-t-transparent rounded-full animate-spin" /> Saving...</span>
         ) : result?.stage ? `✓ ${result.stage}` : (
           <span className="flex items-center gap-1">
             <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12.07 1.63L21.3 5.73c.55.24.55.64 0 .89L12.07 10.7c-.37.16-.77.16-1.14 0L1.7 6.62c-.55-.25-.55-.65 0-.89l9.23-4.1c.37-.16.77-.16 1.14 0zM22.3 10.3l-2.07-.92-7.1 3.15c-.37.17-.77.17-1.14 0l-7.1-3.15-2.07.92c-.55.24-.55.64 0 .89l9.23 4.08c.37.17.77.17 1.14 0l9.23-4.08c.55-.25.55-.65 0-.89zm0 4.58l-2.07-.92-7.1 3.15c-.37.17-.77.17-1.14 0l-7.1-3.15-2.07.92c-.55.24-.55.64 0 .89l9.23 4.08c.37.17.77.17 1.14 0l9.23-4.08c.55-.25.55-.65 0-.89z"/></svg>
@@ -200,7 +200,7 @@ export function CrmButton({ company }) {
       </button>
 
       {open && !result?.stage && (
-        <div className="fixed z-[200] bg-[#1a1d2e] border border-amber-400/20 rounded-lg overflow-visible shadow-2xl"
+        <div className="fixed z-[200] bg-card border border-accent/20 rounded-lg overflow-visible shadow-2xl"
           style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.7)', width: '160px',
             ...(ref.current ? (() => {
               const rect = ref.current.getBoundingClientRect();
@@ -220,21 +220,21 @@ export function CrmButton({ company }) {
               <p className="text-[8px] text-muted/40 uppercase tracking-wider font-bold px-2.5 pt-2 pb-1">Add to CRM as {user}</p>
               {CRM_STAGES.map(stage => (
                 <button key={stage} onClick={(e) => { e.stopPropagation(); handleStageClick(stage); }}
-                  className={`w-full text-left text-[11px] px-2.5 py-2 border-t border-white/5 font-medium transition-colors ${stageColors[stage]}`}>
+                  className={`w-full text-left text-[11px] px-2.5 py-2 border-t border-border/5 font-medium transition-colors ${stageColors[stage]}`}>
                   {stage === 'BORO-SM' ? '🏆 ' : ''}{stage}
                 </button>
               ))}
-              {result?.error && <p className="text-red-400/60 text-[9px] px-2.5 py-1">{result.error}</p>}
+              {result?.error && <p className="text-rose/60 text-[9px] px-2.5 py-1">{result.error}</p>}
             </>
           ) : (
             <div className="p-3 space-y-2">
-              <p className="text-[11px] text-bright font-medium text-center">Add to <span className="text-emerald-400 font-bold">BORO-SM</span>?</p>
+              <p className="text-[11px] text-bright font-medium text-center">Add to <span className="text-sm font-bold">BORO-SM</span>?</p>
               <p className="text-[9px] text-muted/50 text-center">Highest conviction bucket</p>
               <div className="flex gap-2">
                 <button onClick={(e) => { e.stopPropagation(); setConfirmSM(false); }}
                   className="flex-1 text-[10px] py-1.5 rounded-md border border-border/20 text-muted/50 hover:text-bright hover:border-border/40">Cancel</button>
                 <button onClick={(e) => { e.stopPropagation(); addToCRM('BORO-SM'); }}
-                  className="flex-1 text-[10px] py-1.5 rounded-md bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 hover:bg-emerald-500/30 font-bold">🏆 Confirm</button>
+                  className="flex-1 text-[10px] py-1.5 rounded-md bg-sm/20 border border-sm/30 text-sm hover:bg-sm/30 font-bold">🏆 Confirm</button>
               </div>
             </div>
           )}
@@ -335,30 +335,30 @@ export function CrmHistory() {
     <div ref={ref} className="relative">
       <button onClick={handleOpen}
         className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all text-[10px] font-medium ${
-          open ? 'bg-amber-500/10 border-amber-400/25 text-amber-300' : 'border-border/15 text-muted/40 hover:text-amber-400 hover:border-amber-400/20'
+          open ? 'bg-accent/10 border-accent/25 text-accent' : 'border-border/15 text-muted/40 hover:text-accent hover:border-accent/20'
         }`}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12.07 1.63L21.3 5.73c.55.24.55.64 0 .89L12.07 10.7c-.37.16-.77.16-1.14 0L1.7 6.62c-.55-.25-.55-.65 0-.89l9.23-4.1c.37-.16.77-.16 1.14 0zM22.3 10.3l-2.07-.92-7.1 3.15c-.37.17-.77.17-1.14 0l-7.1-3.15-2.07.92c-.55.24-.55.64 0 .89l9.23 4.08c.37.17.77.17 1.14 0l9.23-4.08c.55-.25.55-.65 0-.89zm0 4.58l-2.07-.92-7.1 3.15c-.37.17-.77.17-1.14 0l-7.1-3.15-2.07.92c-.55.24-.55.64 0 .89l9.23 4.08c.37.17.77.17 1.14 0l9.23-4.08c.55-.25.55-.65 0-.89z"/></svg>
         CRM
       </button>
 
       {open && (
-        <div className="absolute z-[90] top-full right-0 mt-1 w-[320px] bg-[#1a1d2e] border border-amber-400/20 rounded-xl overflow-hidden"
+        <div className="absolute z-[90] top-full right-0 mt-1 w-[320px] bg-card border border-accent/20 rounded-xl overflow-hidden"
           style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
           {/* Pipeline counts */}
-          <div className="px-3 pt-3 pb-2 border-b border-white/5">
+          <div className="px-3 pt-3 pb-2 border-b border-border/5">
             <p className="text-[9px] text-muted/40 uppercase tracking-wider font-bold mb-2">Pipeline</p>
             <div className="flex gap-2">
-              <div className="flex-1 text-center px-2 py-1.5 rounded-md bg-sky-500/8 border border-sky-400/15">
-                <p className="text-lg font-bold text-sky-400">{airtableData.bo}</p>
-                <p className="text-[8px] text-sky-400/65 font-medium">BO</p>
+              <div className="flex-1 text-center px-2 py-1.5 rounded-md bg-bo/8 border border-bo/15">
+                <p className="text-lg font-bold text-bo">{airtableData.bo}</p>
+                <p className="text-[8px] text-bo/65 font-medium">BO</p>
               </div>
-              <div className="flex-1 text-center px-2 py-1.5 rounded-md bg-violet-500/8 border border-violet-400/15">
-                <p className="text-lg font-bold text-violet-400">{airtableData.boro}</p>
-                <p className="text-[8px] text-violet-400/50 font-medium">BORO</p>
+              <div className="flex-1 text-center px-2 py-1.5 rounded-md bg-boro/8 border border-boro/15">
+                <p className="text-lg font-bold text-boro">{airtableData.boro}</p>
+                <p className="text-[8px] text-boro/50 font-medium">BORO</p>
               </div>
-              <div className="flex-1 text-center px-2 py-1.5 rounded-md bg-emerald-500/8 border border-emerald-400/15">
-                <p className="text-lg font-bold text-emerald-400">{airtableData.borosm}</p>
-                <p className="text-[8px] text-emerald-400/50 font-medium">🏆 SM</p>
+              <div className="flex-1 text-center px-2 py-1.5 rounded-md bg-sm/8 border border-sm/15">
+                <p className="text-lg font-bold text-sm">{airtableData.borosm}</p>
+                <p className="text-[8px] text-sm/50 font-medium">🏆 SM</p>
               </div>
             </div>
           </div>
@@ -366,10 +366,10 @@ export function CrmHistory() {
           {/* Recently added (72h) */}
           <div className="px-3 pt-2 pb-1 flex items-center justify-between">
             <p className="text-[9px] text-muted/40 uppercase tracking-wider font-bold">
-              Recent activity (30d) {recentCompanies.length > 0 && <span className="text-amber-400/60">({recentCompanies.length})</span>}
+              Recent activity (30d) {recentCompanies.length > 0 && <span className="text-accent/60">({recentCompanies.length})</span>}
             </p>
-            {loading && <span className="text-[9px] text-amber-400/50 animate-pulse">loading…</span>}
-            {!loading && <button onClick={loadData} className="text-[9px] text-muted/30 hover:text-amber-400/60">↻</button>}
+            {loading && <span className="text-[9px] text-accent/50 animate-pulse">loading…</span>}
+            {!loading && <button onClick={loadData} className="text-[9px] text-muted/30 hover:text-accent/60">↻</button>}
           </div>
           <div className="max-h-[400px] overflow-y-auto">
             {recentCompanies.length === 0 && !loading ? (
@@ -379,24 +379,24 @@ export function CrmHistory() {
                 const { inVotes, outVotes } = parseVotes(c.in_or_out);
                 const hasVotes = inVotes.length > 0 || outVotes.length > 0;
                 return (
-                  <div key={`${c.company}-${i}`} className="px-3 py-2 border-t border-white/3 hover:bg-white/[0.02]">
+                  <div key={`${c.company}-${i}`} className="px-3 py-2 border-t border-border/3 hover:bg-surface/[0.02]">
                     <div className="flex items-center gap-2">
                       <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded flex-shrink-0 ${
-                        c._stage === 'BO' ? 'bg-sky-500/15 text-sky-400' :
-                        c._stage === 'BORO' ? 'bg-violet-500/15 text-violet-400' :
-                        'bg-emerald-500/15 text-emerald-400'
+                        c._stage === 'BO' ? 'bg-bo/15 text-bo' :
+                        c._stage === 'BORO' ? 'bg-boro/15 text-boro' :
+                        'bg-sm/15 text-sm'
                       }`}>{c._stage === 'BORO-SM' ? '🏆' : c._stage}</span>
                       <span className="text-[11px] text-bright/80 truncate flex-1 font-medium">{c.company}</span>
                       <span className="text-[8px] text-bright/25 flex-shrink-0">{timeSince(c.created_time)}</span>
                     </div>
                     <div className="flex items-center gap-1.5 mt-1 ml-0.5">
-                      {c.addedBy && <span className="text-[8px] text-amber-400/50 font-medium">by {c.addedBy}</span>}
+                      {c.addedBy && <span className="text-[8px] text-accent/50 font-medium">by {c.addedBy}</span>}
                       {hasVotes && c.addedBy && <span className="text-[7px] text-muted/20">·</span>}
                       {inVotes.map(name => (
-                        <span key={name} className="text-[8px] px-1.5 py-0.5 rounded-full bg-emerald-500 text-white font-bold">{name}✓</span>
+                        <span key={name} className="text-[8px] px-1.5 py-0.5 rounded-full bg-sm text-bright font-bold">{name}✓</span>
                       ))}
                       {outVotes.map(name => (
-                        <span key={name} className="text-[8px] px-1.5 py-0.5 rounded-full bg-red-500/80 text-white font-bold">{name}✗</span>
+                        <span key={name} className="text-[8px] px-1.5 py-0.5 rounded-full bg-rose/80 text-bright font-bold">{name}✗</span>
                       ))}
                       {!hasVotes && !c.addedBy && <span className="text-[8px] text-muted/25 italic">No votes yet</span>}
                     </div>

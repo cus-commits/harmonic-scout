@@ -25,12 +25,12 @@ function CompanyMiniCard({ company, addFavorite, isFavorited }) {
   const saved = isFavorited && isFavorited(name);
 
   return (
-    <div className="flex items-start gap-2 px-2.5 py-2 rounded-lg hover:bg-violet-500/5 transition-colors border border-transparent hover:border-violet-400/10">
+    <div className="flex items-start gap-2 px-2.5 py-2 rounded-lg hover:bg-boro/5 transition-colors border border-transparent hover:border-boro/10">
       {logoUrl ? (
         <img src={logoUrl} alt="" className="w-8 h-8 rounded-lg bg-ink/50 flex-shrink-0 object-contain" onError={e => { e.target.style.display='none'; }} />
       ) : (
-        <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center flex-shrink-0">
-          <span className="text-violet-400 font-bold text-xs">{name[0]}</span>
+        <div className="w-8 h-8 rounded-lg bg-boro/10 flex items-center justify-center flex-shrink-0">
+          <span className="text-boro font-bold text-xs">{name[0]}</span>
         </div>
       )}
       <div className="flex-1 min-w-0">
@@ -38,14 +38,14 @@ function CompanyMiniCard({ company, addFavorite, isFavorited }) {
           <span className="text-[11px] font-semibold text-bright truncate">{name}</span>
           {webUrl && (
             <a href={webUrl} target="_blank" rel="noopener" onClick={e => e.stopPropagation()}
-              className="text-[8px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-400/30 hover:bg-sky-500/20 font-medium flex-shrink-0">
+              className="text-[8px] px-1.5 py-0.5 rounded bg-bo/15 text-bo border border-bo/30 hover:bg-bo/20 font-medium flex-shrink-0">
               🌐
             </a>
           )}
         </div>
         <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-          {stage && <span className="text-[9px] px-1 py-0.5 rounded bg-emerald-500/10 text-emerald-300/60 border border-emerald-400/10">{String(stage).replace(/_/g,' ')}</span>}
-          {funding && <span className="text-[9px] text-sky-400/65">💰 {funding}</span>}
+          {stage && <span className="text-[9px] px-1 py-0.5 rounded bg-sm/10 text-sm/60 border border-sm/10">{String(stage).replace(/_/g,' ')}</span>}
+          {funding && <span className="text-[9px] text-bo/65">💰 {funding}</span>}
           {hc && <span className="text-[9px] text-muted/40">👥 {hc}</span>}
           {loc && <span className="text-[9px] text-muted/35">📍 {loc}</span>}
         </div>
@@ -54,7 +54,7 @@ function CompanyMiniCard({ company, addFavorite, isFavorited }) {
       </div>
       {addFavorite && (
         <button onClick={(e) => { e.stopPropagation(); if (!saved) addFavorite({ name, description: desc, website: web, logo_url: logoUrl, funding_total: company.funding_total, funding_stage: stage, location: loc, headcount: hc, investors: company.investors }); }}
-          className={`flex-shrink-0 text-sm ${saved ? 'text-sky-400' : 'text-muted/35 hover:text-sky-400'}`}>
+          className={`flex-shrink-0 text-sm ${saved ? 'text-bo' : 'text-muted/35 hover:text-bo'}`}>
           {saved ? '★' : '☆'}
         </button>
       )}
@@ -117,20 +117,20 @@ function LiveSearch({ addFavorite, isFavorited }) {
       <div className="relative">
         <input type="text" value={query} onChange={e => { setQuery(e.target.value); setSelectedCompany(null); setSimilarResults(null); }}
           placeholder="Type a company name to find similar..."
-          className="w-full bg-ink/50 border border-violet-400/20 rounded-lg px-3 py-2.5 text-xs text-bright outline-none focus:border-violet-400/40 placeholder-muted/30" />
-        {loading && <div className="absolute right-3 top-3 w-3 h-3 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />}
+          className="w-full bg-ink/50 border border-boro/20 rounded-lg px-3 py-2.5 text-xs text-bright outline-none focus:border-boro/40 placeholder-muted/30" />
+        {loading && <div className="absolute right-3 top-3 w-3 h-3 border-2 border-accent border-t-transparent rounded-full animate-spin" />}
 
         {/* Live suggestions dropdown */}
         {suggestions.length > 0 && !selectedCompany && (
-          <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-surface border border-violet-400/20 rounded-lg shadow-xl overflow-hidden max-h-[250px] overflow-y-auto">
+          <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-surface border border-boro/20 rounded-lg shadow-xl overflow-hidden max-h-[250px] overflow-y-auto">
             {suggestions.map((s, i) => (
               <button key={i} onClick={() => handleSelect(s)}
-                className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-violet-500/8 transition-colors text-left border-b border-border/15 last:border-0">
+                className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-boro/8 transition-colors text-left border-b border-border/15 last:border-0">
                 {s.logo_url ? (
                   <img src={s.logo_url} alt="" className="w-7 h-7 rounded-md bg-ink/50 flex-shrink-0 object-contain" onError={e => { e.target.style.display='none'; }} />
                 ) : (
-                  <div className="w-7 h-7 rounded-md bg-violet-500/10 flex items-center justify-center flex-shrink-0">
-                    <span className="text-violet-400 text-[10px] font-bold">{(s.name || '?')[0]}</span>
+                  <div className="w-7 h-7 rounded-md bg-boro/10 flex items-center justify-center flex-shrink-0">
+                    <span className="text-boro text-[10px] font-bold">{(s.name || '?')[0]}</span>
                   </div>
                 )}
                 <div className="min-w-0">
@@ -146,8 +146,8 @@ function LiveSearch({ addFavorite, isFavorited }) {
       {/* Similar results */}
       {similarLoading && (
         <div className="flex items-center justify-center gap-2 py-4">
-          <div className="w-4 h-4 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
-          <span className="text-[10px] text-violet-300/50">Finding similar companies...</span>
+          <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+          <span className="text-[10px] text-boro/50">Finding similar companies...</span>
         </div>
       )}
 
@@ -156,7 +156,7 @@ function LiveSearch({ addFavorite, isFavorited }) {
         const remaining = similarResults.length - visibleCount;
         return (
         <div className="space-y-1">
-          <p className="text-[9px] text-violet-400/40 uppercase tracking-wider font-bold">
+          <p className="text-[9px] text-boro/40 uppercase tracking-wider font-bold">
             Showing {visible.length} of {similarResults.length} similar to {selectedCompany?.name}
           </p>
           <div className="space-y-0.5 max-h-[400px] overflow-y-auto">
@@ -166,7 +166,7 @@ function LiveSearch({ addFavorite, isFavorited }) {
           </div>
           {remaining > 0 && (
             <button onClick={() => setVisibleCount(prev => prev + 25)}
-              className="w-full text-[10px] text-violet-400/50 hover:text-violet-300 py-2 border-t border-violet-400/10 font-medium">
+              className="w-full text-[10px] text-boro/50 hover:text-boro py-2 border-t border-boro/10 font-medium">
               Show {Math.min(25, remaining)} more ({remaining} remaining) ↓
             </button>
           )}
@@ -174,7 +174,7 @@ function LiveSearch({ addFavorite, isFavorited }) {
         );
       })()}
       {similarResults && similarResults.length === 0 && (
-        <p className="text-violet-300/40 text-[10px] text-center py-2">No similar companies found</p>
+        <p className="text-boro/40 text-[10px] text-center py-2">No similar companies found</p>
       )}
     </div>
   );
@@ -223,23 +223,23 @@ export default function FindSimilar({ companyId, companyName, addFavorite, isFav
     <div>
       <button onClick={handleSearch} disabled={loading}
         className={`text-[9px] px-2 py-0.5 rounded-md border transition-all font-medium ${
-          open && results?.length > 0 ? 'bg-violet-500/12 border-violet-400/25 text-violet-300'
-          : 'bg-violet-500/6 border-violet-400/15 text-violet-400/70 hover:border-violet-400/30 hover:text-violet-300'
+          open && results?.length > 0 ? 'bg-boro/12 border-boro/25 text-boro'
+          : 'bg-boro/6 border-boro/15 text-boro/70 hover:border-boro/30 hover:text-boro'
         }`}>
         {loading ? (
-          <span className="flex items-center gap-1"><span className="w-2 h-2 border border-violet-400 border-t-transparent rounded-full animate-spin" /> Finding...</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 border border-accent border-t-transparent rounded-full animate-spin" /> Finding...</span>
         ) : '🔍 Similar'}
       </button>
 
       {open && results !== null && (
-        <div className="mt-2 bg-violet-500/4 border border-violet-400/12 rounded-xl p-3 space-y-2">
+        <div className="mt-2 bg-boro/4 border border-boro/12 rounded-xl p-3 space-y-2">
           {error && (results || []).length === 0 ? (
-            <p className="text-violet-300/40 text-[10px]">{error}</p>
+            <p className="text-boro/40 text-[10px]">{error}</p>
           ) : (results || []).length === 0 ? (
-            <p className="text-violet-300/40 text-[10px]">No similar companies found</p>
+            <p className="text-boro/40 text-[10px]">No similar companies found</p>
           ) : (
             <>
-              <p className="text-[9px] text-violet-400/40 uppercase tracking-wider font-bold">
+              <p className="text-[9px] text-boro/40 uppercase tracking-wider font-bold">
                 Showing {visibleResults.length} of {results.length} similar to {companyName}
               </p>
               <div className="space-y-0.5 max-h-[500px] overflow-y-auto">
@@ -249,7 +249,7 @@ export default function FindSimilar({ companyId, companyName, addFavorite, isFav
               </div>
               {remaining > 0 && (
                 <button onClick={() => setVisibleCount(prev => prev + 25)}
-                  className="w-full text-[10px] text-violet-400/50 hover:text-violet-300 py-2 border-t border-violet-400/10 font-medium">
+                  className="w-full text-[10px] text-boro/50 hover:text-boro py-2 border-t border-boro/10 font-medium">
                   Show {Math.min(25, remaining)} more ({remaining} remaining) ↓
                 </button>
               )}

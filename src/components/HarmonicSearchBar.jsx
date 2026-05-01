@@ -121,15 +121,15 @@ export default function HarmonicSearchBar({ addFavorite, isFavorited }) {
               onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
               onKeyDown={handleKeyDown}
               placeholder="Type a company name or search query..."
-              className="w-full bg-ink/50 border border-border/25 rounded-xl px-4 py-3 text-sm text-bright outline-none focus:border-amber-400/40 placeholder:text-muted/40 transition-colors" />
-            {sugLoading && <div className="absolute right-3 top-3.5 w-3.5 h-3.5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />}
+              className="w-full bg-ink/50 border border-border/25 rounded-xl px-4 py-3 text-sm text-bright outline-none focus:border-accent/40 placeholder:text-muted/40 transition-colors" />
+            {sugLoading && <div className="absolute right-3 top-3.5 w-3.5 h-3.5 border-2 border-accent border-t-transparent rounded-full animate-spin" />}
 
             {/* Live suggestions dropdown */}
             {showSuggestions && suggestions.length > 0 && (
-              <div className="absolute z-[100] top-full left-0 right-0 mt-1 bg-[#1a1d2e] border border-amber-400/25 rounded-xl overflow-hidden"
+              <div className="absolute z-[100] top-full left-0 right-0 mt-1 bg-card border border-accent/25 rounded-xl overflow-hidden"
                 style={{ boxShadow: '0 12px 48px rgba(0,0,0,0.7), 0 0 0 1px rgba(20,184,166,0.1)' }}>
                 <div className="px-3 pt-2 pb-1 flex items-center justify-between">
-                  <span className="text-[9px] text-amber-400/65 uppercase tracking-wider font-bold">Companies matching "{query}"</span>
+                  <span className="text-[9px] text-accent/65 uppercase tracking-wider font-bold">Companies matching "{query}"</span>
                   <span className="text-[9px] text-muted/40">{suggestions.length} found</span>
                 </div>
                 {suggestions.map((s, i) => {
@@ -139,42 +139,42 @@ export default function HarmonicSearchBar({ addFavorite, isFavorited }) {
                   const domain = s.domain || s.website_domain || '';
                   return (
                   <button key={s.id || i} onClick={() => handleSelect({ ...s, name, logo_url: logo, domain })}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-amber-500/10 transition-colors text-left border-t border-white/5">
+                    className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-accent/10 transition-colors text-left border-t border-border/5">
                     {logo ? (
                       <img src={logo} alt="" className="w-9 h-9 rounded-lg bg-ink/80 flex-shrink-0 object-contain" onError={e => { e.target.style.display='none'; }} />
                     ) : (
-                      <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
-                        <span className="text-amber-400 text-sm font-bold">{name[0]}</span>
+                      <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
+                        <span className="text-accent text-sm font-bold">{name[0]}</span>
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold text-bright truncate">{name}</p>
                       {domain && <p className="text-[10px] text-muted/40 truncate">{domain}</p>}
                     </div>
-                    <span className="text-[10px] text-amber-400/55 flex-shrink-0">→</span>
+                    <span className="text-[10px] text-accent/55 flex-shrink-0">→</span>
                   </button>
                   );
                 })}
                 <button onClick={handleFullSearch}
-                  className="w-full text-[11px] text-amber-400/60 hover:text-amber-300 py-2.5 border-t border-amber-400/10 hover:bg-amber-500/5 font-medium">
+                  className="w-full text-[11px] text-accent/60 hover:text-accent py-2.5 border-t border-accent/10 hover:bg-accent/5 font-medium">
                   🔎 Search all companies for "{query}"
                 </button>
               </div>
             )}
           </div>
           <button onClick={handleFullSearch} disabled={loading || !query.trim()}
-            className="px-5 py-3 rounded-xl bg-amber-500/80 text-white font-bold text-sm disabled:opacity-30 active:scale-[0.98] transition-all shadow-md shadow-amber-500/15 whitespace-nowrap">
-            {loading ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block" /> : '🔎'}
+            className="px-5 py-3 rounded-xl bg-accent/80 text-bright font-bold text-sm disabled:opacity-30 active:scale-[0.98] transition-all shadow-md shadow-accent/15 whitespace-nowrap">
+            {loading ? <span className="w-4 h-4 border-2 border-bright border-t-transparent rounded-full animate-spin inline-block" /> : '🔎'}
           </button>
         </div>
       </div>
 
       {/* Results */}
-      {error && <p className="text-red-400/60 text-xs">{error}</p>}
+      {error && <p className="text-rose/60 text-xs">{error}</p>}
       {results && results.length === 0 && !error && <p className="text-muted/40 text-xs text-center py-2">No results found</p>}
       {results && results.length > 0 && (
         <div className="space-y-2">
-          <p className="text-[10px] text-amber-400/55 font-bold uppercase tracking-wider">{results.length} compan{results.length === 1 ? 'y' : 'ies'} found</p>
+          <p className="text-[10px] text-accent/55 font-bold uppercase tracking-wider">{results.length} compan{results.length === 1 ? 'y' : 'ies'} found</p>
           <div className="space-y-2 max-h-[600px] overflow-y-auto">
             {results.map((c, i) => {
               const webUrl = c.website ? (c.website.startsWith('http') ? c.website : `https://${c.website}`) : null;
@@ -188,8 +188,8 @@ export default function HarmonicSearchBar({ addFavorite, isFavorited }) {
                     {c.logo_url ? (
                       <img src={c.logo_url} alt="" className="w-10 h-10 rounded-lg bg-ink/50 flex-shrink-0 object-contain" onError={e => { e.target.style.display='none'; }} />
                     ) : (
-                      <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
-                        <span className="text-amber-400 font-bold">{(c.name || '?')[0]}</span>
+                      <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
+                        <span className="text-accent font-bold">{(c.name || '?')[0]}</span>
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
@@ -197,26 +197,26 @@ export default function HarmonicSearchBar({ addFavorite, isFavorited }) {
                         <span className="text-sm font-bold text-bright">{c.name}</span>
                         {webUrl && (
                           <a href={webUrl} target="_blank" rel="noopener"
-                            className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-400/30 hover:bg-sky-500/20 font-medium">🌐 website</a>
+                            className="text-[9px] px-1.5 py-0.5 rounded bg-bo/15 text-bo border border-bo/30 hover:bg-bo/20 font-medium">🌐 website</a>
                         )}
                         {c.signal && (
                           <span className={`text-[9px] px-1.5 py-0.5 rounded border font-bold ${
-                            c.signal === 'HIGH' ? 'bg-emerald-500/12 text-emerald-400 border-emerald-400/25'
-                            : c.signal === 'MEDIUM' ? 'bg-amber-500/12 text-amber-400 border-amber-400/25'
-                            : 'bg-gray-500/8 text-gray-400 border-gray-400/15'
+                            c.signal === 'HIGH' ? 'bg-sm/12 text-sm border-sm/25'
+                            : c.signal === 'MEDIUM' ? 'bg-accent/12 text-accent border-accent/25'
+                            : 'bg-muted/8 text-muted border-muted/15'
                           }`}>{c.signal}</span>
                         )}
                       </div>
                       <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                        {stage && <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300/60 border border-emerald-400/15">{stage}</span>}
-                        {funding && <span className="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-300/60 border border-sky-400/15">💰 {funding}</span>}
+                        {stage && <span className="text-[9px] px-1.5 py-0.5 rounded bg-sm/10 text-sm/60 border border-sm/15">{stage}</span>}
+                        {funding && <span className="text-[9px] px-1.5 py-0.5 rounded bg-bo/10 text-bo/60 border border-bo/15">💰 {funding}</span>}
                         {c.headcount && <span className="text-[9px] text-muted/40">👥 {c.headcount}</span>}
                         {c.location && <span className="text-[9px] text-muted/40">📍 {c.location}</span>}
                       </div>
                     </div>
                     {addFavorite && (
                       <button onClick={() => !saved && addFavorite({ ...c })}
-                        className={`flex-shrink-0 text-base ${saved ? 'text-sky-400' : 'text-muted/40 hover:text-sky-400'}`}>
+                        className={`flex-shrink-0 text-base ${saved ? 'text-bo' : 'text-muted/40 hover:text-bo'}`}>
                         {saved ? '★' : '☆'}
                       </button>
                     )}

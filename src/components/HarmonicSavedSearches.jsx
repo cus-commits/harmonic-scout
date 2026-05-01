@@ -30,20 +30,20 @@ function CompanyCard({ company, addFavorite, isFavorited }) {
             <p className="text-[13px] font-semibold text-bright leading-snug truncate">{company.name}</p>
             {webUrl && (
               <a href={webUrl} target="_blank" rel="noopener"
-                className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-400/30 hover:bg-sky-500/20 font-medium">
+                className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded bg-bo/15 text-bo border border-bo/30 hover:bg-bo/20 font-medium">
                 🌐
               </a>
             )}
           </div>
           <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
-            {stage && <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/12 text-amber-300 border border-amber-400/20 font-medium">{String(stage).replace(/_/g, ' ')}</span>}
-            {funding && <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/12 text-amber-300 border border-amber-400/20 font-medium">💰 {funding}</span>}
+            {stage && <span className="text-[9px] px-1.5 py-0.5 rounded bg-accent/12 text-accent border border-accent/20 font-medium">{String(stage).replace(/_/g, ' ')}</span>}
+            {funding && <span className="text-[9px] px-1.5 py-0.5 rounded bg-accent/12 text-accent border border-accent/20 font-medium">💰 {funding}</span>}
             {hc && <span className="text-[9px] text-muted/50">👥 {hc}</span>}
           </div>
         </div>
         {addFavorite && (
           <button onClick={() => !saved && addFavorite({ name: company.name, description: desc, website: web, logo_url: logo, funding_total: ft, funding_stage: stage, location: loc, headcount: hc })}
-            className={`flex-shrink-0 text-base ${saved ? 'text-sky-400' : 'text-muted/35 hover:text-sky-400'}`}>
+            className={`flex-shrink-0 text-base ${saved ? 'text-bo' : 'text-muted/35 hover:text-bo'}`}>
             {saved ? '★' : '☆'}
           </button>
         )}
@@ -97,12 +97,12 @@ export default function HarmonicSavedSearches({ compact = false, addFavorite, is
   if (searches.length === 0 && !loading) return null;
 
   return (
-    <div className={`border border-amber-500/15 rounded-xl ${compact ? '' : 'mb-4'}`}
+    <div className={`border border-accent/15 rounded-xl ${compact ? '' : 'mb-4'}`}
       style={{ background: 'linear-gradient(135deg, rgba(20,184,166,0.03) 0%, rgba(56,189,248,0.03) 100%)' }}>
       
       {/* Header */}
       <button onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between px-3.5 py-2.5 hover:bg-amber-500/5 transition-colors">
+        className="w-full flex items-center justify-between px-3.5 py-2.5 hover:bg-accent/5 transition-colors">
         <div className="flex items-center gap-2">
           <span className="text-sm">🔮</span>
           <div className="text-left">
@@ -114,10 +114,10 @@ export default function HarmonicSavedSearches({ compact = false, addFavorite, is
         </div>
         <div className="flex items-center gap-2">
           {activeSearch && results?.companies?.length > 0 && !expanded && (
-            <span className="text-[10px] text-amber-400/60">{activeSearch.name} · {results.companies.length} results</span>
+            <span className="text-[10px] text-accent/60">{activeSearch.name} · {results.companies.length} results</span>
           )}
           {searches.length > 0 && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-400/20 font-medium">{searches.length}</span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20 font-medium">{searches.length}</span>
           )}
           <span className={`text-muted/40 text-xs transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}>▾</span>
         </div>
@@ -125,10 +125,10 @@ export default function HarmonicSavedSearches({ compact = false, addFavorite, is
 
       {/* Search list (collapsible) */}
       {expanded && (
-        <div className="border-t border-amber-500/10 px-3.5 py-3 space-y-2">
+        <div className="border-t border-accent/10 px-3.5 py-3 space-y-2">
           {loading ? (
             <div className="flex justify-center py-4">
-              <div className="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
             </div>
           ) : searches.length === 0 ? (
             <div className="text-center py-4">
@@ -140,7 +140,7 @@ export default function HarmonicSavedSearches({ compact = false, addFavorite, is
               <div className="flex items-center justify-between">
                 <p className="text-[10px] text-muted/50">Tap a search to load results</p>
                 <button onClick={() => setNetNew(!netNew)}
-                  className={`text-[10px] px-2 py-0.5 rounded-full border transition-all ${netNew ? 'bg-amber-500/12 border-amber-400/30 text-amber-300' : 'border-border/20 text-muted/40'}`}>
+                  className={`text-[10px] px-2 py-0.5 rounded-full border transition-all ${netNew ? 'bg-accent/12 border-accent/30 text-accent' : 'border-border/20 text-muted/40'}`}>
                   {netNew ? '✨ Net new only' : 'All results'}
                 </button>
               </div>
@@ -148,19 +148,19 @@ export default function HarmonicSavedSearches({ compact = false, addFavorite, is
                 {searches.map(s => (
                   <button key={s.id} onClick={() => loadResults(s)}
                     className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-all ${
-                      activeSearch?.id === s.id ? 'bg-amber-500/10 border border-amber-400/25' : 'hover:bg-white/3 border border-transparent'
+                      activeSearch?.id === s.id ? 'bg-accent/10 border border-accent/25' : 'hover:bg-surface/3 border border-transparent'
                     }`}>
                     <div className="min-w-0">
                       <p className="text-xs font-medium text-bright/80 truncate">{s.name}</p>
                       {s.count != null && <p className="text-[10px] text-muted/40">{s.count} companies</p>}
                     </div>
                     {activeSearch?.id === s.id && loadingResults && (
-                      <div className="w-3.5 h-3.5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                      <div className="w-3.5 h-3.5 border-2 border-accent border-t-transparent rounded-full animate-spin flex-shrink-0" />
                     )}
                   </button>
                 ))}
               </div>
-              <button onClick={fetchSearches} className="w-full text-[10px] text-muted/40 hover:text-amber-400 transition-colors py-1">↻ Refresh</button>
+              <button onClick={fetchSearches} className="w-full text-[10px] text-muted/40 hover:text-accent transition-colors py-1">↻ Refresh</button>
             </>
           )}
         </div>
@@ -168,16 +168,16 @@ export default function HarmonicSavedSearches({ compact = false, addFavorite, is
 
       {/* Results — ALWAYS visible when they exist, even when search list is collapsed */}
       {results && !loadingResults && (
-        <div className="border-t border-amber-500/10 px-3.5 py-3 space-y-2">
+        <div className="border-t border-accent/10 px-3.5 py-3 space-y-2">
           {results.error ? (
-            <p className="text-red-400/80 text-xs">{results.error}</p>
+            <p className="text-rose/80 text-xs">{results.error}</p>
           ) : results.companies?.length > 0 ? (
             <>
               <div className="flex items-center justify-between">
                 <p className="text-[10px] text-muted/40">
                   {activeSearch?.name} — {results.companies.length} companies{results.totalCount > results.companies.length ? ` (of ${results.totalCount})` : ''}
                 </p>
-                <button onClick={() => { setResults(null); setActiveSearch(null); }} className="text-[10px] text-muted/40 hover:text-red-400 transition-colors">✕ Clear</button>
+                <button onClick={() => { setResults(null); setActiveSearch(null); }} className="text-[10px] text-muted/40 hover:text-rose transition-colors">✕ Clear</button>
               </div>
               <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
                 {results.companies.map((c, i) => <CompanyCard key={c.id || c.name || i} company={c} addFavorite={addFavorite} isFavorited={isFavorited} />)}
@@ -192,8 +192,8 @@ export default function HarmonicSavedSearches({ compact = false, addFavorite, is
       )}
 
       {loadingResults && (
-        <div className="border-t border-amber-500/10 px-3.5 py-4 flex justify-center">
-          <div className="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+        <div className="border-t border-accent/10 px-3.5 py-4 flex justify-center">
+          <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
         </div>
       )}
     </div>

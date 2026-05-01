@@ -12,12 +12,12 @@ function WebGrowthBadge({ company }) {
   const harmonicUrl = company.id && typeof company.id === 'number' ? `https://console.harmonic.ai/dashboard/company/${company.id}?selectedTab=TRACTION` : null;
   const badges = [];
   if (g30 !== null && g30 !== undefined) {
-    if (g30 >= 50) badges.push({ label: `🌐▲${Math.round(g30)}%`, period: '1mo', color: 'bg-sm/15 text-sm border-sm/25', url: harmonicUrl });
-    else if (g30 <= -30) badges.push({ label: `🌐▼${Math.abs(Math.round(g30))}%`, period: '1mo', color: 'bg-rose/12 text-rose border-rose/20', url: harmonicUrl });
+    if (g30 >= 50) badges.push({ label: `🌐▲${Math.round(g30)}%`, period: '1mo', color: 'bg-emerald-500/15 text-emerald-400 border-emerald-400/25', url: harmonicUrl });
+    else if (g30 <= -30) badges.push({ label: `🌐▼${Math.abs(Math.round(g30))}%`, period: '1mo', color: 'bg-red-500/12 text-red-400 border-red-400/20', url: harmonicUrl });
   }
   if (g90 !== null && g90 !== undefined) {
-    if (g90 >= 50) badges.push({ label: `🌐▲${Math.round(g90)}%`, period: '3mo', color: 'bg-sm/12 text-sm/70 border-sm/20', url: harmonicUrl });
-    else if (g90 <= -30) badges.push({ label: `🌐▼${Math.abs(Math.round(g90))}%`, period: '3mo', color: 'bg-rose/10 text-rose/70 border-rose/15', url: harmonicUrl });
+    if (g90 >= 50) badges.push({ label: `🌐▲${Math.round(g90)}%`, period: '3mo', color: 'bg-emerald-500/12 text-emerald-300/70 border-emerald-400/20', url: harmonicUrl });
+    else if (g90 <= -30) badges.push({ label: `🌐▼${Math.abs(Math.round(g90))}%`, period: '3mo', color: 'bg-red-500/10 text-red-300/70 border-red-400/15', url: harmonicUrl });
   }
   if (badges.length === 0) return null;
   return badges.map((b, i) => b.url ? (
@@ -37,9 +37,9 @@ function moneyFmt(n) {
 
 function stageColor(s) {
   const st = (s||'').toLowerCase();
-  if (st.includes('pre')) return 'bg-amber/12 text-amber border-amber/25';
-  if (st.includes('seed')) return 'bg-sm/12 text-sm border-sm/25';
-  return 'bg-muted/12 text-muted border-muted/25';
+  if (st.includes('pre')) return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+  if (st.includes('seed')) return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+  return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
 }
 
 export default function SharedFavoritesPage({ userId, addFavorite, isFavorited }) {
@@ -109,9 +109,12 @@ export default function SharedFavoritesPage({ userId, addFavorite, isFavorited }
   const backburned = allCompanies.filter(c => c.backburned);
 
   return (
-    <div className="min-h-screen max-w-[1080px] mx-auto px-7 pt-6 pb-28 fade-in">
+    <div className="min-h-screen max-w-4xl mx-auto px-8 pt-4 pb-4">
       <div className="mb-4">
-        <h1 className="font-serif text-xl font-semibold text-bright">Team</h1>
+        <h1 className="text-xl font-bold tracking-tight">
+          <span className="text-sky-400" style={{ fontFamily: "'Courier New', monospace" }}>dc</span>{' '}
+          <span style={{ background: 'linear-gradient(135deg, #ec4899 0%, #f59e0b 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Team</span>
+        </h1>
         <p className="text-muted/50 text-xs mt-0.5">Shared favorites from the team — vote In or Out</p>
       </div>
 
@@ -120,7 +123,7 @@ export default function SharedFavoritesPage({ userId, addFavorite, isFavorited }
         <span className="text-muted/40">{active.length} active</span>
         {backburned.length > 0 && (
           <button onClick={() => setShowBackburn(!showBackburn)}
-            className={`transition-all ${showBackburn ? 'text-rose/60' : 'text-muted/35 hover:text-muted/50'}`}>
+            className={`transition-all ${showBackburn ? 'text-red-400/60' : 'text-muted/35 hover:text-muted/50'}`}>
             🔥 {backburned.length} backburned {showBackburn ? '(hide)' : '(show)'}
           </button>
         )}
@@ -129,7 +132,7 @@ export default function SharedFavoritesPage({ userId, addFavorite, isFavorited }
 
       {loading ? (
         <div className="flex justify-center py-8">
-          <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+          <div className="w-6 h-6 border-2 border-sky-400 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : active.length === 0 && backburned.length === 0 ? (
         <div className="text-center py-12">
@@ -156,7 +159,7 @@ export default function SharedFavoritesPage({ userId, addFavorite, isFavorited }
       {showBackburn && backburned.length > 0 && (
         <div className="mt-8">
           <div className="flex items-center gap-2 mb-3">
-            <h2 className="text-sm font-bold text-rose/60">🔥 Backburned</h2>
+            <h2 className="text-sm font-bold text-red-400/60">🔥 Backburned</h2>
             <span className="text-[10px] text-muted/30">{backburned.length} companies</span>
           </div>
           <div className="space-y-2 opacity-60">
@@ -192,16 +195,16 @@ function TeamCard({ item, crmUser, onVote, votingOn, addFavorite, isFavorited })
   const myVote = crmUser ? votes[crmUser] : null;
 
   return (
-    <div className={`rounded-xl border p-4 space-y-2.5 transition-all ${
-      item.backburned ? 'border-rose/15' : 'border-border/[0.06]'
-    }`} style={{ background: 'rgba(46, 42, 37, 0.55)' }}>
+    <div className={`rounded-xl border bg-surface/50 p-4 space-y-2.5 transition-all ${
+      item.backburned ? 'border-red-500/15' : 'border-border/25'
+    }`}>
       {/* Header */}
       <div className="flex items-start gap-3">
         {c.logo_url ? (
-          <img src={c.logo_url} alt="" className="w-10 h-10 rounded-[10px] bg-ink-2 object-contain flex-shrink-0" onError={e => { e.target.style.display='none'; }} />
+          <img src={c.logo_url} alt="" className="w-10 h-10 rounded-xl bg-ink/50 object-contain flex-shrink-0" onError={e => { e.target.style.display='none'; }} />
         ) : (
-          <div className="w-10 h-10 rounded-xl bg-ink-2 flex items-center justify-center flex-shrink-0">
-            <span className="font-serif italic font-semibold text-accent text-lg">{(c.name||'?')[0]}</span>
+          <div className="w-10 h-10 rounded-xl bg-sky-500/10 flex items-center justify-center flex-shrink-0">
+            <span className="text-sky-400 font-bold text-lg">{(c.name||'?')[0]}</span>
           </div>
         )}
         <div className="flex-1 min-w-0">
@@ -209,14 +212,14 @@ function TeamCard({ item, crmUser, onVote, votingOn, addFavorite, isFavorited })
             <h3 className="font-bold text-bright text-sm">{c.name}</h3>
             {webUrl && (
               <a href={webUrl} target="_blank" rel="noopener"
-                className="text-[10px] px-2 py-0.5 rounded-md bg-bo/12 text-bo border border-bo/20 hover:bg-bo/20 font-medium">
+                className="text-[10px] px-2 py-0.5 rounded-md bg-blue-500/15 text-blue-400 border border-blue-400/30 hover:bg-sky-500/20 font-medium">
                 🌐 website
               </a>
             )}
           </div>
           <div className="flex items-center gap-1.5 mt-1 flex-wrap">
             {stage && <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${stageColor(c.funding_stage)}`}>{stage}</span>}
-            {total && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md border bg-bo/12 text-bo border-bo/20">💰 {total}</span>}
+            {total && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md border bg-sky-500/12 text-sky-400 border-sky-500/20">💰 {total}</span>}
             <WebGrowthBadge company={c} />
           </div>
         </div>
@@ -228,7 +231,7 @@ function TeamCard({ item, crmUser, onVote, votingOn, addFavorite, isFavorited })
       <div className="flex items-center gap-1.5 flex-wrap text-[10px]">
         <span className="text-muted/35">Added by:</span>
         {item.addedBy.map((a, i) => (
-          <span key={i} className="px-2 py-0.5 rounded-full bg-rose/10 text-rose/70 border border-rose/15 font-medium">
+          <span key={i} className="px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-400/70 border border-pink-400/15 font-medium">
             {a.nickname}
           </span>
         ))}
@@ -239,14 +242,14 @@ function TeamCard({ item, crmUser, onVote, votingOn, addFavorite, isFavorited })
       <div className="flex items-center gap-1.5 flex-wrap">
         {inVotes.length > 0 && (
           <div className="flex items-center gap-1">
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-sm/12 text-sm border border-sm/20 font-medium">{inVotes.length} In</span>
-            <span className="text-[9px] text-sm/40">{inVotes.map(([k]) => k).join(', ')}</span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/12 text-emerald-400 border border-emerald-400/20 font-medium">{inVotes.length} In</span>
+            <span className="text-[9px] text-emerald-400/40">{inVotes.map(([k]) => k).join(', ')}</span>
           </div>
         )}
         {outVotes.length > 0 && (
           <div className="flex items-center gap-1">
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose/12 text-rose border border-rose/20 font-medium">{outVotes.length} Out</span>
-            <span className="text-[9px] text-rose/40">{outVotes.map(([k]) => k).join(', ')}</span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/12 text-red-400 border border-red-400/20 font-medium">{outVotes.length} Out</span>
+            <span className="text-[9px] text-red-400/40">{outVotes.map(([k]) => k).join(', ')}</span>
           </div>
         )}
       </div>
@@ -257,16 +260,16 @@ function TeamCard({ item, crmUser, onVote, votingOn, addFavorite, isFavorited })
           <button onClick={() => onVote(c.name, 'in')} disabled={!!votingOn}
             className={`flex-1 text-[11px] py-2 rounded-lg border font-semibold transition-all ${
               myVote === 'in'
-                ? 'bg-sm/20 border-sm/40 text-sm'
-                : 'border-border/25 text-muted/40 hover:border-sm/30 hover:text-sm/60'
+                ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-400'
+                : 'border-border/25 text-muted/40 hover:border-emerald-400/30 hover:text-emerald-400/60'
             }`}>
             {votingOn === `${c.name}-in` ? '...' : '✓ In'}
           </button>
           <button onClick={() => onVote(c.name, 'out')} disabled={!!votingOn}
             className={`flex-1 text-[11px] py-2 rounded-lg border font-semibold transition-all ${
               myVote === 'out'
-                ? 'bg-rose/20 border-rose/40 text-rose'
-                : 'border-border/25 text-muted/40 hover:border-rose/30 hover:text-rose/60'
+                ? 'bg-red-500/20 border-red-400/40 text-red-400'
+                : 'border-border/25 text-muted/40 hover:border-red-400/30 hover:text-red-400/60'
             }`}>
             {votingOn === `${c.name}-out` ? '...' : '✗ Out'}
           </button>
@@ -276,7 +279,7 @@ function TeamCard({ item, crmUser, onVote, votingOn, addFavorite, isFavorited })
       {/* Actions */}
       <div className="flex items-center gap-1.5 flex-wrap">
         <CrmButton company={c} />
-        {c.id && typeof c.id === "number" && <a href={`/company/${c.id}`} className="text-[8px] px-1.5 py-0.5 rounded bg-rose/10 text-rose border border-rose/15 hover:bg-rose/20 font-bold" title="Company Card">H</a>}
+        {c.id && typeof c.id === "number" && <a href={`/company/${c.id}`} className="text-[8px] px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-400 border border-pink-400/15 hover:bg-pink-500/20 font-bold" title="Company Card">H</a>}
         <FindSimilar addFavorite={addFavorite} isFavorited={isFavorited} companyId={c.id} companyName={c.name} />
         {c.location && <span className="text-[9px] text-muted/35">📍 {c.location}</span>}
       </div>

@@ -175,8 +175,8 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
         <div className="space-y-1 mt-1 mb-2">
           <input type="password" value={keyInput} onChange={e => setKeyInput(e.target.value)} placeholder={placeholder}
             className="w-full bg-ink/60 border border-border/30 rounded-lg px-2 py-1.5 text-[11px] text-bright font-mono outline-none focus:border-accent/40" autoComplete="off" />
-          {keyStatus === 'error' && <p className="text-[9px] text-red-400">{keyError}</p>}
-          {keyStatus === 'success' && <p className="text-[9px] text-emerald-400">Key saved</p>}
+          {keyStatus === 'error' && <p className="text-[9px] text-rose">{keyError}</p>}
+          {keyStatus === 'success' && <p className="text-[9px] text-sm">Key saved</p>}
           <button onClick={() => handleSaveKey(type)} disabled={!keyInput.trim() || keyStatus === 'validating'}
             className="w-full text-[10px] px-2 py-1.5 rounded-lg bg-accent/20 text-accent font-bold disabled:opacity-40 transition-colors">
             {keyStatus === 'validating' ? 'Validating...' : 'Save Key'}

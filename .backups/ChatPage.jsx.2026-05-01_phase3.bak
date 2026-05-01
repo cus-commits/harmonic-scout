@@ -51,16 +51,16 @@ function CompanyCard({ company, onFavorite, isSaved }) {
 
   const stageClass = (() => {
     const s = (company.funding_stage || '').toLowerCase();
-    if (s.includes('pre') || s.includes('preseed')) return 'bg-amber/12 text-amber border-amber/25';
-    if (s.includes('seed')) return 'bg-sm/12 text-sm border-sm/25';
-    if (s.includes('series_a') || s.includes('series a')) return 'bg-bo/12 text-bo border-bo/25';
-    if (s.includes('series_b') || s.includes('series b')) return 'bg-boro/12 text-boro border-boro/25';
-    if (s.includes('series')) return 'bg-boro/12 text-boro border-boro/25';
-    return 'bg-muted/12 text-muted border-muted/25';
+    if (s.includes('pre') || s.includes('preseed')) return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+    if (s.includes('seed')) return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+    if (s.includes('series_a') || s.includes('series a')) return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+    if (s.includes('series_b') || s.includes('series b')) return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
+    if (s.includes('series')) return 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30';
+    return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
   })();
 
   return (
-    <div className="rounded-[14px] border border-border/[0.06] hover:border-accent/18 p-3.5 space-y-2.5 transition-all" style={{ background: 'rgba(46, 42, 37, 0.55)' }}>
+    <div className="rounded-xl border border-border/40 bg-surface/60 p-3.5 space-y-2.5 hover:border-accent/30 transition-all">
       {/* Header: logo + name + favorite */}
       <div className="flex items-start gap-3">
         {company.logo_url ? (
@@ -102,13 +102,13 @@ function CompanyCard({ company, onFavorite, isSaved }) {
         )}
 
         {fundingDisplay && (
-          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md border bg-bo/12 text-bo border-bo/20">
+          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md border bg-sky-500/15 text-sky-400 border-sky-500/25">
             💰 {fundingDisplay}
           </span>
         )}
 
         {lastRoundDisplay && (
-          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md border bg-boro/12 text-boro border-boro/20">
+          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md border bg-violet-500/15 text-violet-400 border-violet-500/25">
             🎯 Last: {lastRoundDisplay}
           </span>
         )}
@@ -274,8 +274,10 @@ export default function ChatPage({ addFavorite, isFavorited }) {
 
       {/* Header */}
       <div className="px-4 pt-4 pb-2 flex-shrink-0">
-        <h1 className="font-serif text-lg font-semibold text-bright">Pigeon Finder</h1>
-        <p className="font-mono text-[10px] text-muted">AI deal analyst • 30M+ companies • Daxos Capital</p>
+        <h1 className="text-lg font-bold tracking-tight">
+          <span className="text-accent" style={{ fontFamily: "'Courier New', monospace" }}>dc</span> Pigeon Finder
+        </h1>
+        <p className="text-muted text-xs">AI deal analyst • 30M+ companies • Daxos Capital</p>
         <div className="mt-2">
           <HarmonicSavedSearches compact addFavorite={addFavorite} isFavorited={isFavorited} />
         </div>

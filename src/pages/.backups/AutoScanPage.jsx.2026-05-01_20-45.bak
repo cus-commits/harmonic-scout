@@ -64,7 +64,7 @@ function ChipSelect({ options, selected, onChange, columns = 3 }) {
     <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
       {options.map(opt => (
         <button key={opt} onClick={() => onChange(selected.includes(opt) ? selected.filter(s => s !== opt) : [...selected, opt])}
-          className={`text-left text-[11px] px-2.5 py-2 rounded-lg border transition-all ${selected.includes(opt) ? 'bg-bo/12 border-bo/35 text-bo font-medium' : 'bg-surface/40 border-border/25 text-muted/70 hover:border-border/50'}`}>
+          className={`text-left text-[11px] px-2.5 py-2 rounded-lg border transition-all ${selected.includes(opt) ? 'bg-sky-500/12 border-sky-400/35 text-sky-300 font-medium' : 'bg-surface/40 border-border/25 text-muted/70 hover:border-border/50'}`}>
           {opt}
         </button>
       ))}
@@ -77,7 +77,7 @@ function TextInput({ label, value, onChange, placeholder }) {
     <div>
       <label className="text-[10px] text-muted/50 uppercase tracking-wider font-bold">{label}</label>
       <input type="text" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-        className="w-full bg-ink/50 border border-border/25 rounded-lg px-3 py-2 text-xs text-bright outline-none focus:border-bo/35 mt-1 transition-colors placeholder:text-bright/60" />
+        className="w-full bg-ink/50 border border-border/25 rounded-lg px-3 py-2 text-xs text-bright outline-none focus:border-sky-400/35 mt-1 transition-colors placeholder:text-white/60" />
     </div>
   );
 }
@@ -87,7 +87,7 @@ function Section({ title, children, toggleAll, allSelected }) {
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <h3 className="text-xs font-bold text-bright/80">{title}</h3>
-        {toggleAll && <button onClick={toggleAll} className="text-[10px] text-bo/60 hover:text-bo">{allSelected ? 'Clear' : 'All'}</button>}
+        {toggleAll && <button onClick={toggleAll} className="text-[10px] text-sky-400/60 hover:text-sky-300">{allSelected ? 'Clear' : 'All'}</button>}
       </div>
       {children}
     </div>
@@ -102,16 +102,16 @@ function TimeframePicker({ value, onChange, compact = false }) {
     return (
       <div className="relative">
         <button onClick={() => setOpen(!open)}
-          className="text-[10px] px-2.5 py-1.5 rounded-lg border border-border/20 text-muted/50 hover:border-bo/25 hover:text-bo transition-all flex items-center gap-1">
+          className="text-[10px] px-2.5 py-1.5 rounded-lg border border-border/20 text-muted/50 hover:border-sky-400/25 hover:text-sky-300 transition-all flex items-center gap-1">
           🕐 {current.label}
           <span className="text-[8px] text-muted/30">▾</span>
         </button>
         {open && (
-          <div className="absolute top-full mt-1 right-0 z-50 bg-card border border-border/25 rounded-lg shadow-xl py-1 min-w-[80px]">
+          <div className="absolute top-full mt-1 right-0 z-50 bg-[#1a1d2e] border border-border/25 rounded-lg shadow-xl py-1 min-w-[80px]">
             {TIMEFRAME_OPTIONS.map(o => (
               <button key={o.value} onClick={() => { onChange(o.value); setOpen(false); }}
                 className={`w-full text-left px-3 py-1.5 text-[11px] transition-colors ${
-                  o.value === value ? 'text-bo bg-bo/10 font-semibold' : 'text-muted/60 hover:text-bright hover:bg-bright/5'
+                  o.value === value ? 'text-sky-300 bg-sky-500/10 font-semibold' : 'text-muted/60 hover:text-bright hover:bg-white/5'
                 }`}>
                 {o.label}
               </button>
@@ -130,7 +130,7 @@ function TimeframePicker({ value, onChange, compact = false }) {
         {TIMEFRAME_OPTIONS.map(o => (
           <button key={o.value} onClick={() => onChange(o.value)}
             className={`text-[11px] px-3 py-2 rounded-lg border font-medium transition-all ${
-              o.value === value ? 'bg-bo/12 border-bo/35 text-bo' : 'border-border/25 text-muted/60 hover:border-border/40'
+              o.value === value ? 'bg-sky-500/12 border-sky-400/35 text-sky-300' : 'border-border/25 text-muted/60 hover:border-border/40'
             }`}>
             {o.label}
           </button>
@@ -177,7 +177,7 @@ function ProfileEditor({ profile, onSave, onCancel, personName }) {
       <div>
         <label className="text-[10px] text-muted/50 uppercase tracking-wider font-bold">Scan Name</label>
         <input type="text" value={p.name || ''} onChange={e => set('name', e.target.value)} placeholder="e.g. Crypto Deep Dive"
-          className="w-full bg-ink/50 border border-border/25 rounded-lg px-3 py-2.5 text-sm text-bright font-medium outline-none focus:border-bo/35 mt-1 placeholder:text-bright/60" />
+          className="w-full bg-ink/50 border border-border/25 rounded-lg px-3 py-2.5 text-sm text-bright font-medium outline-none focus:border-sky-400/35 mt-1 placeholder:text-white/60" />
       </div>
 
       {/* Scan Mode Toggle */}
@@ -186,13 +186,13 @@ function ProfileEditor({ profile, onSave, onCancel, personName }) {
         <div className="flex gap-2">
           <button onClick={() => set('scanMode', 'keywords')}
             className={`flex-1 py-2.5 rounded-lg border text-xs font-semibold transition-all ${
-              !isSavedSearchMode ? 'bg-bo/12 border-bo/35 text-bo' : 'border-border/25 text-muted/60 hover:border-border/40'
+              !isSavedSearchMode ? 'bg-sky-500/12 border-sky-400/35 text-sky-300' : 'border-border/25 text-muted/60 hover:border-border/40'
             }`}>
             🔍 Keywords
           </button>
           <button onClick={() => set('scanMode', 'savedSearch')}
             className={`flex-1 py-2.5 rounded-lg border text-xs font-semibold transition-all ${
-              isSavedSearchMode ? 'bg-accent/12 border-accent/35 text-accent' : 'border-border/25 text-muted/60 hover:border-border/40'
+              isSavedSearchMode ? 'bg-amber-500/12 border-amber-400/35 text-amber-300' : 'border-border/25 text-muted/60 hover:border-border/40'
             }`}>
             H Saved Searches
           </button>
@@ -206,7 +206,7 @@ function ProfileEditor({ profile, onSave, onCancel, personName }) {
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-bright/80">Ⓗ Select Harmonic Saved Searches</h3>
               {(p.savedSearchIds || []).length > 0 && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20 font-medium">
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-400/20 font-medium">
                   {(p.savedSearchIds || []).length} selected
                 </span>
               )}
@@ -216,10 +216,10 @@ function ProfileEditor({ profile, onSave, onCancel, personName }) {
 
           {loadingSearches ? (
             <div className="flex justify-center py-6">
-              <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
             </div>
           ) : availableSearches.length === 0 ? (
-            <div className="bg-accent/5 border border-accent/15 rounded-xl p-4 text-center">
+            <div className="bg-amber-500/5 border border-amber-400/15 rounded-xl p-4 text-center">
               <p className="text-muted/50 text-xs">No saved searches found in Harmonic</p>
               <p className="text-[10px] text-muted/35 mt-1">Create them in the Harmonic console first</p>
             </div>
@@ -230,14 +230,14 @@ function ProfileEditor({ profile, onSave, onCancel, personName }) {
                 return (
                   <button key={s.id} onClick={() => toggleSavedSearch(s)}
                     className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl border text-left transition-all ${
-                      selected ? 'bg-accent/10 border-accent/30' : 'border-border/20 hover:border-border/40'
+                      selected ? 'bg-amber-500/10 border-amber-400/30' : 'border-border/20 hover:border-border/40'
                     }`}>
                     <div className="min-w-0 flex-1">
-                      <p className={`text-xs font-medium ${selected ? 'text-accent' : 'text-bright/70'}`}>{s.name}</p>
+                      <p className={`text-xs font-medium ${selected ? 'text-amber-300' : 'text-bright/70'}`}>{s.name}</p>
                       <p className="text-[10px] text-muted/40">{s.count != null ? `${s.count} companies` : ''} · {s.type || 'company'}</p>
                     </div>
                     <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                      selected ? 'bg-accent border-accent text-bright' : 'border-border/30'
+                      selected ? 'bg-amber-500 border-amber-500 text-white' : 'border-border/30'
                     }`}>
                       {selected && <span className="text-[10px] font-bold">✓</span>}
                     </div>
@@ -254,7 +254,7 @@ function ProfileEditor({ profile, onSave, onCancel, personName }) {
               <p className="text-[10px] text-muted/40">Category label, priority keywords, and scoring notes for each saved search. Keywords and notes help Opus prioritize within each pool.</p>
               {(p.savedSearchIds || []).map((s, idx) => (
                 <div key={s.id} className="bg-surface/30 border border-border/10 rounded-xl px-3.5 py-3 space-y-2">
-                  <p className="text-[11px] text-accent/70 font-semibold truncate">{s.name}</p>
+                  <p className="text-[11px] text-amber-300/70 font-semibold truncate">{s.name}</p>
                   <div className="flex items-center gap-2">
                     <label className="text-[9px] text-muted/40 uppercase tracking-wider font-bold w-16 flex-shrink-0">Label</label>
                     <input type="text" value={s.category || ''} placeholder={s.name}
@@ -263,7 +263,7 @@ function ProfileEditor({ profile, onSave, onCancel, personName }) {
                         updated[idx] = { ...updated[idx], category: e.target.value };
                         set('savedSearchIds', updated);
                       }}
-                      className="flex-1 bg-ink/50 border border-border/25 rounded-lg px-2.5 py-1.5 text-[11px] text-bright outline-none focus:border-accent/35 placeholder:text-bright/60" />
+                      className="flex-1 bg-ink/50 border border-border/25 rounded-lg px-2.5 py-1.5 text-[11px] text-bright outline-none focus:border-amber-400/35 placeholder:text-white/60" />
                   </div>
                   <div className="flex items-center gap-2">
                     <label className="text-[9px] text-muted/40 uppercase tracking-wider font-bold w-16 flex-shrink-0">Keywords</label>
@@ -273,7 +273,7 @@ function ProfileEditor({ profile, onSave, onCancel, personName }) {
                         updated[idx] = { ...updated[idx], keywords: e.target.value };
                         set('savedSearchIds', updated);
                       }}
-                      className="flex-1 bg-ink/50 border border-border/25 rounded-lg px-2.5 py-1.5 text-[11px] text-bright outline-none focus:border-accent/35 placeholder:text-bright/60" />
+                      className="flex-1 bg-ink/50 border border-border/25 rounded-lg px-2.5 py-1.5 text-[11px] text-bright outline-none focus:border-amber-400/35 placeholder:text-white/60" />
                   </div>
                   <div className="flex items-center gap-2">
                     <label className="text-[9px] text-muted/40 uppercase tracking-wider font-bold w-16 flex-shrink-0">Notes</label>
@@ -283,7 +283,7 @@ function ProfileEditor({ profile, onSave, onCancel, personName }) {
                         updated[idx] = { ...updated[idx], notes: e.target.value };
                         set('savedSearchIds', updated);
                       }}
-                      className="flex-1 bg-ink/50 border border-border/25 rounded-lg px-2.5 py-1.5 text-[11px] text-bright outline-none focus:border-accent/35 placeholder:text-bright/60" />
+                      className="flex-1 bg-ink/50 border border-border/25 rounded-lg px-2.5 py-1.5 text-[11px] text-bright outline-none focus:border-amber-400/35 placeholder:text-white/60" />
                   </div>
                 </div>
               ))}
@@ -292,7 +292,7 @@ function ProfileEditor({ profile, onSave, onCancel, personName }) {
 
           <Section title="📝 Notes">
             <textarea value={p.notes || ''} onChange={e => set('notes', e.target.value)} rows={3} placeholder="Any additional context for Claude's scoring..."
-              className="w-full bg-ink/50 border border-border/25 rounded-lg px-3 py-2 text-xs text-bright outline-none focus:border-bo/35 resize-none leading-relaxed placeholder:text-bright/60" />
+              className="w-full bg-ink/50 border border-border/25 rounded-lg px-3 py-2 text-xs text-bright outline-none focus:border-sky-400/35 resize-none leading-relaxed placeholder:text-white/60" />
           </Section>
         </div>
       ) : (
@@ -322,7 +322,7 @@ function ProfileEditor({ profile, onSave, onCancel, personName }) {
           </Section>
           <Section title="📝 Notes">
             <textarea value={p.notes || ''} onChange={e => set('notes', e.target.value)} rows={3} placeholder="Anything specific..."
-              className="w-full bg-ink/50 border border-border/25 rounded-lg px-3 py-2 text-xs text-bright outline-none focus:border-bo/35 resize-none leading-relaxed placeholder:text-bright/60" />
+              className="w-full bg-ink/50 border border-border/25 rounded-lg px-3 py-2 text-xs text-bright outline-none focus:border-sky-400/35 resize-none leading-relaxed placeholder:text-white/60" />
           </Section>
         </>
       )}
@@ -333,7 +333,7 @@ function ProfileEditor({ profile, onSave, onCancel, personName }) {
       <div className="flex gap-2">
         {onCancel && <button onClick={onCancel} className="py-3 px-6 rounded-xl border border-border/30 text-muted text-sm font-medium">Cancel</button>}
         <button onClick={() => onSave({ ...p, _customized: true, updatedAt: new Date().toISOString() })}
-          className="flex-1 py-3 rounded-xl bg-bo text-bright font-bold text-sm active:scale-[0.98] shadow-md shadow-bo/20">
+          className="flex-1 py-3 rounded-xl bg-sky-500 text-white font-bold text-sm active:scale-[0.98] shadow-md shadow-sky-500/20">
           Save {personName ? `${personName}'s` : ''} Preferences
         </button>
       </div>
@@ -344,7 +344,7 @@ function ProfileEditor({ profile, onSave, onCancel, personName }) {
 // ---- Utilities ----
 
 function moneyFmt(n) { if (!n || typeof n !== 'number') return null; if (n >= 1e9) return `$${(n/1e9).toFixed(1)}B`; if (n >= 1e6) return `$${(n/1e6).toFixed(1)}M`; if (n >= 1e3) return `$${(n/1e3).toFixed(0)}K`; return `$${n}`; }
-function stageColor(s) { const st = (s||'').toLowerCase(); if (st.includes('pre')) return 'bg-accent/20 text-accent border-accent/30'; if (st.includes('seed')) return 'bg-sm/20 text-sm border-sm/30'; return 'bg-muted/20 text-muted border-muted/30'; }
+function stageColor(s) { const st = (s||'').toLowerCase(); if (st.includes('pre')) return 'bg-amber-500/20 text-amber-400 border-amber-500/30'; if (st.includes('seed')) return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'; return 'bg-gray-500/20 text-gray-400 border-gray-500/30'; }
 function stageFmt(s) { 
   if (!s || typeof s !== 'string') return '';
   const lower = s.toLowerCase();
@@ -363,10 +363,10 @@ function ScanAnalysisPanel({ analysis, companies }) {
   const cutCount = (analysis.match(/—\s*CUT/gi) || []).length;
 
   return (
-    <div className="border border-boro/15 rounded-xl overflow-hidden"
+    <div className="border border-violet-400/15 rounded-xl overflow-hidden"
       style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.03) 0%, rgba(59,130,246,0.03) 100%)' }}>
       <button onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-bright/[0.02] transition-colors">
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/[0.02] transition-colors">
         <div className="flex items-center gap-2.5">
           <span className="text-base">🧠</span>
           <div className="text-left">
@@ -380,14 +380,14 @@ function ScanAnalysisPanel({ analysis, companies }) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-boro/10 text-boro border border-boro/20 font-medium">
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-300 border border-violet-400/20 font-medium">
             {expanded ? 'Hide' : 'Show'}
           </span>
           <span className={`text-muted/40 text-xs transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}>▾</span>
         </div>
       </button>
       {expanded && (
-        <div className="border-t border-boro/10 px-4 py-3">
+        <div className="border-t border-violet-400/10 px-4 py-3">
           <AnalysisWithLinks text={analysis} companies={companies} />
         </div>
       )}
@@ -416,10 +416,10 @@ function AnalysisWithLinks({ text, companies, scoredCompanies }) {
   // Format: "CompanyName — PASS — reason" or "CompanyName — CUT — reason"
   const highlightLine = (lineText) => {
     if (/[—\-–]\s*PASS\s*[—\-–]/i.test(lineText)) {
-      return 'text-sm/80 bg-sm/8 rounded px-1 -mx-1';
+      return 'text-emerald-400/80 bg-emerald-500/8 rounded px-1 -mx-1';
     }
     if (/[—\-–]\s*CUT\s*[—\-–]/i.test(lineText)) {
-      return 'text-rose/60 bg-rose/5 rounded px-1 -mx-1';
+      return 'text-red-400/60 bg-red-500/5 rounded px-1 -mx-1';
     }
     return null;
   };
@@ -453,14 +453,14 @@ function AnalysisWithLinks({ text, companies, scoredCompanies }) {
             {parts.map((part, i) => {
               if (part.type === 'text') return <span key={i}>{part.content}</span>;
               // Color bold company names: green if passed (score >= 6), red if scored but failed, default otherwise
-              const nameColor = part.score >= 6 ? 'text-sm font-bold' : part.score > 0 ? 'text-rose/80 font-bold' : 'text-bright font-bold';
+              const nameColor = part.score >= 6 ? 'text-emerald-400 font-bold' : part.score > 0 ? 'text-red-400/80 font-bold' : 'text-bright font-bold';
               return (
                 <span key={i} className="inline-flex items-center gap-1">
                   <strong className={nameColor}>{part.name}</strong>
-                  {part.score > 0 && <span className={`text-[8px] ${part.score >= 6 ? 'text-sm/60' : 'text-rose/50'}`}>({part.score}/10)</span>}
+                  {part.score > 0 && <span className={`text-[8px] ${part.score >= 6 ? 'text-emerald-400/60' : 'text-red-400/50'}`}>({part.score}/10)</span>}
                   {part.url && (
                     <a href={part.url} target="_blank" rel="noopener"
-                      className="inline-flex items-center text-[9px] px-1.5 py-0.5 rounded bg-bo/15 text-bo border border-bo/30 hover:bg-bo/20 hover:text-bo transition-all font-medium no-underline"
+                      className="inline-flex items-center text-[9px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-400/30 hover:bg-sky-500/20 hover:text-sky-300 transition-all font-medium no-underline"
                       onClick={e => e.stopPropagation()}>
                       🌐
                     </a>
@@ -480,7 +480,7 @@ function Countdown({ targetMs }) {
   const [now, setNow] = useState(Date.now());
   useEffect(() => { const i = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(i); }, []);
   const diff = Math.max(0, targetMs - now);
-  if (diff === 0) return <span className="text-sm/60">Ready</span>;
+  if (diff === 0) return <span className="text-emerald-400/60">Ready</span>;
   const h = Math.floor(diff / 3600000);
   const m = Math.floor((diff % 3600000) / 60000);
   const s = Math.floor((diff % 60000) / 1000);
@@ -494,12 +494,12 @@ function WebGrowthBadge({ company }) {
   const harmonicUrl = company.id && typeof company.id === 'number' ? `https://console.harmonic.ai/dashboard/company/${company.id}?selectedTab=TRACTION` : null;
   const badges = [];
   if (g30 !== null && g30 !== undefined) {
-    if (g30 >= 50) badges.push({ label: `🌐▲${Math.round(g30)}%`, period: '1mo', color: 'bg-sm/15 text-sm border-sm/25', url: harmonicUrl });
-    else if (g30 <= -30) badges.push({ label: `🌐▼${Math.abs(Math.round(g30))}%`, period: '1mo', color: 'bg-rose/12 text-rose border-rose/20', url: harmonicUrl });
+    if (g30 >= 50) badges.push({ label: `🌐▲${Math.round(g30)}%`, period: '1mo', color: 'bg-emerald-500/15 text-emerald-400 border-emerald-400/25', url: harmonicUrl });
+    else if (g30 <= -30) badges.push({ label: `🌐▼${Math.abs(Math.round(g30))}%`, period: '1mo', color: 'bg-red-500/12 text-red-400 border-red-400/20', url: harmonicUrl });
   }
   if (g90 !== null && g90 !== undefined) {
-    if (g90 >= 50) badges.push({ label: `🌐▲${Math.round(g90)}%`, period: '3mo', color: 'bg-sm/12 text-sm/70 border-sm/20', url: harmonicUrl });
-    else if (g90 <= -30) badges.push({ label: `🌐▼${Math.abs(Math.round(g90))}%`, period: '3mo', color: 'bg-rose/10 text-rose/70 border-rose/15', url: harmonicUrl });
+    if (g90 >= 50) badges.push({ label: `🌐▲${Math.round(g90)}%`, period: '3mo', color: 'bg-emerald-500/12 text-emerald-300/70 border-emerald-400/20', url: harmonicUrl });
+    else if (g90 <= -30) badges.push({ label: `🌐▼${Math.abs(Math.round(g90))}%`, period: '3mo', color: 'bg-red-500/10 text-red-300/70 border-red-400/15', url: harmonicUrl });
   }
   if (badges.length === 0) return null;
   return badges.map((b, i) => b.url ? (
@@ -521,42 +521,42 @@ function ScanResultCard({ company: raw, onFavorite, isFavorited, onDismiss, onSh
     <div className="rounded-xl border border-border/25 bg-surface/50 p-3.5 space-y-2 fade-in">
       <div className="flex items-start gap-3">
         {(company.logo_url || card.logo_url) ? <img src={company.logo_url || card.logo_url} alt="" className="w-9 h-9 rounded-lg bg-surface object-contain flex-shrink-0" onError={e => { e.target.style.display = 'none'; }} />
-          : <div className="w-9 h-9 rounded-lg bg-bo/10 flex items-center justify-center flex-shrink-0"><span className="text-bo font-bold text-sm">{(company.name||'?')[0]}</span></div>}
+          : <div className="w-9 h-9 rounded-lg bg-sky-500/10 flex items-center justify-center flex-shrink-0"><span className="text-sky-400 font-bold text-sm">{(company.name||'?')[0]}</span></div>}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h3 className="font-bold text-bright text-sm truncate">{company.name}</h3>
-            {companyId && typeof companyId === "number" && <a href={`/company/${companyId}`} className="text-[9px] px-1.5 py-0.5 rounded bg-rose/10 text-rose border border-rose/15 hover:bg-rose/20 font-bold" title="Harmonic Card">H</a>}
+            {companyId && typeof companyId === "number" && <a href={`/company/${companyId}`} className="text-[9px] px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-400 border border-pink-400/15 hover:bg-pink-500/20 font-bold" title="Harmonic Card">H</a>}
             {webUrl && (
               <a href={webUrl} target="_blank" rel="noopener"
-                className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded-md bg-bo/15 text-bo border border-bo/30 hover:bg-bo/20 font-medium">
+                className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded-md bg-blue-500/15 text-blue-400 border border-blue-400/30 hover:bg-sky-500/20 font-medium">
                 🌐
               </a>
             )}
-            {(company.socials?.linkedin || card.socials?.linkedin) && <a href={company.socials?.linkedin || card.socials?.linkedin} target="_blank" rel="noopener" className="text-[9px] px-1.5 py-0.5 rounded-md bg-surface/40 border border-border/20 text-muted/50 hover:text-bo font-medium">💼</a>}
+            {(company.socials?.linkedin || card.socials?.linkedin) && <a href={company.socials?.linkedin || card.socials?.linkedin} target="_blank" rel="noopener" className="text-[9px] px-1.5 py-0.5 rounded-md bg-surface/40 border border-border/20 text-muted/50 hover:text-sky-400 font-medium">💼</a>}
           </div>
         </div>
         {(company._score || company.score) > 0 && (
           <span className={`flex-shrink-0 text-[10px] px-2 py-0.5 rounded-full font-bold border ${
-            (company._score||company.score) >= 8 ? 'bg-sm/20 text-sm border-sm/25' :
-            (company._score||company.score) >= 6 ? 'bg-bo/20 text-bo border-bo/25' :
+            (company._score||company.score) >= 8 ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/25' :
+            (company._score||company.score) >= 6 ? 'bg-sky-500/20 text-sky-300 border-sky-400/25' :
             'bg-muted/10 text-muted/60 border-border/20'
           }`}>{company._score||company.score}/10</span>
         )}
-        {onShowLogic && <button onClick={() => onShowLogic(company.name)} className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded bg-boro/10 text-boro border border-boro/15 hover:bg-boro/20 font-medium" title="View scoring logic">🧠</button>}
-        <button onClick={() => !isFavorited && onFavorite({...company})} className={`flex-shrink-0 text-base ${isFavorited ? 'text-bo' : 'text-muted/40 hover:text-bo'}`}>{isFavorited ? '★' : '☆'}</button>
+        {onShowLogic && <button onClick={() => onShowLogic(company.name)} className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400 border border-violet-400/15 hover:bg-violet-500/20 font-medium" title="View scoring logic">🧠</button>}
+        <button onClick={() => !isFavorited && onFavorite({...company})} className={`flex-shrink-0 text-base ${isFavorited ? 'text-sky-400' : 'text-muted/40 hover:text-sky-400'}`}>{isFavorited ? '★' : '☆'}</button>
         {onDismiss && <UnvettedRemoveMenu company={company} onHide={(c) => onDismiss(c)} onBackburn={(c) => { onDismiss(c); try { fetch(`${API_BASE}/api/vetting/backburn`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ companyName: c.name, personId: localStorage.getItem('crm_user') || '' }) }); } catch(e){} }} />}
       </div>
       {company.description && <p className="text-muted/60 text-xs leading-relaxed line-clamp-2">{company.description}</p>}
       <div className="flex flex-wrap gap-1.5">
         {company._crmStage && <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
-          company._crmStage === 'BORO-SM' ? 'bg-boro/15 text-boro border-boro/25' :
-          company._crmStage === 'BORO' ? 'bg-bo/15 text-bo border-bo/25' :
-          company._crmStage === 'BO' ? 'bg-bo/12 text-bo border-bo/20' :
-          'bg-accent/12 text-accent border-accent/20'
+          company._crmStage === 'BORO-SM' ? 'bg-violet-500/15 text-violet-300 border-violet-400/25' :
+          company._crmStage === 'BORO' ? 'bg-blue-500/15 text-blue-300 border-blue-400/25' :
+          company._crmStage === 'BO' ? 'bg-sky-500/12 text-sky-300 border-sky-400/20' :
+          'bg-amber-500/12 text-amber-300 border-amber-400/20'
         }`}>CRM: {company._crmStage}</span>}
-        {company._sourceCategory && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md border bg-accent/10 text-accent border-accent/20">Ⓗ {company._sourceCategory}</span>}
+        {company._sourceCategory && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md border bg-amber-500/10 text-amber-300 border-amber-400/20">Ⓗ {company._sourceCategory}</span>}
         {stage && <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${stageColor(company.funding_stage)}`}>{stage}</span>}
-        {total && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md border bg-bo/12 text-bo border-bo/20">💰 {total}</span>}
+        {total && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md border bg-sky-500/12 text-sky-400 border-sky-500/20">💰 {total}</span>}
         <WebGrowthBadge company={company} />
         {company.location && <span className="text-[10px] px-2 py-0.5 rounded-md border bg-surface/40 border-border/20 text-muted/50">📍 {company.location}</span>}
         {company.headcount && <span className="text-[10px] px-2 py-0.5 rounded-md border bg-surface/40 border-border/20 text-muted/50">👥 {company.headcount}</span>}
@@ -629,7 +629,7 @@ function HistoryPanel({ personId }) {
           <span className="text-[9px] text-muted/30 mr-1">Filter:</span>
           {allUsers.map(uid => (
             <button key={uid} onClick={() => toggleUser(uid)}
-              className={`text-[9px] px-2 py-0.5 rounded-full border transition-all ${userFilters[uid] !== false ? 'bg-bo/15 border-bo/25 text-bo' : 'border-border/15 text-muted/25 hover:text-muted/50'}`}>
+              className={`text-[9px] px-2 py-0.5 rounded-full border transition-all ${userFilters[uid] !== false ? 'bg-sky-500/15 border-sky-400/25 text-sky-300' : 'border-border/15 text-muted/25 hover:text-muted/50'}`}>
               {uid}
             </button>
           ))}
@@ -657,10 +657,10 @@ function HistoryPanel({ personId }) {
 
         return (
           <div key={i} className="border border-border/15 rounded-xl overflow-hidden">
-            <div className="flex items-center gap-2 px-3 py-2.5 hover:bg-bo/[0.03] transition-colors">
+            <div className="flex items-center gap-2 px-3 py-2.5 hover:bg-sky-500/[0.03] transition-colors">
               <button onClick={() => { setExpandedIdx(isExpanded ? null : i); setWinnersIdx(null); }} className="flex-1 text-left min-w-0">
                 <p className="text-xs font-medium text-bright/80 truncate">
-                  {h.personId && h.personId !== personId && <span className="text-[9px] text-bo/60 mr-1">[{h.personId}]</span>}
+                  {h.personId && h.personId !== personId && <span className="text-[9px] text-sky-400/60 mr-1">[{h.personId}]</span>}
                   {h.profileName || (h.tier?.name ? `${h.tier.name} Scan` : 'Scan')}
                   {(h.totalResults > 0 || companies.length > 0) && <span className="text-[9px] text-muted/30 ml-1">({h.totalResults || companies.length} results)</span>}
                 </p>
@@ -685,14 +685,14 @@ function HistoryPanel({ personId }) {
                 {allScored.length > 0 && (
                   <button onClick={() => { setWinnersIdx(isWinners ? null : i); setExpandedIdx(null); }}
                     className={`text-[9px] px-2 py-1 rounded-lg border transition-all font-bold ${
-                      isWinners ? 'bg-bo/15 border-bo/30 text-bo' : 'border-bo/25 text-bo/70 hover:text-bo hover:border-bo/40'
+                      isWinners ? 'bg-sky-500/15 border-sky-400/30 text-sky-300' : 'border-sky-400/25 text-sky-400/70 hover:text-sky-300 hover:border-sky-400/40'
                     }`}>
                     🏆 {winners.length > 0 ? `Winners (${winners.length})` : `Scored (${allScored.length})`}
                   </button>
                 )}
                 {confirmLoad === i ? (
-                  <div className="flex items-center gap-1.5 bg-bo/8 border border-bo/20 rounded-lg px-2 py-1">
-                    <span className="text-[8px] text-bo/70">
+                  <div className="flex items-center gap-1.5 bg-sky-500/8 border border-sky-400/20 rounded-lg px-2 py-1">
+                    <span className="text-[8px] text-sky-300/70">
                       Load {h.totalResults || topCos.length || '?'} results{winners.length > 0 ? `, ${winners.length} winners` : allScored.length > 0 ? `, ${allScored.length} scored` : ''}?
                     </span>
                     <button onClick={async () => {
@@ -741,7 +741,7 @@ function HistoryPanel({ personId }) {
                       }
                       setLoadingResults(null);
                     }}
-                      className="text-[8px] px-1.5 py-0.5 rounded bg-bo/20 border border-bo/30 text-bo font-bold hover:bg-bo/30 transition-all">
+                      className="text-[8px] px-1.5 py-0.5 rounded bg-sky-500/20 border border-sky-400/30 text-sky-300 font-bold hover:bg-sky-500/30 transition-all">
                       Yes
                     </button>
                     <button onClick={() => setConfirmLoad(null)}
@@ -751,13 +751,13 @@ function HistoryPanel({ personId }) {
                   </div>
                 ) : (
                   <button onClick={() => setConfirmLoad(i)}
-                    className="text-[9px] px-2 py-1 rounded-lg border border-bo/20 text-bo/60 hover:text-bo hover:border-bo/30 transition-all font-medium">
+                    className="text-[9px] px-2 py-1 rounded-lg border border-sky-400/20 text-sky-400/60 hover:text-sky-300 hover:border-sky-400/30 transition-all font-medium">
                     {loadingResults === i ? '...' : 'Load Results'}
                   </button>
                 )}
                 <button onClick={() => { setExpandedIdx(isExpanded ? null : i); setWinnersIdx(null); }}
                   className={`text-[9px] px-2 py-1 rounded-lg border transition-all font-medium ${
-                    isExpanded ? 'bg-boro/10 border-boro/25 text-boro' : 'border-border/15 text-muted/40 hover:text-boro hover:border-boro/20'
+                    isExpanded ? 'bg-violet-500/10 border-violet-400/25 text-violet-300' : 'border-border/15 text-muted/40 hover:text-violet-300 hover:border-violet-400/20'
                   }`}>
                   🧠 {isExpanded ? 'Hide' : 'Logic'}
                 </button>
@@ -765,8 +765,8 @@ function HistoryPanel({ personId }) {
             </div>
 
             {isWinners && allScored.length > 0 && (
-              <div className="border-t border-bo/10 px-3 py-3 bg-bo/[0.02] space-y-2">
-                <p className="text-[9px] uppercase tracking-widest text-bo/45 font-bold">
+              <div className="border-t border-sky-400/10 px-3 py-3 bg-sky-500/[0.02] space-y-2">
+                <p className="text-[9px] uppercase tracking-widest text-sky-400/45 font-bold">
                   {winners.length > 0 ? `🏆 Winners — Sent to DD (${winners.length})` : '📊 Scored Companies'}
                   {allScored.length > winners.length && <span className="text-muted/30 font-normal ml-1">· {allScored.length} total scored</span>}
                 </p>
@@ -783,22 +783,22 @@ function HistoryPanel({ personId }) {
                         <div className="flex items-center gap-2">
                           <span className={`text-[11px] font-bold ${isWinner ? 'text-bright' : 'text-bright/60'}`}>{c.name}</span>
                           <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold border ${
-                            score >= 7 ? 'bg-sm/15 text-sm border-sm/20' :
-                            score >= 6 ? 'bg-bo/15 text-bo border-bo/20' :
-                            score >= 4 ? 'bg-accent/15 text-accent border-accent/20' :
+                            score >= 7 ? 'bg-emerald-500/15 text-emerald-400 border-emerald-400/20' :
+                            score >= 6 ? 'bg-sky-500/15 text-sky-400 border-sky-400/20' :
+                            score >= 4 ? 'bg-amber-500/15 text-amber-400 border-amber-400/20' :
                             'bg-muted/10 text-muted/50 border-border/15'
                           }`}>★ {score}/10</span>
-                          {webUrl && <a href={webUrl} target="_blank" rel="noopener" className="text-[8px] px-1.5 py-0.5 rounded bg-bo/15 text-bo border border-bo/20 font-medium hover:bg-bo/25">🌐</a>}
+                          {webUrl && <a href={webUrl} target="_blank" rel="noopener" className="text-[8px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-400/20 font-medium hover:bg-blue-500/25">🌐</a>}
                         </div>
                         {(c.description || c.card?.description) && <p className="text-[9px] text-muted/45 line-clamp-1 mt-0.5">{c.description || c.card?.description}</p>}
                       </div>
-                      {cardId && typeof cardId === 'number' && <a href={`/company/${cardId}`} className="text-[8px] px-1.5 py-0.5 rounded bg-rose/10 text-rose border border-rose/15 font-bold hover:bg-rose/20">H</a>}
+                      {cardId && typeof cardId === 'number' && <a href={`/company/${cardId}`} className="text-[8px] px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-400 border border-pink-400/15 font-bold hover:bg-pink-500/20">H</a>}
                     </div>
                   );
                 })}
                 {hasMoreScored && (
                   <button onClick={() => setWinnersShowCount(prev => ({ ...prev, [i]: currentWinnersCount + 15 }))}
-                    className="w-full py-2.5 rounded-xl border border-bo/15 bg-bo/[0.04] text-bo/60 text-[10px] font-medium hover:text-bo hover:border-bo/25 transition-all">
+                    className="w-full py-2.5 rounded-xl border border-sky-400/15 bg-sky-500/[0.04] text-sky-400/60 text-[10px] font-medium hover:text-sky-300 hover:border-sky-400/25 transition-all">
                     Load More ({allScored.length - currentWinnersCount} remaining)
                   </button>
                 )}
@@ -806,8 +806,8 @@ function HistoryPanel({ personId }) {
             )}
 
             {isExpanded && analysis && (
-              <div className="border-t border-border/10 px-3 py-3 bg-boro/[0.02]">
-                <p className="text-[9px] uppercase tracking-widest text-boro/45 font-bold mb-2">Opus Scoring Logic</p>
+              <div className="border-t border-border/10 px-3 py-3 bg-violet-500/[0.02]">
+                <p className="text-[9px] uppercase tracking-widest text-violet-400/45 font-bold mb-2">Opus Scoring Logic</p>
                 <AnalysisWithLinks text={analysis} companies={companies} scoredCompanies={topCos} />
               </div>
             )}
@@ -854,8 +854,8 @@ function TopPicksPanel({ personId, addFavorite, isFavorited }) {
 
   if (picks.length === 0) {
     return (
-      <div className="bg-accent/4 border border-accent/12 rounded-xl p-4 text-center">
-        <p className="text-accent/65 text-xs">No top picks yet for {person?.name || personId}</p>
+      <div className="bg-amber-500/4 border border-amber-400/12 rounded-xl p-4 text-center">
+        <p className="text-amber-300/65 text-xs">No top picks yet for {person?.name || personId}</p>
         <p className="text-[10px] text-muted/40 mt-1">Run scans — companies scoring 7+/10 from {person?.name || 'this person'}'s scans auto-save here</p>
       </div>
     );
@@ -870,13 +870,13 @@ function TopPicksPanel({ personId, addFavorite, isFavorited }) {
   }
 
   return (
-    <div className="bg-accent/4 border border-accent/12 rounded-xl p-4 space-y-3">
+    <div className="bg-amber-500/4 border border-amber-400/12 rounded-xl p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-[10px] uppercase tracking-widest text-accent/50 font-bold">⭐ {person?.name || personId}'s Top Picks</p>
+          <p className="text-[10px] uppercase tracking-widest text-amber-400/50 font-bold">⭐ {person?.name || personId}'s Top Picks</p>
           <p className="text-[9px] text-muted/35 mt-0.5">Companies that scored 7+/10 in {person?.name || 'this person'}'s scans (last 30 days)</p>
         </div>
-        <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20 font-medium">{picks.length}</span>
+        <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-400/20 font-medium">{picks.length}</span>
       </div>
       <div className="space-y-3 max-h-[600px] overflow-y-auto">
         {Object.entries(byDate).map(([date, dayPicks]) => (
@@ -897,28 +897,28 @@ function TopPicksPanel({ personId, addFavorite, isFavorited }) {
                 const coWinners = (pick.allWinners || []).filter(w => w.name !== c.name);
 
                 return (
-                  <div key={`${c.name}-${i}`} className="rounded-xl border border-accent/10 bg-surface/40 overflow-hidden">
+                  <div key={`${c.name}-${i}`} className="rounded-xl border border-amber-400/10 bg-surface/40 overflow-hidden">
                     <div className="p-3 space-y-1.5">
                       <div className="flex items-start gap-2.5">
                         {c.logo_url ? <img src={c.logo_url} alt="" className="w-8 h-8 rounded-lg bg-ink/50 flex-shrink-0" onError={e => { e.target.style.display='none'; }} />
-                          : <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0"><span className="text-accent font-bold text-xs">{(c.name||'?')[0]}</span></div>}
+                          : <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0"><span className="text-amber-400 font-bold text-xs">{(c.name||'?')[0]}</span></div>}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5">
                             <p className="text-xs font-semibold text-bright leading-snug truncate">{c.name}</p>
                             {score && (
                               <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${
-                                score >= 8 ? 'bg-sm/15 text-sm border border-sm/20' : 'bg-bo/12 text-bo border border-bo/15'
+                                score >= 8 ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-400/20' : 'bg-sky-500/12 text-sky-400 border border-sky-400/15'
                               }`}>{score}/10</span>
                             )}
                           </div>
                           <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                            {stage && <span className="text-[9px] px-1.5 py-0.5 rounded bg-sm/10 text-sm/70 border border-sm/15">{stage}</span>}
-                            {total && <span className="text-[9px] px-1.5 py-0.5 rounded bg-bo/10 text-bo/70 border border-bo/15">💰 {total}</span>}
+                            {stage && <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300/70 border border-emerald-400/15">{stage}</span>}
+                            {total && <span className="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-300/70 border border-sky-400/15">💰 {total}</span>}
                             {c.headcount && <span className="text-[9px] text-muted/40">👥 {c.headcount}</span>}
                           </div>
                         </div>
                         <div className="flex items-center gap-1 flex-shrink-0">
-                          <button onClick={() => !saved && addFavorite && addFavorite({...c})} className={`text-sm ${saved ? 'text-accent' : 'text-muted/40 hover:text-accent'}`}>
+                          <button onClick={() => !saved && addFavorite && addFavorite({...c})} className={`text-sm ${saved ? 'text-amber-400' : 'text-muted/40 hover:text-amber-400'}`}>
                             {saved ? '★' : '☆'}
                           </button>
                           <UnvettedRemoveMenu company={c} onHide={handleHide} onBackburn={handleBackburn} />
@@ -929,12 +929,12 @@ function TopPicksPanel({ personId, addFavorite, isFavorited }) {
 
                       {/* Source scan + actions */}
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[9px] text-accent/50">{scanIcon} {scanLabel}</span>
-                        {c.website && <a href={c.website.startsWith('http') ? c.website : `https://${c.website}`} target="_blank" rel="noopener" className="text-[9px] text-bo/65 hover:text-bo hover:underline">🌐 Website</a>}
+                        <span className="text-[9px] text-amber-400/50">{scanIcon} {scanLabel}</span>
+                        {c.website && <a href={c.website.startsWith('http') ? c.website : `https://${c.website}`} target="_blank" rel="noopener" className="text-[9px] text-sky-400/65 hover:text-sky-300 hover:underline">🌐 Website</a>}
                         {c.location && <span className="text-[9px] text-muted/40">📍 {c.location}</span>}
                         <button onClick={() => setExpandedLogic(isLogicOpen ? null : globalIdx)}
                           className={`text-[9px] px-2 py-0.5 rounded-lg border font-medium transition-all ml-auto ${
-                            isLogicOpen ? 'bg-boro/10 border-boro/25 text-boro' : 'border-border/15 text-muted/40 hover:text-boro hover:border-boro/20'
+                            isLogicOpen ? 'bg-violet-500/10 border-violet-400/25 text-violet-300' : 'border-border/15 text-muted/40 hover:text-violet-300 hover:border-violet-400/20'
                           }`}>
                           🧠 {isLogicOpen ? 'Hide' : 'Logic'}
                         </button>
@@ -945,7 +945,7 @@ function TopPicksPanel({ personId, addFavorite, isFavorited }) {
                         <div className="flex items-center gap-1 flex-wrap">
                           <span className="text-[8px] text-muted/30 uppercase tracking-wider font-bold">Also picked:</span>
                           {coWinners.map(w => (
-                            <span key={w.name} className="text-[9px] px-1.5 py-0.5 rounded bg-accent/6 text-accent/50 border border-accent/10">
+                            <span key={w.name} className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/6 text-amber-300/50 border border-amber-400/10">
                               {w.name}{w.score ? ` (${w.score})` : ''}
                             </span>
                           ))}
@@ -955,15 +955,15 @@ function TopPicksPanel({ personId, addFavorite, isFavorited }) {
 
                     {/* Expanded: full Opus logic from this scan */}
                     {isLogicOpen && pick.analysis && (
-                      <div className="border-t border-accent/8 px-3 py-3 bg-boro/[0.02]">
-                        <p className="text-[9px] uppercase tracking-widest text-boro/45 font-bold mb-2">Opus Logic — {scanLabel}</p>
+                      <div className="border-t border-amber-400/8 px-3 py-3 bg-violet-500/[0.02]">
+                        <p className="text-[9px] uppercase tracking-widest text-violet-400/45 font-bold mb-2">Opus Logic — {scanLabel}</p>
                         <div className="text-[10px] text-bright/55 leading-relaxed whitespace-pre-wrap max-h-[300px] overflow-y-auto">
                           <AnalysisWithLinks text={pick.analysis} companies={[c, ...(pick.allWinners || []).map(w => ({ name: w.name }))]} />
                         </div>
                       </div>
                     )}
                     {isLogicOpen && !pick.analysis && (
-                      <div className="border-t border-accent/8 px-3 py-3">
+                      <div className="border-t border-amber-400/8 px-3 py-3">
                         <p className="text-[10px] text-muted/35 text-center">No analysis saved for this scan (older picks may not have logic stored)</p>
                       </div>
                     )}
@@ -1034,11 +1034,11 @@ function ScanModePanel({ activeTab, activeProfile, personProfiles, activeProfile
 
   return (
     <div className={`border rounded-xl transition-all ${
-      isSavedSearchMode ? 'border-accent/20 bg-accent/[0.03]' : 'border-border/15 bg-ink/15'
+      isSavedSearchMode ? 'border-amber-400/20 bg-amber-500/[0.03]' : 'border-border/15 bg-ink/15'
     }`}>
       {/* Header — always visible */}
       <button onClick={handleExpand}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-bright/[0.02] transition-colors">
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/[0.02] transition-colors">
         <div className="flex items-center gap-2.5">
           <span className="text-base">{isSavedSearchMode ? 'Ⓗ' : '🔍'}</span>
           <div className="text-left">
@@ -1055,7 +1055,7 @@ function ScanModePanel({ activeTab, activeProfile, personProfiles, activeProfile
         </div>
         <div className="flex items-center gap-2">
           {isSavedSearchMode && selectedIds.size > 0 && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/12 text-accent border border-accent/20 font-medium">
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/12 text-amber-300 border border-amber-400/20 font-medium">
               {selectedIds.size}
             </span>
           )}
@@ -1073,7 +1073,7 @@ function ScanModePanel({ activeTab, activeProfile, personProfiles, activeProfile
               switchToKeywords();
             }}
               className={`flex-1 py-2 rounded-lg border text-[11px] font-semibold transition-all ${
-                !isSavedSearchMode ? 'bg-bo/12 border-bo/35 text-bo' : 'border-border/25 text-muted/50 hover:border-border/40'
+                !isSavedSearchMode ? 'bg-sky-500/12 border-sky-400/35 text-sky-300' : 'border-border/25 text-muted/50 hover:border-border/40'
               }`}>
               🔍 Keywords Mode
             </button>
@@ -1084,7 +1084,7 @@ function ScanModePanel({ activeTab, activeProfile, personProfiles, activeProfile
               fetchSearches();
             }}
               className={`flex-1 py-2 rounded-lg border text-[11px] font-semibold transition-all ${
-                isSavedSearchMode ? 'bg-accent/12 border-accent/35 text-accent' : 'border-border/25 text-muted/50 hover:border-border/40'
+                isSavedSearchMode ? 'bg-amber-500/12 border-amber-400/35 text-amber-300' : 'border-border/25 text-muted/50 hover:border-border/40'
               }`}>
               H Saved Search Mode
             </button>
@@ -1096,7 +1096,7 @@ function ScanModePanel({ activeTab, activeProfile, personProfiles, activeProfile
 
               {loading ? (
                 <div className="flex justify-center py-4">
-                  <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
                 </div>
               ) : searches.length === 0 ? (
                 <div className="text-center py-3">
@@ -1110,16 +1110,16 @@ function ScanModePanel({ activeTab, activeProfile, personProfiles, activeProfile
                     return (
                       <button key={s.id} onClick={() => toggleSearch(s)}
                         className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg border text-left transition-all ${
-                          selected ? 'bg-accent/10 border-accent/25' : 'border-border/15 hover:border-border/30'
+                          selected ? 'bg-amber-500/10 border-amber-400/25' : 'border-border/15 hover:border-border/30'
                         }`}>
                         <div className="min-w-0 flex-1">
-                          <p className={`text-xs font-medium truncate ${selected ? 'text-accent' : 'text-bright/65'}`}>{s.name}</p>
+                          <p className={`text-xs font-medium truncate ${selected ? 'text-amber-300' : 'text-bright/65'}`}>{s.name}</p>
                           {s.count != null && <p className="text-[10px] text-muted/35">{s.count} companies</p>}
                         </div>
                         <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ml-2 transition-all ${
-                          selected ? 'bg-accent border-accent' : 'border-border/30'
+                          selected ? 'bg-amber-500 border-amber-500' : 'border-border/30'
                         }`}>
-                          {selected && <span className="text-bright text-[10px] font-bold">✓</span>}
+                          {selected && <span className="text-white text-[10px] font-bold">✓</span>}
                         </div>
                       </button>
                     );
@@ -1133,29 +1133,29 @@ function ScanModePanel({ activeTab, activeProfile, personProfiles, activeProfile
                   <p className="text-[10px] text-muted/35">Add keywords or notes per search to tell Opus what to prioritize within each pool.</p>
                   {(activeProfile?.savedSearchIds || []).map((s, idx) => (
                     <div key={s.id} className="bg-surface/30 border border-border/10 rounded-lg px-3 py-2 space-y-1.5">
-                      <p className="text-[11px] text-accent/70 font-medium">{s.category || s.name}</p>
+                      <p className="text-[11px] text-amber-300/70 font-medium">{s.category || s.name}</p>
                       <input type="text" value={s.keywords || ''} placeholder="Keywords: e.g. robotics, energy, hardware"
                         onChange={e => {
                           const updated = [...(activeProfile.savedSearchIds || [])];
                           updated[idx] = { ...updated[idx], keywords: e.target.value };
                           onSaveProfile({ ...activeProfile, savedSearchIds: updated, updatedAt: new Date().toISOString() });
                         }}
-                        className="w-full bg-ink/40 border border-border/20 rounded px-2.5 py-1.5 text-[11px] text-bright outline-none focus:border-accent/30 placeholder:text-bright/60" />
+                        className="w-full bg-ink/40 border border-border/20 rounded px-2.5 py-1.5 text-[11px] text-bright outline-none focus:border-amber-400/30 placeholder:text-white/60" />
                       <input type="text" value={s.notes || ''} placeholder="Notes: e.g. looking for hardware founders specifically"
                         onChange={e => {
                           const updated = [...(activeProfile.savedSearchIds || [])];
                           updated[idx] = { ...updated[idx], notes: e.target.value };
                           onSaveProfile({ ...activeProfile, savedSearchIds: updated, updatedAt: new Date().toISOString() });
                         }}
-                        className="w-full bg-ink/40 border border-border/20 rounded px-2.5 py-1.5 text-[11px] text-bright outline-none focus:border-accent/30 placeholder:text-bright/60" />
+                        className="w-full bg-ink/40 border border-border/20 rounded px-2.5 py-1.5 text-[11px] text-bright outline-none focus:border-amber-400/30 placeholder:text-white/60" />
                     </div>
                   ))}
                 </div>
               )}
 
               {selectedIds.size > 0 && (
-                <div className="bg-accent/5 border border-accent/10 rounded-lg px-3 py-2">
-                  <p className="text-[10px] text-accent/60">
+                <div className="bg-amber-500/5 border border-amber-400/10 rounded-lg px-3 py-2">
+                  <p className="text-[10px] text-amber-300/60">
                     ✓ {selectedIds.size} search{selectedIds.size !== 1 ? 'es' : ''} selected — daily scan will pull net-new companies, filter out CRM dupes, score with Opus using your preferences + per-search hints, and push top 5-10 to DD.
                   </p>
                 </div>
@@ -1169,14 +1169,14 @@ function ScanModePanel({ activeTab, activeProfile, personProfiles, activeProfile
                 </div>
                 <input type="text" value={activeProfile?.keywords || ''} placeholder="Priority keywords: e.g. crypto, betting, exchange, AI agent"
                   onChange={e => onSaveProfile({ ...activeProfile, keywords: e.target.value, updatedAt: new Date().toISOString() })}
-                  className="w-full bg-ink/40 border border-border/20 rounded-lg px-3 py-2 text-[11px] text-bright outline-none focus:border-accent/30 placeholder:text-bright/60" />
+                  className="w-full bg-ink/40 border border-border/20 rounded-lg px-3 py-2 text-[11px] text-bright outline-none focus:border-amber-400/30 placeholder:text-white/60" />
                 <input type="text" value={activeProfile?.antiKeywords || ''} placeholder="Exclude: e.g. consulting, NFT collection, metaverse"
                   onChange={e => onSaveProfile({ ...activeProfile, antiKeywords: e.target.value, updatedAt: new Date().toISOString() })}
-                  className="w-full bg-ink/40 border border-border/20 rounded-lg px-3 py-2 text-[11px] text-bright outline-none focus:border-accent/30 placeholder:text-bright/60" />
+                  className="w-full bg-ink/40 border border-border/20 rounded-lg px-3 py-2 text-[11px] text-bright outline-none focus:border-amber-400/30 placeholder:text-white/60" />
                 <textarea value={activeProfile?.notes || ''} placeholder="Notes for Opus: e.g. Looking for first-time founders, val <$25M, priority on crypto infra..."
                   onChange={e => onSaveProfile({ ...activeProfile, notes: e.target.value, updatedAt: new Date().toISOString() })}
                   rows={2}
-                  className="w-full bg-ink/40 border border-border/20 rounded-lg px-3 py-2 text-[11px] text-bright outline-none focus:border-accent/30 resize-none leading-relaxed placeholder:text-bright/60" />
+                  className="w-full bg-ink/40 border border-border/20 rounded-lg px-3 py-2 text-[11px] text-bright outline-none focus:border-amber-400/30 resize-none leading-relaxed placeholder:text-white/60" />
               </div>
             </>
           )}
@@ -1196,19 +1196,19 @@ function UnvettedRemoveMenu({ company, onHide, onBackburn }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="relative">
-      <button onClick={() => setOpen(!open)} className="text-muted/40 hover:text-rose transition-colors" title="Options">
+      <button onClick={() => setOpen(!open)} className="text-muted/40 hover:text-red-400 transition-colors" title="Options">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute top-full right-0 mt-1 z-50 bg-card border border-border/30 rounded-lg shadow-xl py-1 min-w-[140px]">
+          <div className="absolute top-full right-0 mt-1 z-50 bg-[#1a1d2e] border border-border/30 rounded-lg shadow-xl py-1 min-w-[140px]">
             <button onClick={() => { onHide(company); setOpen(false); }}
-              className="w-full text-left px-3 py-2 text-[11px] text-muted/60 hover:text-bright hover:bg-bright/5 transition-colors">
+              className="w-full text-left px-3 py-2 text-[11px] text-muted/60 hover:text-bright hover:bg-white/5 transition-colors">
               👁‍🗨 Hide for me
             </button>
             <button onClick={() => { onBackburn(company); setOpen(false); }}
-              className="w-full text-left px-3 py-2 text-[11px] text-rose/70 hover:text-rose hover:bg-rose/5 transition-colors border-t border-border/10">
+              className="w-full text-left px-3 py-2 text-[11px] text-red-400/70 hover:text-red-400 hover:bg-red-500/5 transition-colors border-t border-border/10">
               🔥 Backburn
             </button>
           </div>
@@ -1283,24 +1283,24 @@ function VettingPanel({ team, addFavorite, isFavorited }) {
     return true;
   });
 
-  if (loading) return <div className="flex justify-center py-6"><div className="w-5 h-5 border-2 border-boro border-t-transparent rounded-full animate-spin" /></div>;
+  if (loading) return <div className="flex justify-center py-6"><div className="w-5 h-5 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" /></div>;
 
   if (visible.length === 0) {
     return (
-      <div className="bg-boro/4 border border-boro/12 rounded-xl p-4 text-center">
-        <p className="text-boro/50 text-xs">No unvetted companies</p>
+      <div className="bg-violet-500/4 border border-violet-400/12 rounded-xl p-4 text-center">
+        <p className="text-violet-300/50 text-xs">No unvetted companies</p>
         <p className="text-[10px] text-muted/40 mt-1">Top-scoring companies from daily and weekly scans will appear here for team review</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-boro/4 border border-boro/12 rounded-xl p-4 space-y-3">
+    <div className="bg-violet-500/4 border border-violet-400/12 rounded-xl p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-[10px] uppercase tracking-widest text-boro/50 font-bold">📋 Unvetted New Companies</p>
+        <p className="text-[10px] uppercase tracking-widest text-violet-400/50 font-bold">📋 Unvetted New Companies</p>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-boro/10 text-boro border border-boro/20 font-medium">{visible.length}</span>
-          <button onClick={fetchVetting} className="text-[9px] text-muted/40 hover:text-boro">↻</button>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-300 border border-violet-400/20 font-medium">{visible.length}</span>
+          <button onClick={fetchVetting} className="text-[9px] text-muted/40 hover:text-violet-300">↻</button>
         </div>
       </div>
 
@@ -1312,19 +1312,19 @@ function VettingPanel({ team, addFavorite, isFavorited }) {
           const saved = isFavorited && isFavorited(c.name);
 
           return (
-            <div key={c.name || idx} className="rounded-xl border border-boro/10 bg-surface/40 p-3.5 space-y-2.5">
+            <div key={c.name || idx} className="rounded-xl border border-violet-400/10 bg-surface/40 p-3.5 space-y-2.5">
               {/* Header */}
               <div className="flex items-start gap-3">
                 {c.logo_url ? <img src={c.logo_url} alt="" className="w-9 h-9 rounded-lg bg-ink/50 flex-shrink-0" onError={e => { e.target.style.display='none'; }} />
-                  : <div className="w-9 h-9 rounded-lg bg-boro/10 flex items-center justify-center flex-shrink-0"><span className="text-boro font-bold text-sm">{(c.name||'?')[0]}</span></div>}
+                  : <div className="w-9 h-9 rounded-lg bg-violet-500/10 flex items-center justify-center flex-shrink-0"><span className="text-violet-400 font-bold text-sm">{(c.name||'?')[0]}</span></div>}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <h3 className="font-bold text-bright text-sm truncate">{c.name}</h3>
-                    {webUrl && <a href={webUrl} target="_blank" rel="noopener" className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded bg-bo/15 text-bo border border-bo/30 hover:bg-bo/20 font-medium">🌐</a>}
+                    {webUrl && <a href={webUrl} target="_blank" rel="noopener" className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-400/30 hover:bg-sky-500/20 font-medium">🌐</a>}
                   </div>
                   <div className="flex gap-1.5 mt-0.5 flex-wrap">
                     {stage && <span className={`text-[9px] px-1.5 py-0.5 rounded-md border ${stageColor(c.funding_stage)}`}>{stage}</span>}
-                    {total && <span className="text-[9px] px-1.5 py-0.5 rounded-md border bg-bo/10 text-bo border-bo/20">💰 {total}</span>}
+                    {total && <span className="text-[9px] px-1.5 py-0.5 rounded-md border bg-sky-500/10 text-sky-400 border-sky-500/20">💰 {total}</span>}
                   </div>
                 </div>
                 {/* X button with Backburn / Hide for me menu */}
@@ -1345,8 +1345,8 @@ function VettingPanel({ team, addFavorite, isFavorited }) {
                 <button onClick={() => handleFavorite(c)}
                   className={`text-[10px] px-3 py-1 rounded-lg border font-bold transition-all active:scale-95 ${
                     saved
-                      ? 'bg-rose/15 border-rose/40 text-rose'
-                      : 'border-rose/25 text-rose/70 hover:bg-rose/15 hover:border-rose/50 hover:text-rose'
+                      ? 'bg-pink-500/15 border-pink-400/40 text-pink-400'
+                      : 'border-pink-400/25 text-pink-400/70 hover:bg-pink-500/15 hover:border-pink-400/50 hover:text-pink-400'
                   }`}>
                   {saved ? '❤️ Favorited' : '🤍 Favorite'}
                 </button>
@@ -1451,15 +1451,15 @@ function ScanProgressPanel({ scanStatus, effectiveScanMode, onCancel, profileNam
 
   const stageEmoji = { fetch: '📡', sonnet: '⚡', enrich: '🔬', filter: '🧹', scoring: '🧠' };
   const stageLabel = { fetch: 'Importing', sonnet: 'Sonnet Screen', enrich: 'Enriching', filter: 'Filtering', scoring: 'Deep Scoring' };
-  const stageColors = { fetch: 'text-bo', sonnet: 'text-boro', enrich: 'text-accent', filter: 'text-rose', scoring: 'text-sm' };
+  const stageColors = { fetch: 'text-sky-400', sonnet: 'text-violet-400', enrich: 'text-amber-400', filter: 'text-pink-400', scoring: 'text-emerald-400' };
   const stageOrder = ['fetch', 'sonnet', 'enrich', 'filter', 'scoring'];
 
   return (
-    <div className="bg-ink/30 border border-bo/15 rounded-xl overflow-hidden">
+    <div className="bg-ink/30 border border-sky-400/15 rounded-xl overflow-hidden">
       {/* Search context header */}
       {(profileName || (savedSearchNames && savedSearchNames.length > 0)) && (
-        <div className="px-4 pt-3 pb-1 border-b border-bo/10">
-          <p className="text-[11px] text-bo/70 font-medium truncate">
+        <div className="px-4 pt-3 pb-1 border-b border-sky-400/10">
+          <p className="text-[11px] text-sky-400/70 font-medium truncate">
             {profileName && <span>{profileName}</span>}
             {savedSearchNames && savedSearchNames.length > 0 && (
               <span className="text-muted/50 ml-1">— {savedSearchNames.join(', ')}</span>
@@ -1470,7 +1470,7 @@ function ScanProgressPanel({ scanStatus, effectiveScanMode, onCancel, profileNam
       {/* Main progress header */}
       <div className="p-4 space-y-3">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin flex-shrink-0" />
+          <div className="w-8 h-8 border-2 border-sky-400 border-t-transparent rounded-full animate-spin flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-sm text-bright/70 font-medium">
               {scanStatus?.progress || `Scanning via ${effectiveScanMode === 'savedSearch' ? 'Harmonic Saved Searches' : 'Keywords'}...`}
@@ -1480,9 +1480,9 @@ function ScanProgressPanel({ scanStatus, effectiveScanMode, onCancel, profileNam
             </p>
           </div>
           <div className="text-right flex-shrink-0">
-            <span className="text-[11px] font-mono text-bo/60">{mins}:{secs.toString().padStart(2, '0')}</span>
+            <span className="text-[11px] font-mono text-sky-400/60">{mins}:{secs.toString().padStart(2, '0')}</span>
             {showEta && (
-              <p className="text-[9px] font-mono text-accent/50 mt-0.5">~{etaMins}m {String(etaSecs).padStart(2, '0')}s left</p>
+              <p className="text-[9px] font-mono text-amber-400/50 mt-0.5">~{etaMins}m {String(etaSecs).padStart(2, '0')}s left</p>
             )}
           </div>
         </div>
@@ -1494,9 +1494,9 @@ function ScanProgressPanel({ scanStatus, effectiveScanMode, onCancel, profileNam
             const isPast = stageOrder.indexOf(s) < stageOrder.indexOf(stage);
             return (
               <React.Fragment key={s}>
-                {i > 0 && <div className={`flex-shrink-0 w-4 h-px ${isPast || isActive ? 'bg-bo/30' : 'bg-border/15'}`} />}
+                {i > 0 && <div className={`flex-shrink-0 w-4 h-px ${isPast || isActive ? 'bg-sky-400/30' : 'bg-border/15'}`} />}
                 <div className={`flex items-center gap-1 px-2 py-1 rounded-md text-[9px] font-medium transition-all ${
-                  isActive ? `${stageColors[s]} bg-bright/5 border border-border/10 scale-105` : isPast ? 'text-muted/50' : 'text-muted/20'
+                  isActive ? `${stageColors[s]} bg-white/5 border border-white/10 scale-105` : isPast ? 'text-muted/50' : 'text-muted/20'
                 }`}>
                   <span>{stageEmoji[s]}</span>
                   <span className="hidden sm:inline">{stageLabel[s]}</span>
@@ -1510,16 +1510,16 @@ function ScanProgressPanel({ scanStatus, effectiveScanMode, onCancel, profileNam
         <div className="flex items-center gap-2">
           {!confirmCancel ? (
             <button onClick={() => setConfirmCancel(true)}
-              className="text-[10px] px-3 py-1.5 rounded-lg border border-rose/20 text-rose/60 hover:text-rose hover:border-rose/40 transition-all font-medium">
+              className="text-[10px] px-3 py-1.5 rounded-lg border border-red-400/20 text-red-400/60 hover:text-red-300 hover:border-red-400/40 transition-all font-medium">
               Cancel Search
             </button>
           ) : (
-            <div className="flex items-center gap-2 bg-rose/5 border border-rose/20 rounded-lg px-3 py-2">
-              <div className="text-[10px] text-rose/70">
-                Cancel? {estCostSoFar && <span className="text-accent/60">Cost so far: {estCostSoFar}</span>}
+            <div className="flex items-center gap-2 bg-red-500/5 border border-red-400/20 rounded-lg px-3 py-2">
+              <div className="text-[10px] text-red-300/70">
+                Cancel? {estCostSoFar && <span className="text-amber-300/60">Cost so far: {estCostSoFar}</span>}
               </div>
               <button onClick={() => { onCancel(); setConfirmCancel(false); }}
-                className="text-[10px] px-2.5 py-1 rounded bg-rose/20 border border-rose/30 text-rose font-bold hover:bg-rose/30 transition-all">
+                className="text-[10px] px-2.5 py-1 rounded bg-red-500/20 border border-red-400/30 text-red-300 font-bold hover:bg-red-500/30 transition-all">
                 Yes, Cancel
               </button>
               <button onClick={() => setConfirmCancel(false)}
@@ -1535,7 +1535,7 @@ function ScanProgressPanel({ scanStatus, effectiveScanMode, onCancel, profileNam
       {feed.length > 0 && (
         <div className="border-t border-border/10 bg-black/20">
           <button onClick={() => setHideFeed(!hideFeed)}
-            className="w-full flex items-center justify-between px-4 py-2 hover:bg-bright/[0.02] transition-colors">
+            className="w-full flex items-center justify-between px-4 py-2 hover:bg-white/[0.02] transition-colors">
             <span className="text-[8px] uppercase tracking-widest text-muted/25 font-bold">Live Feed ({feed.length})</span>
             <span className="text-[9px] text-muted/30">{hideFeed ? '▸ Show' : '▾ Hide'}</span>
           </button>
@@ -1592,11 +1592,11 @@ function SavedSearchSelector({ activeProfile, onSaveProfile }) {
   };
 
   return (
-    <div className={`border rounded-xl mb-4 transition-all ${selectedIds.size > 0 ? 'border-accent/20 bg-accent/[0.03]' : 'border-border/15 bg-ink/15'}`}>
+    <div className={`border rounded-xl mb-4 transition-all ${selectedIds.size > 0 ? 'border-amber-400/20 bg-amber-500/[0.03]' : 'border-border/15 bg-ink/15'}`}>
       <button onClick={() => { if (!expanded) fetchSearches(); setExpanded(!expanded); }}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-bright/[0.02] transition-colors">
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/[0.02] transition-colors">
         <div className="flex items-center gap-2.5">
-          <span className="text-[11px] px-1.5 py-0.5 rounded bg-rose/10 text-rose border border-rose/15 font-bold">H</span>
+          <span className="text-[11px] px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-400 border border-pink-400/15 font-bold">H</span>
           <div className="text-left">
             <p className="text-xs font-bold text-bright/80">Harmonic Saved Searches</p>
             <p className="text-[10px] text-muted/45">
@@ -1606,7 +1606,7 @@ function SavedSearchSelector({ activeProfile, onSaveProfile }) {
         </div>
         <div className="flex items-center gap-2">
           {selectedIds.size > 0 && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/12 text-accent border border-accent/20 font-medium">
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/12 text-amber-300 border border-amber-400/20 font-medium">
               {selectedIds.size}
             </span>
           )}
@@ -1616,24 +1616,24 @@ function SavedSearchSelector({ activeProfile, onSaveProfile }) {
 
       {expanded && (
         <div className="border-t border-border/10 px-4 py-3 space-y-2">
-          {loading && <div className="flex justify-center py-3"><div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" /></div>}
+          {loading && <div className="flex justify-center py-3"><div className="w-4 h-4 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" /></div>}
           {!loading && searches.length === 0 && <p className="text-[10px] text-muted/35 text-center py-2">No saved searches found</p>}
           {searches.map(s => {
             const isSelected = selectedIds.has(s.id);
             return (
               <button key={s.id} onClick={() => toggleSearch(s)}
                 className={`w-full text-left px-3 py-2.5 rounded-lg border transition-all flex items-center justify-between ${
-                  isSelected ? 'bg-accent/8 border-accent/25 text-accent' : 'border-border/12 text-bright/60 hover:border-accent/15'
+                  isSelected ? 'bg-amber-500/8 border-amber-400/25 text-amber-200' : 'border-border/12 text-bright/60 hover:border-amber-400/15'
                 }`}>
                 <span className="text-[11px] font-medium">{s.name}</span>
                 <span className={`w-5 h-5 rounded flex items-center justify-center text-[10px] border ${
-                  isSelected ? 'bg-accent/20 border-accent/40 text-accent' : 'border-border/20 text-transparent'
+                  isSelected ? 'bg-amber-500/20 border-amber-400/40 text-amber-300' : 'border-border/20 text-transparent'
                 }`}>{isSelected ? '✓' : ''}</span>
               </button>
             );
           })}
           {selectedIds.size > 0 && (
-            <p className="text-[9px] text-accent/50 text-center pt-1">
+            <p className="text-[9px] text-amber-300/50 text-center pt-1">
               Selected searches are saved to this profile — press the orange Search button to run
             </p>
           )}
@@ -1680,7 +1680,7 @@ function ResultsPanel({ currentResults, dismissedSet, addFavorite, isFavorited, 
 
   // Safety: if currentResults is malformed, show error
   if (!currentResults || typeof currentResults !== 'object') {
-    return <div className="bg-rose/8 border border-rose/15 rounded-xl p-3"><p className="text-rose/80 text-xs">Invalid scan results</p></div>;
+    return <div className="bg-red-500/8 border border-red-500/15 rounded-xl p-3"><p className="text-red-400/80 text-xs">Invalid scan results</p></div>;
   }
 
   let visible = [];
@@ -1710,21 +1710,21 @@ function ResultsPanel({ currentResults, dismissedSet, addFavorite, isFavorited, 
 
   return (
     <div className="space-y-3">
-      {currentResults.message && <div className="bg-rose/8 border border-rose/15 rounded-xl p-3"><p className="text-rose/80 text-xs">{currentResults.message}</p></div>}
-      {currentResults.error && <div className="bg-rose/8 border border-rose/15 rounded-xl p-3"><p className="text-rose/80 text-xs">Error: {currentResults.error}</p></div>}
+      {currentResults.message && <div className="bg-red-500/8 border border-red-500/15 rounded-xl p-3"><p className="text-red-400/80 text-xs">{currentResults.message}</p></div>}
+      {currentResults.error && <div className="bg-red-500/8 border border-red-500/15 rounded-xl p-3"><p className="text-red-400/80 text-xs">Error: {currentResults.error}</p></div>}
 
       {/* Funnel stats */}
       {currentResults.savedSearchMeta && (
-        <div className="bg-accent/5 border border-accent/12 rounded-xl p-3 flex items-center gap-2 text-[10px] text-accent/60 flex-wrap">
+        <div className="bg-amber-500/5 border border-amber-400/12 rounded-xl p-3 flex items-center gap-2 text-[10px] text-amber-300/60 flex-wrap">
           <span>Ⓗ {currentResults.savedSearchMeta.searchCount} searches</span>
           <span>→ {currentResults.savedSearchMeta.totalBeforeDedup} found</span>
           <span>→ {currentResults.savedSearchMeta.freshCount} new</span>
           {currentResults.funnel?.enriched > 0 && <span>→ {currentResults.funnel.enriched} enriched</span>}
           {currentResults.funnel?.sonnetPassed > 0 && (
-            <span className="text-bo/60">→ {currentResults.funnel.sonnetPassed} passed Sonnet</span>
+            <span className="text-sky-300/60">→ {currentResults.funnel.sonnetPassed} passed Sonnet</span>
           )}
           {currentResults.funnel?.opusScored > 0 && (
-            <span className="text-boro/60">→ {currentResults.funnel.opusScored} Opus scored</span>
+            <span className="text-violet-300/60">→ {currentResults.funnel.opusScored} Opus scored</span>
           )}
         </div>
       )}
@@ -1733,8 +1733,8 @@ function ResultsPanel({ currentResults, dismissedSet, addFavorite, isFavorited, 
           <span>🔎 {currentResults.funnel.totalUrns} found</span>
           <span>→ {currentResults.funnel.newCompanies || '?'} new</span>
           <span>→ {currentResults.funnel.detailsFetched || '?'} enriched</span>
-          {currentResults.funnel?.sonnetPassed > 0 && <span className="text-bo/60">→ {currentResults.funnel.sonnetPassed} Sonnet</span>}
-          {currentResults.funnel?.opusScored > 0 && <span className="text-boro/60">→ {currentResults.funnel.opusScored} Opus</span>}
+          {currentResults.funnel?.sonnetPassed > 0 && <span className="text-sky-300/60">→ {currentResults.funnel.sonnetPassed} Sonnet</span>}
+          {currentResults.funnel?.opusScored > 0 && <span className="text-violet-300/60">→ {currentResults.funnel.opusScored} Opus</span>}
         </div>
       )}
 
@@ -1742,14 +1742,14 @@ function ResultsPanel({ currentResults, dismissedSet, addFavorite, isFavorited, 
       <div className="flex gap-1 bg-ink/30 rounded-lg p-1">
         <button onClick={() => setTab('results')}
           className={`flex-1 text-[11px] py-2 rounded-md font-semibold transition-all ${
-            tab === 'results' ? 'bg-bo/15 text-bo border border-bo/25' : 'text-muted/50 hover:text-muted/70'
+            tab === 'results' ? 'bg-sky-500/15 text-sky-300 border border-sky-400/25' : 'text-muted/50 hover:text-muted/70'
           }`}>
           📊 Results ({visible.length})
         </button>
         {hasAnalysis && (
           <button onClick={() => setTab('logic')}
             className={`flex-1 text-[11px] py-2 rounded-md font-semibold transition-all ${
-              tab === 'logic' ? 'bg-boro/15 text-boro border border-boro/25' : 'text-muted/50 hover:text-muted/70'
+              tab === 'logic' ? 'bg-violet-500/15 text-violet-300 border border-violet-400/25' : 'text-muted/50 hover:text-muted/70'
             }`}>
             🧠 Opus Logic
           </button>
@@ -1766,12 +1766,12 @@ function ResultsPanel({ currentResults, dismissedSet, addFavorite, isFavorited, 
                 try {
                   return <ScanResultCard key={c.name} company={c} onFavorite={addFavorite} isFavorited={isFavorited ? isFavorited(c.name) : false} onDismiss={(co) => dismissCompany(activeTab, co)} onShowLogic={hasAnalysis ? showLogicForCompany : null} />;
                 } catch (e) {
-                  return <div key={c.name} className="text-rose/60 text-xs p-2">Error rendering {c.name}: {e.message}</div>;
+                  return <div key={c.name} className="text-red-400/60 text-xs p-2">Error rendering {c.name}: {e.message}</div>;
                 }
               })}
               {hasMore && (
                 <button onClick={() => setShowCount(prev => prev + 15)}
-                  className="w-full py-3 rounded-xl border border-bo/15 bg-bo/[0.04] text-bo/60 text-xs font-medium hover:text-bo hover:border-bo/25 transition-all">
+                  className="w-full py-3 rounded-xl border border-sky-400/15 bg-sky-500/[0.04] text-sky-400/60 text-xs font-medium hover:text-sky-300 hover:border-sky-400/25 transition-all">
                   Load More ({visible.length - showCount} remaining)
                 </button>
               )}
@@ -1786,14 +1786,14 @@ function ResultsPanel({ currentResults, dismissedSet, addFavorite, isFavorited, 
 
       {/* Logic tab — full Opus analysis */}
       {tab === 'logic' && hasAnalysis && (
-        <div ref={logicRef} className="bg-boro/[0.03] border border-boro/12 rounded-xl p-4 space-y-3 max-h-[80vh] overflow-y-auto">
+        <div ref={logicRef} className="bg-violet-500/[0.03] border border-violet-400/12 rounded-xl p-4 space-y-3 max-h-[80vh] overflow-y-auto">
           <div className="flex items-center justify-between">
-            <p className="text-[10px] text-boro/50 uppercase tracking-widest font-bold">Full Opus Analysis</p>
+            <p className="text-[10px] text-violet-400/50 uppercase tracking-widest font-bold">Full Opus Analysis</p>
             <button onClick={() => {
               navigator.clipboard.writeText(currentResults.analysis).then(() => {
                 // Could show toast but keeping it simple
               }).catch(() => {});
-            }} className="text-[9px] px-2 py-0.5 rounded border border-boro/20 text-boro/60 hover:bg-boro/10 transition-all">
+            }} className="text-[9px] px-2 py-0.5 rounded border border-violet-400/20 text-violet-300/60 hover:bg-violet-500/10 transition-all">
               📋 Copy
             </button>
           </div>
@@ -1925,9 +1925,9 @@ export default function AutoScanPage({ addFavorite, isFavorited }) {
       <div className="mb-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold tracking-tight">
-            <span className="text-bo font-serif italic font-semibold">🔮</span> H Screens
+            <span className="text-sky-400" style={{ fontFamily: "'Courier New', monospace" }}>🔮</span> H Screens
           </h1>
-          {activePerson && <span className="text-[11px] text-muted/50">Searching as <span className="text-accent/80 font-bold">{activePerson.emoji} {activePerson.name}</span></span>}
+          {activePerson && <span className="text-[11px] text-muted/50">Searching as <span className="text-amber-400/80 font-bold">{activePerson.emoji} {activePerson.name}</span></span>}
         </div>
       </div>
 
@@ -1937,8 +1937,8 @@ export default function AutoScanPage({ addFavorite, isFavorited }) {
           <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && searchQuery.trim().length >= 2) runSearch(searchQuery.trim()); }}
             placeholder="🔍 Search Harmonic for any company..."
-            className="w-full bg-ink/50 border border-border/20 rounded-xl px-3.5 py-2.5 text-sm text-bright outline-none focus:border-accent/30 placeholder:text-bright/60" />
-          {searchLoading && <div className="absolute right-3 top-3 w-3.5 h-3.5 border-2 border-accent border-t-transparent rounded-full animate-spin" />}
+            className="w-full bg-ink/50 border border-border/20 rounded-xl px-3.5 py-2.5 text-sm text-bright outline-none focus:border-amber-400/30 placeholder:text-white/60" />
+          {searchLoading && <div className="absolute right-3 top-3 w-3.5 h-3.5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />}
           {searchQuery && !searchLoading && (
             <button onClick={() => { setSearchQuery(''); setSearchResults([]); }} className="absolute right-3 top-2.5 text-muted/40 hover:text-bright text-sm">✕</button>
           )}
@@ -1956,24 +1956,24 @@ export default function AutoScanPage({ addFavorite, isFavorited }) {
             {searchResults.map((s, i) => {
               const webUrl = s.website || (s.domain ? `https://${s.domain}` : '');
               return (
-                <div key={s.id || i} className="px-3 py-2.5 hover:bg-bright/[0.03] transition-colors">
+                <div key={s.id || i} className="px-3 py-2.5 hover:bg-white/[0.03] transition-colors">
                   <div className="flex items-center gap-2.5">
                     {s.logo_url ? (
                       <img src={s.logo_url} alt="" className="w-9 h-9 rounded-lg bg-ink/50 object-contain flex-shrink-0" onError={e => { e.target.style.display='none'; }} />
                     ) : (
-                      <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
-                        <span className="text-accent text-sm font-bold">{(s.name || '?')[0]}</span>
+                      <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                        <span className="text-amber-400 text-sm font-bold">{(s.name || '?')[0]}</span>
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         {webUrl ? (
-                          <a href={webUrl} target="_blank" rel="noopener" className="text-sm font-semibold text-bright hover:text-accent transition-colors">{s.name}</a>
+                          <a href={webUrl} target="_blank" rel="noopener" className="text-sm font-semibold text-bright hover:text-amber-300 transition-colors">{s.name}</a>
                         ) : (
                           <span className="text-sm font-semibold text-bright">{s.name}</span>
                         )}
-                        {s.stage && <span className="text-[9px] px-1.5 py-0.5 rounded bg-sm/10 text-sm/60 border border-sm/15">{String(s.stage).replace(/_/g,' ')}</span>}
-                        {s.funding_total && <span className="text-[9px] px-1.5 py-0.5 rounded bg-bo/10 text-bo/60 border border-bo/15">💰 {typeof s.funding_total === 'number' ? (s.funding_total >= 1e9 ? `$${(s.funding_total/1e9).toFixed(1)}B` : s.funding_total >= 1e6 ? `$${(s.funding_total/1e6).toFixed(1)}M` : `$${s.funding_total}`) : s.funding_total}</span>}
+                        {s.stage && <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300/60 border border-emerald-400/15">{String(s.stage).replace(/_/g,' ')}</span>}
+                        {s.funding_total && <span className="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-300/60 border border-sky-400/15">💰 {typeof s.funding_total === 'number' ? (s.funding_total >= 1e9 ? `$${(s.funding_total/1e9).toFixed(1)}B` : s.funding_total >= 1e6 ? `$${(s.funding_total/1e6).toFixed(1)}M` : `$${s.funding_total}`) : s.funding_total}</span>}
                       </div>
                       {s.description && <p className="text-[10px] text-bright/40 truncate mt-0.5">{s.description}</p>}
                       {(s.location || s.headcount) && (
@@ -1985,9 +1985,9 @@ export default function AutoScanPage({ addFavorite, isFavorited }) {
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 mt-1.5 ml-[46px]">
-                    {webUrl && <a href={webUrl} target="_blank" rel="noopener" className="text-[8px] px-1.5 py-0.5 rounded bg-bo/15 text-bo border border-bo/30 hover:bg-bo/20 font-medium" onClick={e => e.stopPropagation()}>🌐</a>}
+                    {webUrl && <a href={webUrl} target="_blank" rel="noopener" className="text-[8px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-400/30 hover:bg-sky-500/20 font-medium" onClick={e => e.stopPropagation()}>🌐</a>}
                     <button onClick={() => addFavorite && addFavorite({ name: s.name, description: s.description, website: s.website || webUrl, logo_url: s.logo_url, funding_total: s.funding_total })}
-                      className="text-[8px] px-1.5 py-0.5 rounded border text-muted/40 border-border/15 hover:text-bo hover:border-bo/20 font-medium">☆ Fav</button>
+                      className="text-[8px] px-1.5 py-0.5 rounded border text-muted/40 border-border/15 hover:text-sky-400 hover:border-sky-400/20 font-medium">☆ Fav</button>
                     <CrmButton company={{ name: s.name, website: webUrl, description: s.description, funding_total: s.funding_total, sector: s.stage, socials: { twitter: s.twitter } }} />
                     <FindSimilar addFavorite={addFavorite} isFavorited={isFavorited} companyId={s.id} companyName={s.name} />
                   </div>
@@ -2007,12 +2007,12 @@ export default function AutoScanPage({ addFavorite, isFavorited }) {
           return (
             <button key={t.id} onClick={() => setActiveTab(t.id)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-[11px] font-medium whitespace-nowrap ${
-                isActive ? 'bg-bo/10 border border-bo/20 text-bo' : 'hover:bg-bright/5 border border-transparent text-muted/50'
+                isActive ? 'bg-sky-500/10 border border-sky-400/20 text-sky-300' : 'hover:bg-white/5 border border-transparent text-muted/50'
               }`}>
               <span className="text-base leading-none">{t.emoji}</span>
               <span>{t.name}</span>
-              {isBusy && <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />}
-              {hasResults && !isBusy && <span className="min-w-[16px] h-4 px-1 rounded-full bg-bo text-bright text-[8px] font-bold flex items-center justify-center">{scanResults[t.id].results.length}</span>}
+              {isBusy && <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
+              {hasResults && !isBusy && <span className="min-w-[16px] h-4 px-1 rounded-full bg-sky-500 text-white text-[8px] font-bold flex items-center justify-center">{scanResults[t.id].results.length}</span>}
             </button>
           );
         })}
@@ -2033,27 +2033,27 @@ export default function AutoScanPage({ addFavorite, isFavorited }) {
               <div key={idx} className="relative group">
                 <button onClick={() => { setActiveProfileIdx(idx); setShowHistory(false); }}
                   className={`text-[12px] px-4 py-2 rounded-xl border whitespace-nowrap transition-all flex items-center gap-2 ${
-                    activeProfileIdx === idx ? 'bg-bo/12 border-bo/30 text-bo font-bold' : 'border-border/20 text-muted/50 hover:border-border/40 font-medium'
+                    activeProfileIdx === idx ? 'bg-sky-500/12 border-sky-400/30 text-sky-300 font-bold' : 'border-border/20 text-muted/50 hover:border-border/40 font-medium'
                   }`}>
                   {prof.name || `Scan ${idx + 1}`}
-                  {isLive && <span className="w-2 h-2 rounded-full bg-accent animate-pulse flex-shrink-0" title="Live" />}
-                  {!isLive && !disabled && isReady && <span className="w-2 h-2 rounded-full bg-sm flex-shrink-0" title="Ready" />}
+                  {isLive && <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse flex-shrink-0" title="Live" />}
+                  {!isLive && !disabled && isReady && <span className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" title="Ready" />}
                   {!isLive && !disabled && !isReady && profileNextRun > 0 && (
                     <span className="text-[9px] text-muted/35 font-mono" title="Next auto-scan">
                       <Countdown targetMs={profileNextRun} />
                     </span>
                   )}
-                  {disabled && <span className="w-2 h-2 rounded-full bg-rose/60 flex-shrink-0" />}
+                  {disabled && <span className="w-2 h-2 rounded-full bg-red-500/60 flex-shrink-0" />}
                 </button>
                 {personProfiles.length > 1 && (
                   <button onClick={() => handleDeleteProfile(idx)}
-                    className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose/80 text-bright text-[8px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
+                    className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-red-500/80 text-white text-[8px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
                 )}
               </div>
             );
           })}
           {personProfiles.length < MAX_PROFILES && (
-            <button onClick={handleNewProfile} className="text-[12px] px-4 py-2 rounded-xl border border-dashed border-bo/20 text-bo/65 hover:border-bo/40 hover:text-bo transition-all whitespace-nowrap font-medium">+ New Scan</button>
+            <button onClick={handleNewProfile} className="text-[12px] px-4 py-2 rounded-xl border border-dashed border-sky-400/20 text-sky-400/65 hover:border-sky-400/40 hover:text-sky-300 transition-all whitespace-nowrap font-medium">+ New Scan</button>
           )}
         </div>
       )}
@@ -2070,25 +2070,25 @@ export default function AutoScanPage({ addFavorite, isFavorited }) {
               <div className="flex items-center gap-2.5">
                 <h2 className="text-sm font-bold text-bright/90">{activeProfile.name || 'Main Scan'}</h2>
                 <button onClick={() => setEditing(true)}
-                  className={`text-[11px] px-3 py-1 rounded-lg border-2 border-bo/40 bg-bo/15 text-bo font-bold hover:bg-bo/25 hover:border-bo/60 transition-all active:scale-95 ${!canEdit ? 'hidden' : ''}`}>
+                  className={`text-[11px] px-3 py-1 rounded-lg border-2 border-sky-400/40 bg-sky-500/15 text-sky-300 font-bold hover:bg-sky-500/25 hover:border-sky-400/60 transition-all active:scale-95 ${!canEdit ? 'hidden' : ''}`}>
                   ✏️ Edit Scan
                 </button>
               </div>
               <div className="flex gap-1.5 flex-wrap">
                 <button onClick={() => { setShowVetting(!showVetting); setShowTopPicks(false); setShowHistory(false); }}
-                  className={`text-[10px] px-2.5 py-1.5 rounded-lg border transition-all ${showVetting ? 'bg-boro/10 border-boro/30 text-boro' : 'border-border/20 text-muted/40 hover:border-boro/25'}`}>
+                  className={`text-[10px] px-2.5 py-1.5 rounded-lg border transition-all ${showVetting ? 'bg-violet-500/10 border-violet-400/30 text-violet-300' : 'border-border/20 text-muted/40 hover:border-violet-400/25'}`}>
                   📋 Unvetted
                 </button>
                 <button onClick={() => { setShowTopPicks(!showTopPicks); setShowHistory(false); setShowVetting(false); }}
-                  className={`text-[10px] px-2.5 py-1.5 rounded-lg border transition-all ${showTopPicks ? 'bg-accent/10 border-accent/30 text-accent' : 'border-border/20 text-muted/40 hover:border-accent/25'}`}>
+                  className={`text-[10px] px-2.5 py-1.5 rounded-lg border transition-all ${showTopPicks ? 'bg-amber-500/10 border-amber-400/30 text-amber-300' : 'border-border/20 text-muted/40 hover:border-amber-400/25'}`}>
                   ⭐ Top Picks
                 </button>
                 <button onClick={() => { setShowHistory(!showHistory); setShowTopPicks(false); setShowVetting(false); setShowCost(false); }}
-                  className={`text-[10px] px-2.5 py-1.5 rounded-lg border transition-all ${showHistory ? 'bg-bo/10 border-bo/30 text-bo' : 'border-border/20 text-muted/40 hover:border-bo/25'}`}>
+                  className={`text-[10px] px-2.5 py-1.5 rounded-lg border transition-all ${showHistory ? 'bg-sky-500/10 border-sky-400/30 text-sky-300' : 'border-border/20 text-muted/40 hover:border-sky-400/25'}`}>
                   🕐 History
                 </button>
                 <button onClick={() => { setShowCost(!showCost); setShowHistory(false); setShowTopPicks(false); setShowVetting(false); }}
-                  className={`text-[10px] px-2.5 py-1.5 rounded-lg border transition-all ${showCost ? 'bg-accent/10 border-accent/30 text-accent' : 'border-border/20 text-muted/40 hover:border-accent/25'}`}>
+                  className={`text-[10px] px-2.5 py-1.5 rounded-lg border transition-all ${showCost ? 'bg-amber-500/10 border-amber-400/30 text-amber-300' : 'border-border/20 text-muted/40 hover:border-amber-400/25'}`}>
                   💲 Cost
                 </button>
                 <TimeframePicker compact value={activeProfile.timeframeDays || 2} onChange={(v) => {
@@ -2097,7 +2097,7 @@ export default function AutoScanPage({ addFavorite, isFavorited }) {
                 }} />
                 <button onClick={() => toggleDisabled(activeTab)}
                   className={`text-[10px] px-2.5 py-1.5 rounded-lg border transition-all ${
-                    isDisabled(activeTab) ? 'bg-rose/15 border-rose/30 text-rose' : 'border-border/20 text-muted/40 hover:border-rose/25 hover:text-rose/60'
+                    isDisabled(activeTab) ? 'bg-red-500/15 border-red-400/30 text-red-400' : 'border-border/20 text-muted/40 hover:border-red-400/25 hover:text-red-400/60'
                   }`}>
                   {isDisabled(activeTab) ? '🔴 Disabled' : '⏸ Disable'}
                 </button>
@@ -2108,9 +2108,9 @@ export default function AutoScanPage({ addFavorite, isFavorited }) {
             <div className="space-y-1.5">
               {activeProfile.savedSearchIds?.length > 0 && (
                 <div className="flex flex-wrap gap-1">
-                  <span className="text-[9px] text-accent/50 uppercase tracking-wider font-bold mr-1 self-center">H Searches</span>
+                  <span className="text-[9px] text-amber-400/50 uppercase tracking-wider font-bold mr-1 self-center">H Searches</span>
                   {activeProfile.savedSearchIds.map(s => (
-                    <span key={s.id} className="text-[10px] px-1.5 py-0.5 rounded bg-accent/8 text-accent/70 border border-accent/15">
+                    <span key={s.id} className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/8 text-amber-300/70 border border-amber-400/15">
                       {s.category || s.name}
                     </span>
                   ))}
@@ -2119,13 +2119,13 @@ export default function AutoScanPage({ addFavorite, isFavorited }) {
               {activeProfile.sectors?.length > 0 && (
                 <div className="flex flex-wrap gap-1">
                   <span className="text-[9px] text-muted/40 uppercase tracking-wider font-bold mr-1 self-center">Sectors</span>
-                  {activeProfile.sectors.map(s => <span key={s} className="text-[10px] px-1.5 py-0.5 rounded bg-bo/8 text-bo/70 border border-bo/15">{s}</span>)}
+                  {activeProfile.sectors.map(s => <span key={s} className="text-[10px] px-1.5 py-0.5 rounded bg-sky-500/8 text-sky-300/70 border border-sky-400/15">{s}</span>)}
                 </div>
               )}
               {activeProfile.stages?.length > 0 && (
                 <div className="flex flex-wrap gap-1">
                   <span className="text-[9px] text-muted/40 uppercase tracking-wider font-bold mr-1 self-center">Stage</span>
-                  {activeProfile.stages.map(s => <span key={s} className="text-[10px] px-1.5 py-0.5 rounded bg-sm/8 text-sm/70 border border-sm/15">{s}</span>)}
+                  {activeProfile.stages.map(s => <span key={s} className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/8 text-emerald-300/70 border border-emerald-400/15">{s}</span>)}
                 </div>
               )}
               <div className="flex flex-wrap gap-2 text-[10px] text-muted/40">
@@ -2147,10 +2147,10 @@ export default function AutoScanPage({ addFavorite, isFavorited }) {
                 }, 0);
                 return (
                   <div className="flex items-center gap-3 pt-1 border-t border-border/10 mt-1">
-                    <span className="text-[9px] text-accent/50 uppercase tracking-wider font-bold">{activePerson?.name}'s Costs</span>
+                    <span className="text-[9px] text-amber-400/50 uppercase tracking-wider font-bold">{activePerson?.name}'s Costs</span>
                     <span className="text-[9px] text-muted/40">This scan: {tierLabel} · every {activeProfile?.timeframeDays || 1}d</span>
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-accent/8 text-accent/70 border border-accent/15">Daily: ~${dailyCost.toFixed(2)}</span>
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-accent/8 text-accent/70 border border-accent/15">Weekly: ~${(dailyCost * 7).toFixed(2)}</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/8 text-amber-300/70 border border-amber-400/15">Daily: ~${dailyCost.toFixed(2)}</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/8 text-amber-300/70 border border-amber-400/15">Weekly: ~${(dailyCost * 7).toFixed(2)}</span>
                     <span className="text-[9px] text-muted/30">{profiles.length} scan{profiles.length !== 1 ? 's' : ''}</span>
                   </div>
                 );
@@ -2166,14 +2166,14 @@ export default function AutoScanPage({ addFavorite, isFavorited }) {
             </div>
             <input type="text" value={activeProfile.keywords || ''} placeholder="Priority: e.g. crypto, betting, exchange, AI agent, robotics"
               onChange={e => handleSaveProfile({ ...activeProfile, keywords: e.target.value, updatedAt: new Date().toISOString() })}
-              className="w-full bg-ink/40 border border-border/20 rounded-lg px-3 py-2 text-[11px] text-bright outline-none focus:border-bo/30 placeholder:text-bright/60" />
+              className="w-full bg-ink/40 border border-border/20 rounded-lg px-3 py-2 text-[11px] text-bright outline-none focus:border-sky-400/30 placeholder:text-white/60" />
             <input type="text" value={activeProfile.antiKeywords || ''} placeholder="Exclude: e.g. consulting, NFT collection, metaverse"
               onChange={e => handleSaveProfile({ ...activeProfile, antiKeywords: e.target.value, updatedAt: new Date().toISOString() })}
-              className="w-full bg-ink/40 border border-border/20 rounded-lg px-3 py-2 text-[11px] text-bright outline-none focus:border-bo/30 placeholder:text-bright/60" />
+              className="w-full bg-ink/40 border border-border/20 rounded-lg px-3 py-2 text-[11px] text-bright outline-none focus:border-sky-400/30 placeholder:text-white/60" />
             <textarea value={activeProfile.notes || ''} placeholder="Notes for Opus: e.g. first-time founders, val <$25M, priority on crypto infra..."
               onChange={e => handleSaveProfile({ ...activeProfile, notes: e.target.value, updatedAt: new Date().toISOString() })}
               rows={2}
-              className="w-full bg-ink/40 border border-border/20 rounded-lg px-3 py-2 text-[11px] text-bright outline-none focus:border-bo/30 resize-none leading-relaxed placeholder:text-bright/60" />
+              className="w-full bg-ink/40 border border-border/20 rounded-lg px-3 py-2 text-[11px] text-bright outline-none focus:border-sky-400/30 resize-none leading-relaxed placeholder:text-white/60" />
           </div>
 
           {/* Harmonic Saved Searches — below keywords */}
@@ -2197,25 +2197,25 @@ export default function AutoScanPage({ addFavorite, isFavorited }) {
             </div>
           )}
           {showCost && (
-            <div className="bg-ink/20 border border-accent/15 rounded-xl p-4 space-y-3">
-              <p className="text-[10px] text-accent/50 uppercase tracking-wider font-bold">Default Cost Tier — {activePerson?.name || activeTab}</p>
+            <div className="bg-ink/20 border border-amber-400/15 rounded-xl p-4 space-y-3">
+              <p className="text-[10px] text-amber-400/50 uppercase tracking-wider font-bold">Default Cost Tier — {activePerson?.name || activeTab}</p>
               <p className="text-[9px] text-muted/35">Select a default tier for this scan profile. Auto-scans will use this tier.</p>
               {[
-                { id: 'full', label: '🧠 Full', desc: 'Sonnet screen → Opus top 80', badge: 'Best', color: 'border-sm/30 bg-sm/8', textColor: 'text-sm' },
-                { id: 'balanced', label: '⚡ Balanced', desc: 'Sonnet screen → Opus top 20', badge: '-50%', color: 'border-bo/30 bg-bo/8', textColor: 'text-bo' },
-                { id: 'economy', label: '💰 Economy', desc: 'Sonnet-only, deep top 40', badge: '-75%', color: 'border-accent/30 bg-accent/8', textColor: 'text-accent' },
-                { id: 'ultra', label: '🪶 Ultra Light', desc: 'Screen first 200, brief top 20', badge: '-85%', color: 'border-boro/30 bg-boro/8', textColor: 'text-boro' },
-                { id: 'micro', label: '⚡ Micro', desc: 'Quick screen first 100 only', badge: '-96%', color: 'border-rose/30 bg-rose/8', textColor: 'text-rose' },
+                { id: 'full', label: '🧠 Full', desc: 'Sonnet screen → Opus top 80', badge: 'Best', color: 'border-emerald-400/30 bg-emerald-500/8', textColor: 'text-emerald-400' },
+                { id: 'balanced', label: '⚡ Balanced', desc: 'Sonnet screen → Opus top 20', badge: '-50%', color: 'border-sky-400/30 bg-sky-500/8', textColor: 'text-sky-400' },
+                { id: 'economy', label: '💰 Economy', desc: 'Sonnet-only, deep top 40', badge: '-75%', color: 'border-amber-400/30 bg-amber-500/8', textColor: 'text-amber-400' },
+                { id: 'ultra', label: '🪶 Ultra Light', desc: 'Screen first 200, brief top 20', badge: '-85%', color: 'border-violet-400/30 bg-violet-500/8', textColor: 'text-violet-400' },
+                { id: 'micro', label: '⚡ Micro', desc: 'Quick screen first 100 only', badge: '-96%', color: 'border-pink-400/30 bg-pink-500/8', textColor: 'text-pink-400' },
               ].map(t => {
                 const isSelected = (activeProfile?.defaultTier || 'full') === t.id;
                 return (
                   <button key={t.id} onClick={() => handleSaveProfile({ ...activeProfile, defaultTier: t.id })}
-                    className={`w-full text-left px-4 py-3 rounded-xl border transition-all ${t.color} ${isSelected ? 'ring-1 ring-white/15' : 'hover:bg-bright/[0.03]'}`}>
+                    className={`w-full text-left px-4 py-3 rounded-xl border transition-all ${t.color} ${isSelected ? 'ring-1 ring-white/15' : 'hover:bg-white/[0.03]'}`}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className={`text-xs font-bold ${t.textColor}`}>{t.label}</span>
                         <span className={`text-[8px] px-1.5 py-0.5 rounded-full border ${t.color} ${t.textColor} font-medium`}>{t.badge}</span>
-                        {isSelected && <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-bright/10 text-bright/60 font-bold">✓ Default</span>}
+                        {isSelected && <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-white/10 text-bright/60 font-bold">✓ Default</span>}
                       </div>
                       <p className="text-[10px] text-muted/45">{t.desc}</p>
                     </div>
@@ -2258,19 +2258,19 @@ export default function AutoScanPage({ addFavorite, isFavorited }) {
             const t5Time = '1-2min';
 
             const tiers = [
-              { id: 'full', label: '🧠 Full', desc: `Screen all ${n} → Opus top ${t1Opus}`, cost: t1Total, time: `${t1Time}min`, color: 'border-sm/30 bg-sm/8', textColor: 'text-sm', badge: 'Best', warn: null },
-              { id: 'balanced', label: '⚡ Balanced', desc: `Screen all ${n} → Opus top ${t2Opus}`, cost: t2Total, time: `${t2Time}min`, color: 'border-bo/30 bg-bo/8', textColor: 'text-bo', badge: `-${Math.round((1 - t2Total/t1Total) * 100)}%`, warn: null },
-              { id: 'economy', label: '💰 Economy', desc: `Screen all ${n} → Sonnet deep top 40`, cost: t3Total, time: `${t3Time}min`, color: 'border-accent/30 bg-accent/8', textColor: 'text-accent', badge: `-${Math.round((1 - t3Total/t1Total) * 100)}%`, warn: null },
-              { id: 'ultra', label: '🪶 Ultra Light', desc: `Screen ${Math.min(n, 500)} of ${n} → deep top 20`, cost: t4Total, time: `${t4Time}min`, color: 'border-boro/30 bg-boro/8', textColor: 'text-boro', badge: `-${Math.round((1 - t4Total/t1Total) * 100)}%`, warn: n > 500 ? `${n - 500} companies not analyzed` : null },
-              { id: 'micro', label: '⚡ Micro', desc: `Screen ${Math.min(n, 150)} of ${n} → quick pass only`, cost: t5Total, time: t5Time, color: 'border-rose/30 bg-rose/8', textColor: 'text-rose', badge: `-${Math.round((1 - t5Total/t1Total) * 100)}%`, warn: n > 150 ? `${n - 150} companies not analyzed` : null },
+              { id: 'full', label: '🧠 Full', desc: `Screen all ${n} → Opus top ${t1Opus}`, cost: t1Total, time: `${t1Time}min`, color: 'border-emerald-400/30 bg-emerald-500/8', textColor: 'text-emerald-400', badge: 'Best', warn: null },
+              { id: 'balanced', label: '⚡ Balanced', desc: `Screen all ${n} → Opus top ${t2Opus}`, cost: t2Total, time: `${t2Time}min`, color: 'border-sky-400/30 bg-sky-500/8', textColor: 'text-sky-400', badge: `-${Math.round((1 - t2Total/t1Total) * 100)}%`, warn: null },
+              { id: 'economy', label: '💰 Economy', desc: `Screen all ${n} → Sonnet deep top 40`, cost: t3Total, time: `${t3Time}min`, color: 'border-amber-400/30 bg-amber-500/8', textColor: 'text-amber-400', badge: `-${Math.round((1 - t3Total/t1Total) * 100)}%`, warn: null },
+              { id: 'ultra', label: '🪶 Ultra Light', desc: `Screen ${Math.min(n, 500)} of ${n} → deep top 20`, cost: t4Total, time: `${t4Time}min`, color: 'border-violet-400/30 bg-violet-500/8', textColor: 'text-violet-400', badge: `-${Math.round((1 - t4Total/t1Total) * 100)}%`, warn: n > 500 ? `${n - 500} companies not analyzed` : null },
+              { id: 'micro', label: '⚡ Micro', desc: `Screen ${Math.min(n, 150)} of ${n} → quick pass only`, cost: t5Total, time: t5Time, color: 'border-pink-400/30 bg-pink-500/8', textColor: 'text-pink-400', badge: `-${Math.round((1 - t5Total/t1Total) * 100)}%`, warn: n > 150 ? `${n - 150} companies not analyzed` : null },
             ];
 
             return (
-              <div className="bg-accent/5 border-2 border-accent/30 rounded-xl p-4 space-y-3">
+              <div className="bg-amber-500/5 border-2 border-amber-400/30 rounded-xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-lg">💰</span>
-                    <p className="text-sm font-bold text-accent">Scan Options — {n} companies</p>
+                    <p className="text-sm font-bold text-amber-300">Scan Options — {n} companies</p>
                   </div>
                   <button onClick={() => setCostConfirm(null)} className="text-muted/40 hover:text-bright/60 text-xs">✕</button>
                 </div>
@@ -2283,16 +2283,16 @@ export default function AutoScanPage({ addFavorite, isFavorited }) {
                         // Just select the tier — don't run scan yet
                         handleSaveProfile({ ...activeProfile, defaultTier: t.id });
                         setCostConfirm({ ...costConfirm, _selectedTier: t.id });
-                      }} className={`w-full text-left px-4 py-3 rounded-xl border transition-all group ${isSelected ? t.color + ' ring-2 ring-white/20' : t.color + ' hover:bg-bright/[0.03]'}`}>
+                      }} className={`w-full text-left px-4 py-3 rounded-xl border transition-all group ${isSelected ? t.color + ' ring-2 ring-white/20' : t.color + ' hover:bg-white/[0.03]'}`}>
                         <div className="flex items-center justify-between">
                           <div>
                             <div className="flex items-center gap-2">
                               <span className={`text-xs font-bold ${t.textColor}`}>{t.label}</span>
                               <span className={`text-[8px] px-1.5 py-0.5 rounded-full border ${t.color} ${t.textColor} font-medium`}>{t.badge}</span>
-                              {isSelected && <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-bright/10 text-bright/60 font-bold">✓ Selected</span>}
+                              {isSelected && <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-white/10 text-bright/60 font-bold">✓ Selected</span>}
                             </div>
                             <p className="text-[10px] text-muted/45 mt-0.5">{t.desc}</p>
-                            {t.warn && <p className="text-[9px] text-rose/70 mt-0.5">⚠️ {t.warn}</p>}
+                            {t.warn && <p className="text-[9px] text-red-400/70 mt-0.5">⚠️ {t.warn}</p>}
                           </div>
                           <div className="text-right">
                             <p className={`text-sm font-bold ${t.textColor}`}>${t.cost}</p>
@@ -2311,7 +2311,7 @@ export default function AutoScanPage({ addFavorite, isFavorited }) {
                     setScanningMode(mode);
                     setScanResults(prev => ({ ...prev, [activeTab]: null }));
                     runScan(activeTab, { ...profile, scanTier: tier }, { mode: 'daily' });
-                  }} className="flex-1 py-3 rounded-xl bg-sm/20 border-2 border-sm/40 text-sm font-bold text-sm hover:bg-sm/30 transition-all active:scale-[0.98]">
+                  }} className="flex-1 py-3 rounded-xl bg-emerald-500/20 border-2 border-emerald-400/40 text-emerald-400 font-bold text-sm hover:bg-emerald-500/30 transition-all active:scale-[0.98]">
                     ✓ Run Scan
                   </button>
                   <button onClick={() => setCostConfirm(null)} className="px-6 py-3 rounded-xl border border-border/30 text-muted/50 text-sm hover:text-bright/60 transition-all">
@@ -2350,7 +2350,7 @@ export default function AutoScanPage({ addFavorite, isFavorited }) {
               const estMinutes = Math.max(1, Math.round((estCompanies / 60) * 0.3 + (opusSurvivors / 40) * 1.2));
               setCostConfirm({ mode: 'savedSearch', profile: p, estimatedCount: estCompanies, estimatedCost: totalCost, sonnetCost, opusCost, estimatedTime: `${estMinutes}min` });
             }} disabled={isScanning}
-              className={`flex-1 py-4 rounded-xl font-bold active:scale-[0.98] transition-all duration-200 text-bright text-center ${isScanning && effectiveScanMode !== 'savedSearch' ? 'opacity-30' : isScanning ? 'opacity-80' : ''}`}
+              className={`flex-1 py-4 rounded-xl font-bold active:scale-[0.98] transition-all duration-200 text-white text-center ${isScanning && effectiveScanMode !== 'savedSearch' ? 'opacity-30' : isScanning ? 'opacity-80' : ''}`}
               style={{ background: 'linear-gradient(135deg, #78350f 0%, #f59e0b 50%, #d97706 100%)', boxShadow: '0 4px 20px rgba(245,158,11,0.25)' }}>
               {isScanning && effectiveScanMode === 'savedSearch' ? (
                 <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Scanning...</span>
@@ -2373,7 +2373,7 @@ export default function AutoScanPage({ addFavorite, isFavorited }) {
               const totalCost = (parseFloat(sonnetCost) + parseFloat(opusCost)).toFixed(2);
               setCostConfirm({ mode: 'keywords', profile: p, estimatedCount: estCompanies, estimatedCost: totalCost, sonnetCost, opusCost, estimatedTime: '1-2min' });
             }} disabled={isScanning}
-              className={`flex-1 py-4 rounded-xl font-bold active:scale-[0.98] transition-all duration-200 text-bright text-center ${isScanning && effectiveScanMode !== 'keywords' ? 'opacity-30' : isScanning ? 'opacity-80' : ''}`}
+              className={`flex-1 py-4 rounded-xl font-bold active:scale-[0.98] transition-all duration-200 text-white text-center ${isScanning && effectiveScanMode !== 'keywords' ? 'opacity-30' : isScanning ? 'opacity-80' : ''}`}
               style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #3b82f6 50%, #6366f1 100%)', boxShadow: '0 4px 20px rgba(59,130,246,0.25)' }}>
               {isScanning && effectiveScanMode === 'keywords' ? (
                 <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Scanning...</span>
@@ -2392,7 +2392,7 @@ export default function AutoScanPage({ addFavorite, isFavorited }) {
             try {
               return <ResultsPanel currentResults={currentResults} dismissedSet={dismissedSet} addFavorite={addFavorite} isFavorited={isFavorited} dismissCompany={dismissCompany} activeTab={activeTab} />;
             } catch (e) {
-              return <div className="bg-rose/8 border border-rose/15 rounded-xl p-3"><p className="text-rose/80 text-xs">Render error: {e.message}</p></div>;
+              return <div className="bg-red-500/8 border border-red-500/15 rounded-xl p-3"><p className="text-red-400/80 text-xs">Render error: {e.message}</p></div>;
             }
           })()}
 
@@ -2404,7 +2404,7 @@ export default function AutoScanPage({ addFavorite, isFavorited }) {
       ) : (
         <div className="text-center py-8">
           <p className="text-muted/40 text-sm mb-4">No scan profile yet</p>
-          <button onClick={handleNewProfile} className="px-6 py-3 rounded-xl bg-bo text-bright font-bold text-sm shadow-md shadow-bo/20">+ Create First Scan</button>
+          <button onClick={handleNewProfile} className="px-6 py-3 rounded-xl bg-sky-500 text-white font-bold text-sm shadow-md shadow-sky-500/20">+ Create First Scan</button>
         </div>
       )}
     </div>

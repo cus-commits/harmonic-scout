@@ -546,7 +546,7 @@ export default function AirtablePage() {
             Enter
           </button>
         </div>
-        {pwError && <p className="text-red-400 text-[11px] mt-2">Incorrect password</p>}
+        {pwError && <p className="text-rose text-[11px] mt-2">Incorrect password</p>}
       </div>
     );
   }
@@ -665,18 +665,18 @@ export default function AirtablePage() {
 
       {/* Serena notification — missing reachouts */}
       {serenaMissing && !serenaDismissed && (
-        <div className="mb-2 p-3 bg-red-500/8 border border-red-400/20 rounded-xl relative">
+        <div className="mb-2 p-3 bg-rose/8 border border-red-400/20 rounded-xl relative">
           <button onClick={() => setSerenaDismissed(true)} className="absolute top-2 right-2 text-muted/30 hover:text-muted/60 text-sm">×</button>
-          <p className="text-[11px] text-red-300/80 font-bold mb-2">📞 Serena — Reachout reminders</p>
+          <p className="text-[11px] text-rose/80 font-bold mb-2">📞 Serena — Reachout reminders</p>
           {serenaMissing.sm.length > 0 && (
             <div className="mb-1.5">
-              <p className="text-[9px] text-emerald-400/70 font-bold uppercase tracking-wider">🏆 SM — Not reached in 1+ week ({serenaMissing.sm.length})</p>
+              <p className="text-[9px] text-sm/70 font-bold uppercase tracking-wider">🏆 SM — Not reached in 1+ week ({serenaMissing.sm.length})</p>
               <p className="text-[10px] text-bright/50 mt-0.5">{serenaMissing.sm.join(' · ')}</p>
             </div>
           )}
           {serenaMissing.boro.length > 0 && (
             <div>
-              <p className="text-[9px] text-violet-400/70 font-bold uppercase tracking-wider">BORO — Not reached in 1+ month ({serenaMissing.boro.length})</p>
+              <p className="text-[9px] text-boro/70 font-bold uppercase tracking-wider">BORO — Not reached in 1+ month ({serenaMissing.boro.length})</p>
               <p className="text-[10px] text-bright/50 mt-0.5">{serenaMissing.boro.join(' · ')}</p>
             </div>
           )}
@@ -717,12 +717,12 @@ export default function AirtablePage() {
             return (
               <div className="mb-3 space-y-2">
                 {missingSM.length > 0 && (
-                  <div className="p-2.5 bg-red-500/5 border border-red-400/15 rounded-xl">
-                    <p className="text-[9px] text-red-400/70 font-bold uppercase tracking-wider mb-1.5">⚠ 🏆 SM — No reachout in 1+ week ({missingSM.length})</p>
+                  <div className="p-2.5 bg-rose/5 border border-red-400/15 rounded-xl">
+                    <p className="text-[9px] text-rose/70 font-bold uppercase tracking-wider mb-1.5">⚠ 🏆 SM — No reachout in 1+ week ({missingSM.length})</p>
                     <div className="flex flex-wrap gap-1.5">
                       {missingSM.map((c, i) => (
                         <button key={i} onClick={() => setReachoutModal({ company: c.company, stage: c.crm_stage, notes: c.reachout_notes || '', loading: false })}
-                          className="text-[9px] px-2 py-0.5 rounded-full border border-emerald-400/20 text-emerald-300/70 hover:bg-white/5">
+                          className="text-[9px] px-2 py-0.5 rounded-full border border-sm/20 text-sm/70 hover:bg-surface/30">
                           {c.company}
                         </button>
                       ))}
@@ -735,7 +735,7 @@ export default function AirtablePage() {
                     <div className="flex flex-wrap gap-1.5">
                       {missingBORO.map((c, i) => (
                         <button key={i} onClick={() => setReachoutModal({ company: c.company, stage: c.crm_stage, notes: c.reachout_notes || '', loading: false })}
-                          className="text-[9px] px-2 py-0.5 rounded-full border border-violet-400/20 text-violet-300/70 hover:bg-white/5">
+                          className="text-[9px] px-2 py-0.5 rounded-full border border-boro/20 text-boro/70 hover:bg-surface/30">
                           {c.company}
                         </button>
                       ))}
@@ -791,7 +791,7 @@ export default function AirtablePage() {
                     <div key={i} className="flex items-center gap-3 px-3 py-1.5 rounded-lg border border-border/10 bg-surface/30 hover:bg-surface/50 transition-colors cursor-pointer"
                       onClick={() => setReachoutModal({ company: e.company, stage: e.stage, notes: e.notes || '', loading: false })}>
                       <div className="w-[70px] flex-shrink-0">
-                        <span className={`text-[10px] font-mono block ${e.date ? 'text-bright/60' : 'text-red-400/50'}`}>{dateStr}</span>
+                        <span className={`text-[10px] font-mono block ${e.date ? 'text-bright/60' : 'text-rose/50'}`}>{dateStr}</span>
                         {timeStr && <span className="text-[8px] text-muted/30 block">{timeStr}</span>}
                       </div>
                       <span className="w-[100px] text-[10px] font-semibold text-bright truncate flex-shrink-0">{e.company}</span>
@@ -915,7 +915,7 @@ export default function AirtablePage() {
 
                     {/* Twitter warning */}
                     {twitterWarn && (
-                      <div className={`text-[9px] rounded px-2 py-0.5 font-semibold inline-block ${ta.days_since > 30 ? 'text-red-400/70 bg-red-500/10 border border-red-500/15' : 'text-yellow-400/70 bg-yellow-500/8 border border-yellow-500/12'}`}>
+                      <div className={`text-[9px] rounded px-2 py-0.5 font-semibold inline-block ${ta.days_since > 30 ? 'text-rose/70 bg-rose/10 border border-rose/15' : 'text-accent/70 bg-accent/8 border border-accent/12'}`}>
                         ⚠ 𝕏 {ta.days_since > 30 ? 'inactive' : 'quiet'} {ta.days_since}d
                       </div>
                     )}
@@ -1010,8 +1010,8 @@ export default function AirtablePage() {
       {/* Toast notification */}
       {toast && (
         <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-[300] px-4 py-2.5 rounded-xl shadow-xl border text-sm font-medium max-w-[90vw] flex items-center gap-2 animate-[fadeIn_0.2s] ${
-          toast.type === 'error' ? 'bg-red-500/20 border-red-500/30 text-red-300' :
-          toast.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-300' :
+          toast.type === 'error' ? 'bg-rose/20 border-rose/30 text-rose' :
+          toast.type === 'success' ? 'bg-sm/20 border-sm/30 text-sm' :
           'bg-card border-accent/25 text-bright/80'
         }`}>
           <span>{toast.type === 'error' ? '✗' : toast.type === 'success' ? '✓' : 'ℹ'}</span>
@@ -1199,7 +1199,7 @@ export default function AirtablePage() {
                   return entries.map((e, i) => (
                     <div key={i} className="py-3 border-b border-border/20 last:border-0">
                       <div className="flex items-center gap-2 mb-1.5">
-                        <span className="text-[11px] font-mono font-semibold text-sky-400/80">{e.date ? e.date.replace(' EST', '') : 'No date'}</span>
+                        <span className="text-[11px] font-mono font-semibold text-bo/80">{e.date ? e.date.replace(' EST', '') : 'No date'}</span>
                         {e.author && <span className="text-[10px] text-amber-400/60 font-medium">— {e.author}</span>}
                       </div>
                       <p className="text-sm text-bright/80 leading-relaxed whitespace-pre-wrap">{e.text}</p>

@@ -121,15 +121,15 @@ function MultiSelect({ options, selected, onChange }) {
 
 function TweetCard({ tweet, addFavorite, isFavorited }) {
   const signalColors = {
-    HIGH: 'bg-sm/15 text-sm border-sm/30',
-    MEDIUM: 'bg-accent/15 text-accent border-accent/30',
-    LOW: 'bg-rose/10 text-rose/60 border-rose/20',
+    HIGH: 'bg-green-500/15 text-green-400 border-green-500/30',
+    MEDIUM: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
+    LOW: 'bg-red-500/10 text-red-400/60 border-red-500/20',
   };
   const signalEmoji = { HIGH: '🟢', MEDIUM: '🟡', LOW: '🔴' };
   const sig = tweet.signal || 'LOW';
 
   return (
-    <div className={`rounded-xl border p-3.5 space-y-2 fade-in ${sig === 'HIGH' ? 'border-sm/40 bg-sm/5' : sig === 'MEDIUM' ? 'border-accent/30 bg-accent/5' : 'border-border/40 bg-surface/60'}`}>
+    <div className={`rounded-xl border p-3.5 space-y-2 fade-in ${sig === 'HIGH' ? 'border-green-500/40 bg-green-500/5' : sig === 'MEDIUM' ? 'border-yellow-500/30 bg-yellow-500/5' : 'border-border/40 bg-surface/60'}`}>
       <div className="flex items-start gap-3">
         {tweet.pfp && (
           <img src={tweet.pfp} alt="" className="w-8 h-8 rounded-full flex-shrink-0" />
@@ -139,7 +139,7 @@ function TweetCard({ tweet, addFavorite, isFavorited }) {
             <span className="font-bold text-bright text-sm">{tweet.author}</span>
             <span className="text-[10px] text-muted">@{tweet.username}</span>
             {tweet.verified && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-bo/15 text-bo border border-bo/25">✓</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-500/25">✓</span>
             )}
             <span className={`text-[10px] px-1.5 py-0.5 rounded border font-semibold ${signalColors[sig]}`}>
               {signalEmoji[sig]} {sig}
@@ -154,7 +154,7 @@ function TweetCard({ tweet, addFavorite, isFavorited }) {
         )}
         {addFavorite && (
           <button onClick={() => { const cn = tweet.companyName || tweet.author; const s = isFavorited && isFavorited(cn); if (!s) addFavorite({ name: cn, description: tweet.text?.slice(0, 200), website: tweet.tweetUrl }); }}
-            className={`flex-shrink-0 text-base ${isFavorited && isFavorited(tweet.companyName || tweet.author) ? 'text-bo' : 'text-muted/40 hover:text-bo'}`}>
+            className={`flex-shrink-0 text-base ${isFavorited && isFavorited(tweet.companyName || tweet.author) ? 'text-sky-400' : 'text-muted/40 hover:text-sky-400'}`}>
             {isFavorited && isFavorited(tweet.companyName || tweet.author) ? '★' : '☆'}
           </button>
         )}
@@ -199,7 +199,7 @@ function TweetCard({ tweet, addFavorite, isFavorited }) {
           </div>
           <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-muted">
             {tweet.harmonic.name && <span>🏢 {tweet.harmonic.name}</span>}
-            {tweet.harmonic.fundingTotal ? <span className="text-accent font-medium">💰 ${(tweet.harmonic.fundingTotal / 1e6).toFixed(1)}M raised</span> : <span className="text-sm">💰 No funding found</span>}
+            {tweet.harmonic.fundingTotal ? <span className="text-amber-400 font-medium">💰 ${(tweet.harmonic.fundingTotal / 1e6).toFixed(1)}M raised</span> : <span className="text-green-400">💰 No funding found</span>}
             {tweet.harmonic.lastRound && <span>📋 {tweet.harmonic.lastRound}{tweet.harmonic.lastRoundDate ? ` (${tweet.harmonic.lastRoundDate.slice(0, 7)})` : ''}</span>}
             {tweet.harmonic.headcount && <span>👥 ~{tweet.harmonic.headcount} people</span>}
             {tweet.harmonic.website && (
@@ -308,10 +308,10 @@ export default function TwitterPage({ addFavorite, isFavorited }) {
   };
 
   return (
-    <div className="min-h-screen max-w-[1080px] mx-auto px-7 pt-6 pb-28 fade-in">
+    <div className="min-h-screen max-w-4xl mx-auto px-8 pt-4 pb-24">
       <div className="mb-6 text-center">
         <h1 className="text-xl font-bold tracking-tight">
-          <span className="font-serif italic font-semibold text-accent">dc</span> X / Twitter Scanner
+          <span className="text-accent" style={{ fontFamily: "'Courier New', monospace" }}>dc</span> X / Twitter Scanner
         </h1>
         <p className="text-muted text-xs mt-1">Find founders and builders on Crypto Twitter</p>
       </div>
@@ -346,7 +346,7 @@ export default function TwitterPage({ addFavorite, isFavorited }) {
                   </div>
                   <span
                     onClick={(e) => handleDeleteSearch(s.name, e)}
-                    className="text-muted hover:text-rose opacity-0 group-hover:opacity-100 transition-opacity ml-2 text-sm flex-shrink-0"
+                    className="text-muted hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity ml-2 text-sm flex-shrink-0"
                   >✕</span>
                 </button>
               ))}
@@ -420,7 +420,7 @@ export default function TwitterPage({ addFavorite, isFavorited }) {
       <button
         onClick={handleScan}
         disabled={scanning}
-        className="w-full py-3 rounded-xl bg-gradient-to-r from-accent to-sm text-ink font-bold text-sm active:scale-[0.98] transition-all duration-200 disabled:opacity-50 mb-4 shadow-lg shadow-accent/20 hover:shadow-accent/40 hover:brightness-110"
+        className="w-full py-3 rounded-xl bg-gradient-to-r from-accent to-emerald-400 text-ink font-bold text-sm active:scale-[0.98] transition-all duration-200 disabled:opacity-50 mb-4 shadow-lg shadow-accent/20 hover:shadow-accent/40 hover:brightness-110"
       >
         {scanning ? (
           <span className="flex items-center justify-center gap-2">
@@ -437,7 +437,7 @@ export default function TwitterPage({ addFavorite, isFavorited }) {
         <div className="space-y-3 fade-in">
           {results.error && (
             <div className="text-center py-4">
-              <p className="text-rose text-sm">{results.error}</p>
+              <p className="text-red-400 text-sm">{results.error}</p>
             </div>
           )}
 

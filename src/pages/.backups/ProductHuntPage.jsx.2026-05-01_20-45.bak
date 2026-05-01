@@ -21,12 +21,12 @@ function timeSince(dateStr) {
 function PostCard({ post, addFavorite, isFavorited }) {
   const sig = post.signal || 'LOW';
   const signalColors = {
-    HIGH: 'bg-sm/15 text-sm border-sm/30',
-    MEDIUM: 'bg-accent/15 text-accent border-accent/30',
-    LOW: 'bg-rose/10 text-rose/60 border-rose/20',
+    HIGH: 'bg-green-500/15 text-green-400 border-green-500/30',
+    MEDIUM: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
+    LOW: 'bg-red-500/10 text-red-400/60 border-red-500/20',
   };
   return (
-    <div className={`bg-surface/60 border rounded-xl p-3 space-y-2 ${sig === 'HIGH' ? 'border-sm/30' : sig === 'MEDIUM' ? 'border-accent/20' : 'border-border/20'}`}>
+    <div className={`bg-surface/60 border rounded-xl p-3 space-y-2 ${sig === 'HIGH' ? 'border-green-500/30' : sig === 'MEDIUM' ? 'border-yellow-500/20' : 'border-border/20'}`}>
       <div className="flex items-start gap-2.5">
         {post.pfp && <img src={post.pfp} alt="" className="w-10 h-10 rounded-lg bg-ink flex-shrink-0" onError={e => { e.target.style.display = 'none'; }} />}
         <div className="flex-1 min-w-0">
@@ -35,7 +35,7 @@ function PostCard({ post, addFavorite, isFavorited }) {
               {sig === 'HIGH' ? '🟢' : sig === 'MEDIUM' ? '🟡' : '🔴'} {sig}
             </span>
             {post.companyName && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded bg-accent/10 text-accent border border-accent/20 font-medium">
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-400 border border-orange-500/20 font-medium">
                 🏢 {post.companyName}
               </span>
             )}
@@ -45,7 +45,7 @@ function PostCard({ post, addFavorite, isFavorited }) {
         </div>
         {addFavorite && (
           <button onClick={() => { const cn = post.companyName || post.title; const s = isFavorited && isFavorited(cn); if (!s) addFavorite({ name: cn, description: post.text?.slice(0, 200), website: post.url }); }}
-            className={`flex-shrink-0 text-base ${isFavorited && isFavorited(post.companyName || post.title) ? 'text-bo' : 'text-muted/40 hover:text-bo'}`}>
+            className={`flex-shrink-0 text-base ${isFavorited && isFavorited(post.companyName || post.title) ? 'text-sky-400' : 'text-muted/40 hover:text-sky-400'}`}>
             {isFavorited && isFavorited(post.companyName || post.title) ? '★' : '☆'}
           </button>
         )}
@@ -63,7 +63,7 @@ function PostCard({ post, addFavorite, isFavorited }) {
         </a>
       )}
       {post.meta?.website && post.meta.website !== post.url && (
-        <a href={post.meta.website.startsWith('http') ? post.meta.website : `https://${post.meta.website}`} target="_blank" rel="noopener" className="text-[10px] text-accent hover:underline truncate block">
+        <a href={post.meta.website.startsWith('http') ? post.meta.website : `https://${post.meta.website}`} target="_blank" rel="noopener" className="text-[10px] text-orange-400 hover:underline truncate block">
           🌐 {post.meta.website.replace(/^https?:\/\//, '').slice(0, 40)}
         </a>
       )}
@@ -133,11 +133,11 @@ export default function ProductHuntPage({ addFavorite, isFavorited }) {
   };
 
   return (
-    <div className="min-h-screen max-w-[1080px] mx-auto px-7 pt-6 pb-28 fade-in">
+    <div className="min-h-screen max-w-4xl mx-auto px-8 pt-4 pb-24">
       <div className="mb-6 text-center">
         <h1 className="text-xl font-bold tracking-tight">
-          <span className="font-serif italic font-semibold text-accent">dc</span>{' '}
-          <span className="text-accent">Product Hunt</span> Scanner
+          <span className="text-accent" style={{ fontFamily: "'Courier New', monospace" }}>dc</span>{' '}
+          <span className="text-orange-400">Product Hunt</span> Scanner
         </h1>
         <p className="text-muted text-xs mt-1">Find new launches and early-stage products</p>
       </div>
@@ -155,7 +155,7 @@ export default function ProductHuntPage({ addFavorite, isFavorited }) {
               const active = topics.includes(t);
               return (
                 <button key={t} onClick={() => setTopics(active ? topics.filter(x => x !== t) : [...topics, t])}
-                  className={`text-[11px] px-2.5 py-1.5 rounded-lg border transition-all ${active ? 'bg-accent/15 border-accent/40 text-accent font-medium' : 'bg-surface/50 border-border/30 text-muted hover:border-border/60'}`}>
+                  className={`text-[11px] px-2.5 py-1.5 rounded-lg border transition-all ${active ? 'bg-orange-500/15 border-orange-500/40 text-orange-400 font-medium' : 'bg-surface/50 border-border/30 text-muted hover:border-border/60'}`}>
                   {t}
                 </button>
               );
@@ -167,12 +167,12 @@ export default function ProductHuntPage({ addFavorite, isFavorited }) {
           <h3 className="text-sm font-bold text-bright">Custom keywords (optional)</h3>
           <input type="text" value={customKeywords} onChange={e => setCustomKeywords(e.target.value)}
             placeholder="e.g. betting, prediction market, DeFi"
-            className="w-full bg-ink border border-border/40 rounded-lg px-3 py-2 text-xs text-bright outline-none focus:border-accent/40" />
+            className="w-full bg-ink border border-border/40 rounded-lg px-3 py-2 text-xs text-bright outline-none focus:border-orange-500/40" />
         </div>
       </div>
 
       <button onClick={handleScan} disabled={scanning}
-        className="w-full py-3 rounded-xl bg-gradient-to-r from-accent to-accent text-ink font-bold text-sm active:scale-[0.98] transition-all duration-200 disabled:opacity-50 mb-4 shadow-lg shadow-accent/20">
+        className="w-full py-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-400 text-ink font-bold text-sm active:scale-[0.98] transition-all duration-200 disabled:opacity-50 mb-4 shadow-lg shadow-orange-500/20">
         {scanning ? (
           <span className="flex items-center justify-center gap-2">
             <span className="animate-spin">🐱</span> Scanning Product Hunt...
@@ -183,12 +183,12 @@ export default function ProductHuntPage({ addFavorite, isFavorited }) {
       {results && (
         <div className="space-y-3">
           {results.error && (
-            <div className="bg-rose/10 border border-rose/20 rounded-xl p-3">
-              <p className="text-rose text-sm">{results.error}</p>
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3">
+              <p className="text-red-400 text-sm">{results.error}</p>
             </div>
           )}
           {results.analysis && (
-            <div className="bg-accent/5 border border-accent/15 rounded-xl p-3">
+            <div className="bg-orange-500/5 border border-orange-500/15 rounded-xl p-3">
               <p className="text-xs text-bright/90 leading-relaxed whitespace-pre-wrap">{results.analysis}</p>
             </div>
           )}

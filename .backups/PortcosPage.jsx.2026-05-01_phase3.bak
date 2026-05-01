@@ -33,12 +33,12 @@ function WebGrowthBadge({ company }) {
   const harmonicUrl = company.id && typeof company.id === 'number' ? `https://console.harmonic.ai/dashboard/company/${company.id}?selectedTab=TRACTION` : null;
   const badges = [];
   if (g30 !== null && g30 !== undefined) {
-    if (g30 >= 50) badges.push({ label: `🌐▲${Math.round(g30)}%`, period: '1mo', color: 'bg-sm/15 text-sm border-sm/25', url: harmonicUrl });
-    else if (g30 <= -30) badges.push({ label: `🌐▼${Math.abs(Math.round(g30))}%`, period: '1mo', color: 'bg-rose/12 text-rose border-rose/20', url: harmonicUrl });
+    if (g30 >= 50) badges.push({ label: `🌐▲${Math.round(g30)}%`, period: '1mo', color: 'bg-emerald-500/15 text-emerald-400 border-emerald-400/25', url: harmonicUrl });
+    else if (g30 <= -30) badges.push({ label: `🌐▼${Math.abs(Math.round(g30))}%`, period: '1mo', color: 'bg-red-500/12 text-red-400 border-red-400/20', url: harmonicUrl });
   }
   if (g90 !== null && g90 !== undefined) {
-    if (g90 >= 50) badges.push({ label: `🌐▲${Math.round(g90)}%`, period: '3mo', color: 'bg-sm/12 text-sm/70 border-sm/20', url: harmonicUrl });
-    else if (g90 <= -30) badges.push({ label: `🌐▼${Math.abs(Math.round(g90))}%`, period: '3mo', color: 'bg-rose/10 text-rose/70 border-rose/15', url: harmonicUrl });
+    if (g90 >= 50) badges.push({ label: `🌐▲${Math.round(g90)}%`, period: '3mo', color: 'bg-emerald-500/12 text-emerald-300/70 border-emerald-400/20', url: harmonicUrl });
+    else if (g90 <= -30) badges.push({ label: `🌐▼${Math.abs(Math.round(g90))}%`, period: '3mo', color: 'bg-red-500/10 text-red-300/70 border-red-400/15', url: harmonicUrl });
   }
   if (badges.length === 0) return null;
   return badges.map((b, i) => b.url ? (
@@ -109,15 +109,15 @@ export default function PortcosPage({ addFavorite, isFavorited }) {
   }, []);
 
   return (
-    <div className="max-w-[1080px] mx-auto px-7 pt-6 pb-28 fade-in">
+    <div className="max-w-4xl mx-auto px-8 pt-5 pb-4">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="font-serif text-lg font-semibold text-bright">Portfolio Companies</h1>
+          <h1 className="text-lg font-bold text-bright">Portfolio Companies</h1>
           <p className="text-[10px] text-muted/40">{companies.filter(c => !c.notFound).length} matched on Harmonic · {PORTFOLIO.length} total</p>
         </div>
         {loading && (
-          <span className="text-[10px] text-accent/65 flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 border border-accent border-t-transparent rounded-full animate-spin" />
+          <span className="text-[10px] text-amber-400/65 flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 border border-amber-400 border-t-transparent rounded-full animate-spin" />
             {loaded + 1}/{PORTFOLIO.length}: {loadingName}
           </span>
         )}
@@ -128,13 +128,13 @@ export default function PortcosPage({ addFavorite, isFavorited }) {
           if (c.notFound) {
             return (
               <div key={i} className="px-3 py-2.5 rounded-xl border border-border/15 bg-surface/20 flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-rose/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-rose/65 text-xs font-bold">?</span>
+                <div className="w-9 h-9 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0">
+                  <span className="text-red-400/65 text-xs font-bold">?</span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-bright/40">{c.portfolio_name}</p>
                   <p className="text-[9px] text-muted/35">{c.portfolio_domain}</p>
-                  <p className="text-[9px] text-rose/40">Not found on Harmonic</p>
+                  <p className="text-[9px] text-red-400/40">Not found on Harmonic</p>
                 </div>
               </div>
             );
@@ -145,24 +145,24 @@ export default function PortcosPage({ addFavorite, isFavorited }) {
           const funding = ft && typeof ft === 'number' ? (ft >= 1e9 ? `$${(ft/1e9).toFixed(1)}B` : ft >= 1e6 ? `$${(ft/1e6).toFixed(1)}M` : ft >= 1e3 ? `$${(ft/1e3).toFixed(0)}K` : `$${ft}`) : null;
 
           return (
-            <div key={c.id || i} className="px-3 py-3 rounded-xl border border-border/[0.06] hover:bg-white/[0.02] transition-colors" style={{ background: 'rgba(46, 42, 37, 0.55)' }}>
+            <div key={c.id || i} className="px-3 py-3 rounded-xl border border-border/18 bg-surface/30 hover:bg-white/[0.02] transition-colors">
               <div className="flex items-start gap-3">
                 {c.logo_url ? (
-                  <img src={c.logo_url} alt="" className="w-9 h-9 rounded-[7px] bg-ink-2 flex-shrink-0 object-contain" onError={e => { e.target.style.display='none'; }} />
+                  <img src={c.logo_url} alt="" className="w-9 h-9 rounded-lg bg-ink/60 flex-shrink-0 object-contain" onError={e => { e.target.style.display='none'; }} />
                 ) : (
-                  <div className="w-9 h-9 rounded-lg bg-ink-2 flex items-center justify-center flex-shrink-0">
-                    <span className="font-serif italic font-semibold text-accent text-xs">{(c.name || '?')[0]}</span>
+                  <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                    <span className="text-amber-400 text-xs font-bold">{(c.name || '?')[0]}</span>
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-bold text-bright">{c.name}</span>
                     {c.name !== c.portfolio_name && <span className="text-[8px] text-muted/35">({c.portfolio_name})</span>}
-                    {webUrl && <a href={webUrl} target="_blank" rel="noopener" className="text-bo text-[10px] hover:text-bo/80">🌐</a>}
+                    {webUrl && <a href={webUrl} target="_blank" rel="noopener" className="text-blue-400 text-[10px] hover:text-blue-300">🌐</a>}
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                    {c.stage && <span className="text-[8px] px-1 py-0.5 rounded bg-sm/10 text-sm/65 border border-sm/10">{String(c.stage).replace(/_/g,' ')}</span>}
-                    {funding && <span className="text-[8px] text-bo/65">💰 {funding}</span>}
+                    {c.stage && <span className="text-[8px] px-1 py-0.5 rounded bg-emerald-500/10 text-emerald-300/65 border border-emerald-400/10">{String(c.stage).replace(/_/g,' ')}</span>}
+                    {funding && <span className="text-[8px] text-sky-300/65">💰 {funding}</span>}
                     <WebGrowthBadge company={c} />
                     {c.headcount && <span className="text-[8px] text-muted/35">👥 {c.headcount}</span>}
                     {c.location && <span className="text-[8px] text-muted/40">📍 {c.location}</span>}
@@ -172,11 +172,11 @@ export default function PortcosPage({ addFavorite, isFavorited }) {
               </div>
               {/* Actions */}
               <div className="flex items-center gap-1.5 mt-2 ml-12">
-                {c.id && typeof c.id === "number" && <a href={`/company/${c.id}`} className="text-[8px] px-1.5 py-0.5 rounded bg-rose/10 text-rose border border-rose/15 hover:bg-rose/20 font-bold" title="Company Card">H</a>}<FindSimilar addFavorite={addFavorite} isFavorited={isFavorited} companyId={c.id} companyName={c.name} />
+                {c.id && typeof c.id === "number" && <a href={`/company/${c.id}`} className="text-[8px] px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-400 border border-pink-400/15 hover:bg-pink-500/20 font-bold" title="Company Card">H</a>}<FindSimilar addFavorite={addFavorite} isFavorited={isFavorited} companyId={c.id} companyName={c.name} />
                 {addFavorite && (
                   <button onClick={() => { if (!(isFavorited && isFavorited(c.name))) addFavorite({ name: c.name, description: c.description, website: c.website, logo_url: c.logo_url, funding_total: c.funding_total }); }}
                     className={`text-[8px] px-1.5 py-0.5 rounded border font-medium ${
-                      isFavorited && isFavorited(c.name) ? 'bg-accent/10 text-accent border-accent/15' : 'text-muted/35 border-border/15 hover:text-accent'
+                      isFavorited && isFavorited(c.name) ? 'bg-sky-500/10 text-sky-400 border-sky-400/15' : 'text-muted/35 border-border/15 hover:text-sky-400'
                     }`}>
                     {isFavorited && isFavorited(c.name) ? '★' : '☆'}
                   </button>

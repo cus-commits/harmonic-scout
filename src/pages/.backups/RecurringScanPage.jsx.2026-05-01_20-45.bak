@@ -63,11 +63,11 @@ function loadHScreensProfiles() {
 }
 
 const tierColors = {
-  sky:     { bg: 'bg-bo/10', border: 'border-bo/25', text: 'text-bo', activeBg: 'bg-bo/20', activeBorder: 'border-bo/50' },
-  violet:  { bg: 'bg-boro/10', border: 'border-boro/25', text: 'text-boro', activeBg: 'bg-boro/20', activeBorder: 'border-boro/50' },
-  amber:   { bg: 'bg-accent/10', border: 'border-accent/25', text: 'text-accent', activeBg: 'bg-accent/20', activeBorder: 'border-accent/50' },
-  pink:    { bg: 'bg-rose/10', border: 'border-rose/25', text: 'text-rose', activeBg: 'bg-rose/20', activeBorder: 'border-rose/50' },
-  emerald: { bg: 'bg-sm/10', border: 'border-sm/25', text: 'text-sm', activeBg: 'bg-sm/20', activeBorder: 'border-sm/50' },
+  sky:     { bg: 'bg-sky-500/10', border: 'border-sky-400/25', text: 'text-sky-300', activeBg: 'bg-sky-500/20', activeBorder: 'border-sky-400/50' },
+  violet:  { bg: 'bg-violet-500/10', border: 'border-violet-400/25', text: 'text-violet-300', activeBg: 'bg-violet-500/20', activeBorder: 'border-violet-400/50' },
+  amber:   { bg: 'bg-amber-500/10', border: 'border-amber-400/25', text: 'text-amber-300', activeBg: 'bg-amber-500/20', activeBorder: 'border-amber-400/50' },
+  pink:    { bg: 'bg-pink-500/10', border: 'border-pink-400/25', text: 'text-pink-300', activeBg: 'bg-pink-500/20', activeBorder: 'border-pink-400/50' },
+  emerald: { bg: 'bg-emerald-500/10', border: 'border-emerald-400/25', text: 'text-emerald-300', activeBg: 'bg-emerald-500/20', activeBorder: 'border-emerald-400/50' },
 };
 
 function TierSelector({ selected, onSelect, totalCompanies }) {
@@ -97,7 +97,7 @@ function TierSelector({ selected, onSelect, totalCompanies }) {
         return (
           <button key={t.key} onClick={() => onSelect(t.key)}
             className={`w-full text-left rounded-xl border p-3 transition-all ${
-              isActive ? `${c.activeBg} ${c.activeBorder} ring-1 ring-border/5` : `${c.bg} ${c.border} hover:${c.activeBg}`
+              isActive ? `${c.activeBg} ${c.activeBorder} ring-1 ring-white/5` : `${c.bg} ${c.border} hover:${c.activeBg}`
             }`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -143,11 +143,11 @@ function SearchSelector({ searches, selectedIds, onToggle, onToggleAll }) {
         <div className="flex items-center gap-2">
           <label className="flex items-center gap-1.5 cursor-pointer">
             <input type="checkbox" checked={allSelected} onChange={onToggleAll}
-              className="w-3.5 h-3.5 rounded border-border/30 bg-ink/50 accent-bo" />
+              className="w-3.5 h-3.5 rounded border-border/30 bg-ink/50 accent-sky-400" />
             <span className="text-[10px] text-muted/50 font-medium">All ({searches.length})</span>
           </label>
           <button onClick={() => setExpanded(!expanded)}
-            className="text-[9px] text-bo/50 hover:text-bo font-medium">
+            className="text-[9px] text-sky-400/50 hover:text-sky-300 font-medium">
             {expanded ? '▾ Collapse' : '▸ Select'}
           </button>
         </div>
@@ -157,9 +157,9 @@ function SearchSelector({ searches, selectedIds, onToggle, onToggleAll }) {
           {searches.map(s => {
             const isOn = selectedIds === null || selectedIds?.has(s.id);
             return (
-              <label key={s.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-bright/[0.03] cursor-pointer">
+              <label key={s.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-white/[0.03] cursor-pointer">
                 <input type="checkbox" checked={isOn} onChange={() => onToggle(s.id)}
-                  className="w-3.5 h-3.5 rounded border-border/30 bg-ink/50 accent-bo flex-shrink-0" />
+                  className="w-3.5 h-3.5 rounded border-border/30 bg-ink/50 accent-sky-400 flex-shrink-0" />
                 <span className={`text-[10px] truncate flex-1 ${isOn ? 'text-bright/60' : 'text-muted/30'}`}>{s.name}</span>
                 {s.resultCount > 0 && <span className="text-[8px] text-muted/25 flex-shrink-0">{s.resultCount.toLocaleString()}</span>}
               </label>
@@ -168,7 +168,7 @@ function SearchSelector({ searches, selectedIds, onToggle, onToggleAll }) {
         </div>
       )}
       {!allSelected && selectedIds && (
-        <p className="text-[9px] text-accent/50">{selectedIds.size} of {searches.length} searches selected</p>
+        <p className="text-[9px] text-amber-400/50">{selectedIds.size} of {searches.length} searches selected</p>
       )}
     </div>
   );
@@ -186,7 +186,7 @@ function PortcoSelector({ portcos, enabled, onToggleEnabled, selectedIds, onTogg
       <div className="flex items-center justify-between">
         <label className="flex items-center gap-2 cursor-pointer group">
           <input type="checkbox" checked={enabled} onChange={onToggleEnabled}
-            className="w-4 h-4 rounded border-border/30 bg-ink/50 accent-bo" />
+            className="w-4 h-4 rounded border-border/30 bg-ink/50 accent-sky-400" />
           <div>
             <span className="text-[11px] text-bright/70 font-medium group-hover:text-bright">Include Portfolio Companies</span>
             <p className="text-[9px] text-muted/35">Find similar to our portcos{enabled ? ` (${activeCount} selected)` : ''}</p>
@@ -196,11 +196,11 @@ function PortcoSelector({ portcos, enabled, onToggleEnabled, selectedIds, onTogg
           <div className="flex items-center gap-2">
             <label className="flex items-center gap-1.5 cursor-pointer">
               <input type="checkbox" checked={allSelected} onChange={onToggleAll}
-                className="w-3.5 h-3.5 rounded border-border/30 bg-ink/50 accent-bo" />
+                className="w-3.5 h-3.5 rounded border-border/30 bg-ink/50 accent-sky-400" />
               <span className="text-[10px] text-muted/50 font-medium">All ({portcos.length})</span>
             </label>
             <button onClick={() => setExpanded(!expanded)}
-              className="text-[9px] text-bo/50 hover:text-bo font-medium">
+              className="text-[9px] text-sky-400/50 hover:text-sky-300 font-medium">
               {expanded ? '▾ Collapse' : '▸ Select'}
             </button>
           </div>
@@ -211,9 +211,9 @@ function PortcoSelector({ portcos, enabled, onToggleEnabled, selectedIds, onTogg
           {portcos.map(domain => {
             const isOn = selectedIds === null || selectedIds?.has(domain);
             return (
-              <label key={domain} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-bright/[0.03] cursor-pointer">
+              <label key={domain} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-white/[0.03] cursor-pointer">
                 <input type="checkbox" checked={isOn} onChange={() => onToggle(domain)}
-                  className="w-3.5 h-3.5 rounded border-border/30 bg-ink/50 accent-bo flex-shrink-0" />
+                  className="w-3.5 h-3.5 rounded border-border/30 bg-ink/50 accent-sky-400 flex-shrink-0" />
                 <span className={`text-[10px] truncate ${isOn ? 'text-bright/60' : 'text-muted/30'}`}>{domain}</span>
               </label>
             );
@@ -278,11 +278,11 @@ function ScanProgress({ scan, onCancel }) {
   else if (progress.match(/[Ff]etch|[Ss]tart|[Ll]oad|search/i)) stage = 'fetch';
 
   const stages = [
-    { id: 'fetch', emoji: '📡', label: 'Fetching', color: 'text-bo', weight: 0.10 },
-    { id: 'prescreen', emoji: '⚡', label: 'Pre-Screen', color: 'text-boro', weight: 0.30 },
-    { id: 'enrich', emoji: '🔬', label: 'Enriching', color: 'text-accent', weight: 0.10 },
-    { id: 'screen', emoji: '🎯', label: 'Scoring', color: 'text-rose', weight: 0.25 },
-    { id: 'opus', emoji: '🧠', label: 'Deep Analysis', color: 'text-sm', weight: 0.25 },
+    { id: 'fetch', emoji: '📡', label: 'Fetching', color: 'text-sky-400', weight: 0.10 },
+    { id: 'prescreen', emoji: '⚡', label: 'Pre-Screen', color: 'text-violet-400', weight: 0.30 },
+    { id: 'enrich', emoji: '🔬', label: 'Enriching', color: 'text-amber-400', weight: 0.10 },
+    { id: 'screen', emoji: '🎯', label: 'Scoring', color: 'text-pink-400', weight: 0.25 },
+    { id: 'opus', emoji: '🧠', label: 'Deep Analysis', color: 'text-emerald-400', weight: 0.25 },
   ];
 
   // ETA: stage-weighted + batch progress + elapsed time
@@ -318,27 +318,27 @@ function ScanProgress({ scan, onCancel }) {
   });
 
   return (
-    <div className="bg-ink/30 border border-bo/15 rounded-xl overflow-hidden">
+    <div className="bg-ink/30 border border-sky-400/15 rounded-xl overflow-hidden">
       <div className="p-4 space-y-3">
         {/* User + Tier badge + timer + ETA */}
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 border-2 border-bo border-t-transparent rounded-full animate-spin flex-shrink-0" />
+          <div className="w-8 h-8 border-2 border-sky-400 border-t-transparent rounded-full animate-spin flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <p className="text-sm text-bright/70 font-medium truncate">{progress || 'Starting scan agent...'}</p>
-              {tierInfo.name && <span className="text-[9px] px-1.5 py-0.5 rounded bg-bright/5 border border-border/10 text-muted/50">{tierInfo.name}</span>}
-              {scan?.user && <span className="text-[9px] px-1.5 py-0.5 rounded bg-boro/10 border border-boro/15 text-boro/50">by {scan.user}</span>}
+              {tierInfo.name && <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-muted/50">{tierInfo.name}</span>}
+              {scan?.user && <span className="text-[9px] px-1.5 py-0.5 rounded bg-violet-500/10 border border-violet-400/15 text-violet-300/50">by {scan.user}</span>}
             </div>
             <p className="text-[10px] text-muted/40 mt-0.5">
               {showEta ? `~${etaMins}m ${String(etaSecs).padStart(2, '0')}s remaining` : 'Scan runs in background — safe to close tab or refresh'}
             </p>
           </div>
           <div className="text-right flex-shrink-0">
-            <span className="text-[11px] font-mono text-bo/60">
+            <span className="text-[11px] font-mono text-sky-400/60">
               {hours > 0 ? `${hours}h ${String(mins).padStart(2, '0')}m` : `${mins}:${String(secs).padStart(2, '0')}`}
             </span>
             {showEta && (
-              <p className="text-[9px] font-mono text-accent/50 mt-0.5">~{etaMins}m {String(etaSecs).padStart(2, '0')}s left</p>
+              <p className="text-[9px] font-mono text-amber-400/50 mt-0.5">~{etaMins}m {String(etaSecs).padStart(2, '0')}s left</p>
             )}
           </div>
         </div>
@@ -350,9 +350,9 @@ function ScanProgress({ scan, onCancel }) {
             const isPast = i < stageIdx;
             return (
               <React.Fragment key={s.id}>
-                {i > 0 && <div className={`flex-shrink-0 w-4 h-px ${isPast || isActive ? 'bg-bo/30' : 'bg-border/15'}`} />}
+                {i > 0 && <div className={`flex-shrink-0 w-4 h-px ${isPast || isActive ? 'bg-sky-400/30' : 'bg-border/15'}`} />}
                 <div className={`flex items-center gap-1 px-2 py-1 rounded-md text-[9px] font-medium transition-all ${
-                  isActive ? `${s.color} bg-bright/5 border border-border/10 scale-105` : isPast ? 'text-muted/50' : 'text-muted/20'
+                  isActive ? `${s.color} bg-white/5 border border-white/10 scale-105` : isPast ? 'text-muted/50' : 'text-muted/20'
                 }`}>
                   <span>{s.emoji}</span>
                   <span className="hidden sm:inline">{s.label}</span>
@@ -367,47 +367,47 @@ function ScanProgress({ scan, onCancel }) {
           <div className="flex gap-2 text-[10px] text-muted/40 flex-wrap justify-center">
             {stats.savedSearches > 0 && <span>Ⓗ {stats.savedSearches} searches</span>}
             {stats.totalCompanies > 0 && <span>→ {stats.totalCompanies} companies</span>}
-            {stats.sonnetPassed > 0 && <span className="text-boro/60">→ {stats.sonnetPassed} pre-screened</span>}
-            {stats.enriched > 0 && <span className="text-accent/60">→ {stats.enriched} enriched</span>}
-            {stats.filtered > 0 && <span className="text-accent/60">→ {stats.filtered} filtered</span>}
-            {stats.scored > 0 && <span className="text-rose/60">→ {stats.scored} scored 7+</span>}
-            {stats.deepScored > 0 && <span className="text-sm/60">→ {stats.deepScored} deep-scored</span>}
+            {stats.sonnetPassed > 0 && <span className="text-violet-300/60">→ {stats.sonnetPassed} pre-screened</span>}
+            {stats.enriched > 0 && <span className="text-amber-300/60">→ {stats.enriched} enriched</span>}
+            {stats.filtered > 0 && <span className="text-orange-300/60">→ {stats.filtered} filtered</span>}
+            {stats.scored > 0 && <span className="text-pink-300/60">→ {stats.scored} scored 7+</span>}
+            {stats.deepScored > 0 && <span className="text-emerald-300/60">→ {stats.deepScored} deep-scored</span>}
           </div>
         )}
 
         {/* Winners populating — enhanced company cards */}
         {latestWinners.length > 0 && (
-          <div className="bg-sm/[0.03] border border-sm/10 rounded-lg p-2.5 space-y-1.5">
-            <p className="text-[8px] uppercase tracking-widest text-sm/50 font-bold">Winners Populating ({latestWinners.length})</p>
+          <div className="bg-emerald-500/[0.03] border border-emerald-400/10 rounded-lg p-2.5 space-y-1.5">
+            <p className="text-[8px] uppercase tracking-widest text-emerald-400/50 font-bold">Winners Populating ({latestWinners.length})</p>
             {latestWinners.map((c, i) => {
               const phaseIcon = c._phase === 'prescreen' ? '⚡' : c._phase === 'scoring' ? '🎯' : '🧠';
               const hId = c.id || c.entity_id;
               const hLink = hId ? `https://app.harmonic.ai/company/${hId}` : null;
               return (
-                <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-sm/[0.04] border border-sm/8 hover:bg-sm/[0.08] transition-all group">
+                <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-emerald-500/[0.04] border border-emerald-400/8 hover:bg-emerald-500/[0.08] transition-all group">
                   <span className="text-[9px] flex-shrink-0">{phaseIcon}</span>
                   {c.logo_url ? (
                     <img src={c.logo_url} alt="" className="w-6 h-6 rounded-md bg-ink/50 flex-shrink-0" onError={e => { e.target.style.display = 'none'; }} />
                   ) : (
-                    <div className="w-6 h-6 rounded-md bg-sm/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm font-bold text-[9px]">{(c.name || '?')[0]}</span>
+                    <div className="w-6 h-6 rounded-md bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-emerald-400 font-bold text-[9px]">{(c.name || '?')[0]}</span>
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span className="text-[10px] font-bold text-bright/75 truncate">{c.name}</span>
-                      {c.score && <span className="text-[8px] px-1 py-0.5 rounded bg-sm/15 text-sm font-bold">{c.score}/10</span>}
+                      {c.score && <span className="text-[8px] px-1 py-0.5 rounded bg-emerald-500/15 text-emerald-300 font-bold">{c.score}/10</span>}
                       {c.funding_stage && <span className="text-[8px] text-muted/25">{c.funding_stage}</span>}
                     </div>
                     {c.reason && <p className="text-[8px] text-muted/35 truncate">{c.reason}</p>}
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0 opacity-50 group-hover:opacity-100 transition-all">
                     {hLink && (
-                      <a href={hLink} target="_blank" rel="noopener" className="text-[7px] px-1 py-0.5 rounded bg-boro/10 text-boro/50 border border-boro/10 hover:bg-boro/20">Ⓗ</a>
+                      <a href={hLink} target="_blank" rel="noopener" className="text-[7px] px-1 py-0.5 rounded bg-violet-500/10 text-violet-400/50 border border-violet-400/10 hover:bg-violet-500/20">Ⓗ</a>
                     )}
                     {c.website && (
                       <a href={(typeof c.website === 'object' ? (c.website?.url || '') : c.website || '').startsWith('http') ? (typeof c.website === 'object' ? c.website?.url : c.website) : `https://${typeof c.website === 'object' ? (c.website?.domain || '') : c.website}`} target="_blank" rel="noopener"
-                        className="text-[7px] px-1 py-0.5 rounded bg-bo/10 text-bo/50 border border-bo/10 hover:bg-bo/20">🌐</a>
+                        className="text-[7px] px-1 py-0.5 rounded bg-sky-500/10 text-sky-400/50 border border-sky-400/10 hover:bg-sky-500/20">🌐</a>
                     )}
                   </div>
                 </div>
@@ -421,14 +421,14 @@ function ScanProgress({ scan, onCancel }) {
           <div>
             {!confirmCancel ? (
               <button onClick={() => setConfirmCancel(true)}
-                className="text-[10px] px-3 py-1.5 rounded-lg border border-rose/20 text-rose/60 hover:text-rose hover:border-rose/40 transition-all font-medium">
+                className="text-[10px] px-3 py-1.5 rounded-lg border border-red-400/20 text-red-400/60 hover:text-red-300 hover:border-red-400/40 transition-all font-medium">
                 Cancel Scan
               </button>
             ) : (
-              <div className="flex items-center gap-2 bg-rose/5 border border-rose/20 rounded-lg px-3 py-2">
-                <span className="text-[10px] text-rose/70">Cancel?</span>
+              <div className="flex items-center gap-2 bg-red-500/5 border border-red-400/20 rounded-lg px-3 py-2">
+                <span className="text-[10px] text-red-300/70">Cancel?</span>
                 <button onClick={() => { onCancel(); setConfirmCancel(false); }}
-                  className="text-[10px] px-2.5 py-1 rounded bg-rose/20 border border-rose/30 text-rose font-bold hover:bg-rose/30 transition-all">
+                  className="text-[10px] px-2.5 py-1 rounded bg-red-500/20 border border-red-400/30 text-red-300 font-bold hover:bg-red-500/30 transition-all">
                   Yes
                 </button>
                 <button onClick={() => setConfirmCancel(false)}
@@ -439,7 +439,7 @@ function ScanProgress({ scan, onCancel }) {
             )}
           </div>
           <button onClick={() => navigate(`/searchagent/live/${scan.id}`)}
-            className="text-[10px] px-3 py-1.5 rounded-lg border border-sm/30 bg-sm/10 text-sm hover:bg-sm/20 hover:border-sm/50 transition-all font-bold">
+            className="text-[10px] px-3 py-1.5 rounded-lg border border-emerald-400/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-400/50 transition-all font-bold">
             Real Time ⚡
           </button>
         </div>
@@ -449,7 +449,7 @@ function ScanProgress({ scan, onCancel }) {
       {feed.length > 0 && (
         <div className="border-t border-border/10 bg-black/20">
           <button onClick={() => setHideFeed(!hideFeed)}
-            className="w-full flex items-center justify-between px-4 py-2 hover:bg-bright/[0.02] transition-colors">
+            className="w-full flex items-center justify-between px-4 py-2 hover:bg-white/[0.02] transition-colors">
             <span className="text-[8px] uppercase tracking-widest text-muted/25 font-bold">Full Feed ({feed.length})</span>
             <span className="text-[9px] text-muted/30">{hideFeed ? '▸ Show' : '▾ Hide'}</span>
           </button>
@@ -465,11 +465,11 @@ function ScanProgress({ scan, onCancel }) {
                   return (
                     <div key={f.id} className={`flex items-center gap-1 text-[10px] leading-relaxed rounded px-1 -mx-1 ${
                       isBatchLine ? 'mt-1 pt-1 border-t border-border/5' : ''
-                    } ${isWinner ? 'text-sm/60' : ''} ${i === 0 ? 'text-bright/60' : i < 3 ? 'text-muted/45' : 'text-muted/25'}`}>
+                    } ${isWinner ? 'text-emerald-300/60' : ''} ${i === 0 ? 'text-bright/60' : i < 3 ? 'text-muted/45' : 'text-muted/25'}`}>
                       <span className="text-[9px] font-mono text-muted/20 mr-1 flex-shrink-0">{new Date(f.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
                       <span className="flex-1 truncate">{f.msg}</span>
                       {score !== null && score >= 7 && (
-                        <span className="text-[8px] px-1 py-0.5 rounded bg-sm/15 text-sm font-bold flex-shrink-0">{score}/10</span>
+                        <span className="text-[8px] px-1 py-0.5 rounded bg-emerald-500/15 text-emerald-300 font-bold flex-shrink-0">{score}/10</span>
                       )}
                     </div>
                   );
@@ -500,12 +500,12 @@ function WebGrowthBadge({ company }) {
   const harmonicUrl = company.id && typeof company.id === 'number' ? `https://console.harmonic.ai/dashboard/company/${company.id}?selectedTab=TRACTION` : null;
   const badges = [];
   if (g30 !== null && g30 !== undefined) {
-    if (g30 >= 50) badges.push({ label: `🌐▲${Math.round(g30)}%`, period: '1mo', color: 'bg-sm/15 text-sm border-sm/25', url: harmonicUrl });
-    else if (g30 <= -30) badges.push({ label: `🌐▼${Math.abs(Math.round(g30))}%`, period: '1mo', color: 'bg-rose/12 text-rose border-rose/20', url: harmonicUrl });
+    if (g30 >= 50) badges.push({ label: `🌐▲${Math.round(g30)}%`, period: '1mo', color: 'bg-emerald-500/15 text-emerald-400 border-emerald-400/25', url: harmonicUrl });
+    else if (g30 <= -30) badges.push({ label: `🌐▼${Math.abs(Math.round(g30))}%`, period: '1mo', color: 'bg-red-500/12 text-red-400 border-red-400/20', url: harmonicUrl });
   }
   if (g90 !== null && g90 !== undefined) {
-    if (g90 >= 50) badges.push({ label: `🌐▲${Math.round(g90)}%`, period: '3mo', color: 'bg-sm/12 text-sm/70 border-sm/20', url: harmonicUrl });
-    else if (g90 <= -30) badges.push({ label: `🌐▼${Math.abs(Math.round(g90))}%`, period: '3mo', color: 'bg-rose/10 text-rose/70 border-rose/15', url: harmonicUrl });
+    if (g90 >= 50) badges.push({ label: `🌐▲${Math.round(g90)}%`, period: '3mo', color: 'bg-emerald-500/12 text-emerald-300/70 border-emerald-400/20', url: harmonicUrl });
+    else if (g90 <= -30) badges.push({ label: `🌐▼${Math.abs(Math.round(g90))}%`, period: '3mo', color: 'bg-red-500/10 text-red-300/70 border-red-400/15', url: harmonicUrl });
   }
   if (badges.length === 0) return null;
   return badges.map((b, i) => b.url ? (
@@ -525,13 +525,13 @@ function ResultCard({ result, rank, addFavorite, isFavorited }) {
   const webUrl = rawWeb ? (rawWeb.startsWith('http') ? rawWeb : `https://${rawWeb}`) : null;
   const companyId = card.id || cardRaw.id;
 
-  const scoreColor = score >= 9 ? 'bg-sm/15 text-sm border-sm/30'
-    : score >= 7 ? 'bg-bo/15 text-bo border-bo/30'
-    : score >= 5 ? 'bg-accent/12 text-accent/70 border-accent/25'
+  const scoreColor = score >= 9 ? 'bg-emerald-500/15 text-emerald-300 border-emerald-400/30'
+    : score >= 7 ? 'bg-sky-500/15 text-sky-300 border-sky-400/30'
+    : score >= 5 ? 'bg-amber-500/12 text-amber-300/70 border-amber-400/25'
     : 'bg-surface/40 text-muted/60 border-border/20';
 
-  const confidenceColor = result.confidence === 'High' ? 'text-sm/70' : result.confidence === 'Low' ? 'text-rose/60' : 'text-accent/60';
-  const rankColor = rank <= 3 ? 'text-accent' : rank <= 10 ? 'text-bo/70' : 'text-muted/40';
+  const confidenceColor = result.confidence === 'High' ? 'text-emerald-400/70' : result.confidence === 'Low' ? 'text-red-400/60' : 'text-amber-400/60';
+  const rankColor = rank <= 3 ? 'text-amber-400' : rank <= 10 ? 'text-sky-400/70' : 'text-muted/40';
 
   return (
     <div className="rounded-xl border border-border/15 bg-surface/50 p-3.5 space-y-2.5">
@@ -542,8 +542,8 @@ function ResultCard({ result, rank, addFavorite, isFavorited }) {
         {(card.logo_url || cardRaw.logo_url) ? (
           <img src={card.logo_url || cardRaw.logo_url} alt="" className="w-9 h-9 rounded-lg bg-ink/50 flex-shrink-0" onError={e => { e.target.style.display = 'none'; }} />
         ) : (
-          <div className="w-9 h-9 rounded-lg bg-boro/10 flex items-center justify-center flex-shrink-0">
-            <span className="text-boro font-bold text-sm">{(result.name || '?')[0]}</span>
+          <div className="w-9 h-9 rounded-lg bg-violet-500/10 flex items-center justify-center flex-shrink-0">
+            <span className="text-violet-400 font-bold text-sm">{(result.name || '?')[0]}</span>
           </div>
         )}
         <div className="flex-1 min-w-0">
@@ -551,15 +551,15 @@ function ResultCard({ result, rank, addFavorite, isFavorited }) {
             <h3 className="font-bold text-bright text-sm truncate">{result.name}</h3>
             <span className={`text-[10px] px-2 py-0.5 rounded-md border font-bold ${scoreColor}`}>{score}/10</span>
             {result.confidence && <span className={`text-[9px] ${confidenceColor}`}>{result.confidence}</span>}
-            {companyId && typeof companyId === 'number' && <a href={`/company/${companyId}`} className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded bg-rose/10 text-rose border border-rose/15 hover:bg-rose/20 font-bold" title="Harmonic Card">H</a>}
-            {webUrl && <a href={webUrl} target="_blank" rel="noopener" className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded bg-bo/15 text-bo border border-bo/30 hover:bg-bo/20 font-medium">🌐</a>}
+            {companyId && typeof companyId === 'number' && <a href={`/company/${companyId}`} className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-400 border border-pink-400/15 hover:bg-pink-500/20 font-bold" title="Harmonic Card">H</a>}
+            {webUrl && <a href={webUrl} target="_blank" rel="noopener" className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-400/30 hover:bg-sky-500/20 font-medium">🌐</a>}
           </div>
           <div className="flex gap-1.5 mt-0.5 flex-wrap">
-            {card.funding_stage && <span className="text-[9px] px-1.5 py-0.5 rounded-md border bg-bo/8 text-bo/70 border-bo/20">{card.funding_stage}</span>}
-            {(card.funding_total || cardRaw.funding_total) > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-md border bg-bo/10 text-bo border-bo/20">💰 {moneyFmt(card.funding_total || cardRaw.funding_total)}</span>}
+            {card.funding_stage && <span className="text-[9px] px-1.5 py-0.5 rounded-md border bg-sky-500/8 text-sky-400/70 border-sky-500/20">{card.funding_stage}</span>}
+            {(card.funding_total || cardRaw.funding_total) > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-md border bg-sky-500/10 text-sky-400 border-sky-500/20">💰 {moneyFmt(card.funding_total || cardRaw.funding_total)}</span>}
             {(card.headcount || cardRaw.headcount) > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-md border bg-surface/40 text-muted/50 border-border/20">👥 {card.headcount || cardRaw.headcount}</span>}
             <WebGrowthBadge company={result} />
-            {result._sourceSearch && <span className="text-[9px] px-1.5 py-0.5 rounded-md border bg-accent/8 text-accent/60 border-accent/15">🔍 {result._sourceSearch}</span>}
+            {result._sourceSearch && <span className="text-[9px] px-1.5 py-0.5 rounded-md border bg-amber-500/8 text-amber-400/60 border-amber-400/15">🔍 {result._sourceSearch}</span>}
           </div>
         </div>
       </div>
@@ -569,11 +569,11 @@ function ResultCard({ result, rank, addFavorite, isFavorited }) {
       {result.analysis && (
         <div className="ml-10">
           <button onClick={() => setExpanded(!expanded)}
-            className="text-[10px] text-boro/60 hover:text-boro transition-colors font-medium">
+            className="text-[10px] text-violet-400/60 hover:text-violet-300 transition-colors font-medium">
             {expanded ? '▾ Hide Logic' : '▸ Why #' + rank + '?'}
           </button>
           {expanded && (
-            <div className="mt-2 bg-boro/[0.03] border border-boro/12 rounded-lg p-3 text-[11px] text-bright/60 leading-relaxed whitespace-pre-wrap font-mono">
+            <div className="mt-2 bg-violet-500/[0.03] border border-violet-400/12 rounded-lg p-3 text-[11px] text-bright/60 leading-relaxed whitespace-pre-wrap font-mono">
               {result.analysis}
             </div>
           )}
@@ -584,8 +584,8 @@ function ResultCard({ result, rank, addFavorite, isFavorited }) {
         <button onClick={() => addFavorite && addFavorite({ ...card, name: result.name, _score: score })}
           className={`text-[10px] px-3 py-1 rounded-lg border font-bold transition-all active:scale-95 ${
             isFav
-              ? 'bg-rose/15 border-rose/40 text-rose'
-              : 'border-rose/25 text-rose/70 hover:bg-rose/15 hover:border-rose/50 hover:text-rose'
+              ? 'bg-pink-500/15 border-pink-400/40 text-pink-400'
+              : 'border-pink-400/25 text-pink-400/70 hover:bg-pink-500/15 hover:border-pink-400/50 hover:text-pink-400'
           }`}>
           {isFav ? '❤️ Favorited' : '🤍 Favorite'}
         </button>
@@ -629,9 +629,9 @@ function HistoryPanel({ history, onViewScan, addFavorite, isFavorited }) {
                   <span className="text-[10px] text-muted/40">{date.toLocaleDateString()} {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-sm/60">{topCount} rated 7+</span>
+                  <span className="text-[10px] text-emerald-400/60">{topCount} rated 7+</span>
                   <span className="text-[10px] text-muted/30">{(scan.results || []).length} total</span>
-                  <span className="text-[10px] text-bo/50">{scan.tier?.cost || `$${scan.budgetUsed}`}</span>
+                  <span className="text-[10px] text-sky-400/50">{scan.tier?.cost || `$${scan.budgetUsed}`}</span>
                   <span className="text-[10px] text-muted/30">{isExpanded ? '▼' : '▶'}</span>
                 </div>
               </div>
@@ -651,16 +651,16 @@ function HistoryPanel({ history, onViewScan, addFavorite, isFavorited }) {
               <div className="border-t border-border/15 p-3 space-y-3">
                 {/* Stats funnel */}
                 {scan.stats && (
-                  <div className="bg-accent/5 border border-accent/12 rounded-lg p-2 flex items-center gap-2 text-[10px] text-accent/60 flex-wrap justify-center">
+                  <div className="bg-amber-500/5 border border-amber-400/12 rounded-lg p-2 flex items-center gap-2 text-[10px] text-amber-300/60 flex-wrap justify-center">
                     {scan.stats.savedSearches > 0 && <span>Ⓗ {scan.stats.savedSearches} searches</span>}
                     <span>→ {scan.stats.totalCompanies} sourced</span>
-                    <span className="text-boro/60">→ {scan.stats.sonnetPassed} pre-screened</span>
-                    <span className="text-accent/60">→ {scan.stats.enriched} enriched</span>
-                    {scan.stats.filtered > 0 && <span className="text-accent/60">→ {scan.stats.filtered} filtered</span>}
-                    {scan.stats.scored > 0 && <span className="text-rose/60">→ {scan.stats.scored} scored 7+</span>}
-                    <span className="text-sm/60">→ {scan.stats.deepScored} deep-scored</span>
-                    {scan.stats.ddPushed > 0 && <span className="text-sm/70 font-medium">→ {scan.stats.ddPushed} to DD</span>}
-                    <span className="text-bo/50">· ${scan.budgetUsed} spent</span>
+                    <span className="text-violet-300/60">→ {scan.stats.sonnetPassed} pre-screened</span>
+                    <span className="text-amber-300/60">→ {scan.stats.enriched} enriched</span>
+                    {scan.stats.filtered > 0 && <span className="text-orange-300/60">→ {scan.stats.filtered} filtered</span>}
+                    {scan.stats.scored > 0 && <span className="text-pink-300/60">→ {scan.stats.scored} scored 7+</span>}
+                    <span className="text-emerald-300/60">→ {scan.stats.deepScored} deep-scored</span>
+                    {scan.stats.ddPushed > 0 && <span className="text-emerald-400/70 font-medium">→ {scan.stats.ddPushed} to DD</span>}
+                    <span className="text-sky-300/50">· ${scan.budgetUsed} spent</span>
                   </div>
                 )}
 
@@ -668,14 +668,14 @@ function HistoryPanel({ history, onViewScan, addFavorite, isFavorited }) {
                 <div className="flex gap-1 bg-ink/30 rounded-lg p-1">
                   <button onClick={() => setSubTab(prev => ({ ...prev, [scan.timestamp]: 'results' }))}
                     className={`flex-1 text-[10px] py-1.5 rounded-md font-semibold transition-all ${
-                      activeTab === 'results' ? 'bg-bo/15 text-bo border border-bo/25' : 'text-muted/50 hover:text-muted/70'
+                      activeTab === 'results' ? 'bg-sky-500/15 text-sky-300 border border-sky-400/25' : 'text-muted/50 hover:text-muted/70'
                     }`}>
                     Results ({sortedResults.length})
                   </button>
                   {scan.screenAnalysis && (
                     <button onClick={() => setSubTab(prev => ({ ...prev, [scan.timestamp]: 'logic' }))}
                       className={`flex-1 text-[10px] py-1.5 rounded-md font-semibold transition-all ${
-                        activeTab === 'logic' ? 'bg-boro/15 text-boro border border-boro/25' : 'text-muted/50 hover:text-muted/70'
+                        activeTab === 'logic' ? 'bg-violet-500/15 text-violet-300 border border-violet-400/25' : 'text-muted/50 hover:text-muted/70'
                       }`}>
                       Full Logic
                     </button>
@@ -693,11 +693,11 @@ function HistoryPanel({ history, onViewScan, addFavorite, isFavorited }) {
                 )}
 
                 {activeTab === 'logic' && scan.screenAnalysis && (
-                  <div className="bg-boro/[0.03] border border-boro/12 rounded-lg p-3 max-h-[60vh] overflow-y-auto">
+                  <div className="bg-violet-500/[0.03] border border-violet-400/12 rounded-lg p-3 max-h-[60vh] overflow-y-auto">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-[9px] text-boro/50 uppercase tracking-widest font-bold">Screening & Scoring Logic</p>
+                      <p className="text-[9px] text-violet-400/50 uppercase tracking-widest font-bold">Screening & Scoring Logic</p>
                       <button onClick={() => navigator.clipboard.writeText(scan.screenAnalysis).catch(() => {})}
-                        className="text-[9px] px-2 py-0.5 rounded border border-boro/20 text-boro/60 hover:bg-boro/10">
+                        className="text-[9px] px-2 py-0.5 rounded border border-violet-400/20 text-violet-300/60 hover:bg-violet-500/10">
                         Copy
                       </button>
                     </div>
@@ -726,43 +726,43 @@ function ResultsView({ data, addFavorite, isFavorited }) {
   return (
     <div className="space-y-4">
       {data.stats && (
-        <div className="bg-accent/5 border border-accent/12 rounded-xl p-3 flex items-center gap-2 text-[10px] text-accent/60 flex-wrap justify-center">
+        <div className="bg-amber-500/5 border border-amber-400/12 rounded-xl p-3 flex items-center gap-2 text-[10px] text-amber-300/60 flex-wrap justify-center">
           {data.tier?.name && <span className="text-muted/50">{data.tier.name}</span>}
           {data.stats.savedSearches > 0 && <span>Ⓗ {data.stats.savedSearches} searches</span>}
           <span>→ {data.stats.totalCompanies} sourced</span>
-          <span className="text-boro/60">→ {data.stats.sonnetPassed} pre-screened</span>
-          <span className="text-accent/60">→ {data.stats.enriched} enriched</span>
-          {data.stats.filtered > 0 && <span className="text-accent/60">→ {data.stats.filtered} filtered</span>}
-          {data.stats.scored > 0 && <span className="text-rose/60">→ {data.stats.scored} scored 7+</span>}
-          <span className="text-sm/60">→ {data.stats.deepScored} deep-scored</span>
-          <span className="text-rose/60">→ {data.stats.topResults} rated 7+</span>
-          {data.stats.ddPushed > 0 && <span className="text-sm/70 font-medium">→ {data.stats.ddPushed} to DD</span>}
-          <span className="text-bo/50">· ${data.budgetUsed} spent</span>
+          <span className="text-violet-300/60">→ {data.stats.sonnetPassed} pre-screened</span>
+          <span className="text-amber-300/60">→ {data.stats.enriched} enriched</span>
+          {data.stats.filtered > 0 && <span className="text-orange-300/60">→ {data.stats.filtered} filtered</span>}
+          {data.stats.scored > 0 && <span className="text-pink-300/60">→ {data.stats.scored} scored 7+</span>}
+          <span className="text-emerald-300/60">→ {data.stats.deepScored} deep-scored</span>
+          <span className="text-pink-300/60">→ {data.stats.topResults} rated 7+</span>
+          {data.stats.ddPushed > 0 && <span className="text-emerald-400/70 font-medium">→ {data.stats.ddPushed} to DD</span>}
+          <span className="text-sky-300/50">· ${data.budgetUsed} spent</span>
           {data.duration && <span className="text-muted/30">· {Math.round(data.duration / 60)}m</span>}
         </div>
       )}
 
       {data.options && (data.options.includePortcos || data.options.crmStages?.length > 0 || data.options.keywords) && (
         <div className="flex gap-2 text-[9px] text-muted/30 flex-wrap justify-center">
-          {data.options.includePortcos && <span className="px-1.5 py-0.5 rounded bg-bo/8 border border-bo/15 text-bo/50">📂 Portcos</span>}
+          {data.options.includePortcos && <span className="px-1.5 py-0.5 rounded bg-sky-500/8 border border-sky-400/15 text-sky-400/50">📂 Portcos</span>}
           {data.options.crmStages?.map(s => (
-            <span key={s} className="px-1.5 py-0.5 rounded bg-boro/8 border border-boro/15 text-boro/50">{s}</span>
+            <span key={s} className="px-1.5 py-0.5 rounded bg-violet-500/8 border border-violet-400/15 text-violet-400/50">{s}</span>
           ))}
-          {data.options.keywords && <span className="px-1.5 py-0.5 rounded bg-accent/8 border border-accent/15 text-accent/50">🔑 {data.options.keywords.slice(0, 60)}{data.options.keywords.length > 60 ? '...' : ''}</span>}
+          {data.options.keywords && <span className="px-1.5 py-0.5 rounded bg-amber-500/8 border border-amber-400/15 text-amber-400/50">🔑 {data.options.keywords.slice(0, 60)}{data.options.keywords.length > 60 ? '...' : ''}</span>}
         </div>
       )}
 
       <div className="flex gap-1 bg-ink/30 rounded-lg p-1">
         <button onClick={() => setTab('results')}
           className={`flex-1 text-[11px] py-2 rounded-md font-semibold transition-all ${
-            tab === 'results' ? 'bg-bo/15 text-bo border border-bo/25' : 'text-muted/50 hover:text-muted/70'
+            tab === 'results' ? 'bg-sky-500/15 text-sky-300 border border-sky-400/25' : 'text-muted/50 hover:text-muted/70'
           }`}>
           📊 Results ({sortedResults.length})
         </button>
         {data.screenAnalysis && (
           <button onClick={() => setTab('logic')}
             className={`flex-1 text-[11px] py-2 rounded-md font-semibold transition-all ${
-              tab === 'logic' ? 'bg-boro/15 text-boro border border-boro/25' : 'text-muted/50 hover:text-muted/70'
+              tab === 'logic' ? 'bg-violet-500/15 text-violet-300 border border-violet-400/25' : 'text-muted/50 hover:text-muted/70'
             }`}>
             🧠 Full Logic
           </button>
@@ -779,7 +779,7 @@ function ResultsView({ data, addFavorite, isFavorited }) {
           ))}
           {hasMore && (
             <button onClick={() => setShowCount(prev => prev + 10)}
-              className="w-full py-3 rounded-xl border border-bo/15 bg-bo/[0.04] text-bo/60 text-xs font-medium hover:text-bo hover:border-bo/25 transition-all">
+              className="w-full py-3 rounded-xl border border-sky-400/15 bg-sky-500/[0.04] text-sky-400/60 text-xs font-medium hover:text-sky-300 hover:border-sky-400/25 transition-all">
               Load 10 More ({sortedResults.length - showCount} remaining)
             </button>
           )}
@@ -787,11 +787,11 @@ function ResultsView({ data, addFavorite, isFavorited }) {
       )}
 
       {tab === 'logic' && data.screenAnalysis && (
-        <div className="bg-boro/[0.03] border border-boro/12 rounded-xl p-4 space-y-3 max-h-[80vh] overflow-y-auto">
+        <div className="bg-violet-500/[0.03] border border-violet-400/12 rounded-xl p-4 space-y-3 max-h-[80vh] overflow-y-auto">
           <div className="flex items-center justify-between">
-            <p className="text-[10px] text-boro/50 uppercase tracking-widest font-bold">Full Screening & Scoring Logic</p>
+            <p className="text-[10px] text-violet-400/50 uppercase tracking-widest font-bold">Full Screening & Scoring Logic</p>
             <button onClick={() => navigator.clipboard.writeText(data.screenAnalysis).catch(() => {})}
-              className="text-[9px] px-2 py-0.5 rounded border border-boro/20 text-boro/60 hover:bg-boro/10 transition-all">
+              className="text-[9px] px-2 py-0.5 rounded border border-violet-400/20 text-violet-300/60 hover:bg-violet-500/10 transition-all">
               📋 Copy
             </button>
           </div>
@@ -1228,13 +1228,13 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
           <h1 className="text-xl font-bold text-bright">🔬 Scan Agent</h1>
           <p className="text-[11px] text-muted/40 mt-1">AI-powered pipeline across all Harmonic saved searches</p>
         </div>
-        <span className="text-[11px] text-bo/70 font-medium">{crmUser}</span>
+        <span className="text-[11px] text-sky-400/70 font-medium">{crmUser}</span>
       </div>
 
       {/* Loading state — prevents flash of create form on refresh */}
       {initialLoading && (
         <div className="flex items-center justify-center py-20">
-          <div className="w-8 h-8 border-2 border-bo border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-sky-400 border-t-transparent rounded-full animate-spin" />
           <span className="ml-3 text-sm text-muted/40">Loading scan status...</span>
         </div>
       )}
@@ -1245,13 +1245,13 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
           <div className="flex gap-1 bg-ink/30 rounded-lg p-1 mb-5">
             <button onClick={() => { setPageTab('scan'); setViewingScan(null); }}
               className={`flex-1 text-[11px] py-2 rounded-md font-semibold transition-all ${
-                pageTab === 'scan' ? 'bg-bo/15 text-bo border border-bo/25' : 'text-muted/50 hover:text-muted/70'
+                pageTab === 'scan' ? 'bg-sky-500/15 text-sky-300 border border-sky-400/25' : 'text-muted/50 hover:text-muted/70'
               }`}>
               {hasRunning ? `🚀 New Scan (${runningScans.length} running)` : '🚀 New Scan'}
             </button>
             <button onClick={() => setPageTab('history')}
               className={`flex-1 text-[11px] py-2 rounded-md font-semibold transition-all ${
-                pageTab === 'history' ? 'bg-boro/15 text-boro border border-boro/25' : 'text-muted/50 hover:text-muted/70'
+                pageTab === 'history' ? 'bg-violet-500/15 text-violet-300 border border-violet-400/25' : 'text-muted/50 hover:text-muted/70'
               }`}>
               📜 History ({history.length})
             </button>
@@ -1262,15 +1262,15 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
             <>
               {/* Interrupted banners */}
               {interruptedScans.map(scan => (
-                <div key={scan.id} className="mb-4 bg-accent/8 border border-accent/20 rounded-xl p-4">
+                <div key={scan.id} className="mb-4 bg-amber-500/8 border border-amber-400/20 rounded-xl p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-accent/80 text-sm font-medium">⚠️ Scan interrupted {scan.tier?.name ? `(${scan.tier.name})` : ''}</p>
+                      <p className="text-amber-300/80 text-sm font-medium">⚠️ Scan interrupted {scan.tier?.name ? `(${scan.tier.name})` : ''}</p>
                       <p className="text-[10px] text-muted/40 mt-1">{scan.progress || 'Server restarted while scan was running'}</p>
                       {scan.user && <p className="text-[9px] text-muted/30 mt-0.5">Started by {scan.user}</p>}
                     </div>
                     <button onClick={() => cancelScan(scan.id)}
-                      className="text-[10px] px-3 py-1.5 rounded-lg border border-accent/25 text-accent/60 hover:text-accent font-medium flex-shrink-0">
+                      className="text-[10px] px-3 py-1.5 rounded-lg border border-amber-400/25 text-amber-400/60 hover:text-amber-300 font-medium flex-shrink-0">
                       Dismiss
                     </button>
                   </div>
@@ -1314,7 +1314,7 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                             <button onClick={() => scrollPresets(1)} className="text-[10px] px-1.5 py-0.5 rounded border border-border/20 text-muted/40 hover:text-muted/60">▶</button>
                             <button onClick={() => setEditMode(!editMode)}
                               className={`text-[9px] px-2 py-0.5 rounded border font-medium transition-all ${
-                                editMode ? 'bg-accent/15 border-accent/30 text-accent' : 'border-border/20 text-muted/40 hover:text-muted/60'
+                                editMode ? 'bg-amber-500/15 border-amber-400/30 text-amber-300' : 'border-border/20 text-muted/40 hover:text-muted/60'
                               }`}>
                               {editMode ? 'Done' : 'Edit'}
                             </button>
@@ -1334,16 +1334,16 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                                 )}
                                 <div className="flex-shrink-0 relative">
                                   {item._type === 'preset' && editMode && editingPresetId === item.id ? (
-                                    <div className="flex items-center gap-1 bg-surface/60 border border-accent/30 rounded-lg px-2 py-1.5">
+                                    <div className="flex items-center gap-1 bg-surface/60 border border-amber-400/30 rounded-lg px-2 py-1.5">
                                       <input type="text" value={editPresetName} onChange={e => setEditPresetName(e.target.value)}
                                         onKeyDown={e => { if (e.key === 'Enter') { renamePreset(item.id, editPresetName); setEditingPresetId(null); } }}
                                         className="bg-transparent text-[10px] text-bright w-24 outline-none" autoFocus />
                                       <button onClick={() => { renamePreset(item.id, editPresetName); setEditingPresetId(null); }}
-                                        className="text-[9px] text-sm">✓</button>
+                                        className="text-[9px] text-emerald-400">✓</button>
                                       <button onClick={() => updatePresetFromCurrent(item.id)}
-                                        className="text-[9px] text-bo ml-1" title="Update with current filters">↻</button>
+                                        className="text-[9px] text-sky-400 ml-1" title="Update with current filters">↻</button>
                                       <button onClick={() => deletePreset(item.id)}
-                                        className="text-[9px] text-rose ml-1">✕</button>
+                                        className="text-[9px] text-red-400 ml-1">✕</button>
                                     </div>
                                   ) : (
                                     <button onClick={() => {
@@ -1353,15 +1353,15 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                                     }}
                                       className={`text-[10px] px-3 py-2 rounded-lg border font-medium whitespace-nowrap transition-all ${
                                         editMode && item._type === 'preset'
-                                          ? 'border-accent/25 bg-accent/8 text-accent/70 hover:bg-accent/15'
+                                          ? 'border-amber-400/25 bg-amber-500/8 text-amber-300/70 hover:bg-amber-500/15'
                                           : item._type === 'hscreen'
-                                            ? 'border-bo/20 bg-bo/8 text-bo/70 hover:bg-bo/15 hover:text-bo'
-                                            : 'border-boro/20 bg-boro/8 text-boro/70 hover:bg-boro/15 hover:text-boro'
+                                            ? 'border-sky-400/20 bg-sky-500/8 text-sky-300/70 hover:bg-sky-500/15 hover:text-sky-300'
+                                            : 'border-violet-400/20 bg-violet-500/8 text-violet-300/70 hover:bg-violet-500/15 hover:text-violet-300'
                                       }`}>
                                       {editMode && item._type === 'preset' && <span className="mr-1">✎</span>}
                                       {!item._mine && <span className="text-[8px] text-muted/30 mr-1">{item.user || item._owner}</span>}
                                       {item.name || 'Main Scan'}
-                                      {item._type === 'hscreen' && !item._mine && <span className="text-[8px] text-bo/30 ml-1">H</span>}
+                                      {item._type === 'hscreen' && !item._mine && <span className="text-[8px] text-sky-400/30 ml-1">H</span>}
                                     </button>
                                   )}
                                 </div>
@@ -1397,7 +1397,7 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                     <div className="flex items-center justify-between">
                       <p className="text-[10px] text-muted/50 uppercase tracking-widest font-bold">Search Filters</p>
                       <button onClick={clearFilters}
-                        className="text-[9px] px-2 py-0.5 rounded border border-border/20 text-muted/40 hover:text-rose hover:border-rose/30 font-medium transition-all">
+                        className="text-[9px] px-2 py-0.5 rounded border border-border/20 text-muted/40 hover:text-red-300 hover:border-red-400/30 font-medium transition-all">
                         Clear
                       </button>
                     </div>
@@ -1415,14 +1415,14 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                       <button onClick={() => toggleExpanded('sectors')} className="flex items-center gap-2 w-full text-left">
                         <span className="text-[9px] text-muted/40">{expandedFilters.sectors ? '▾' : '▸'}</span>
                         <span className="text-[11px] text-bright/60 font-medium">Sectors</span>
-                        {sectors.length > 0 && <span className="text-[9px] text-bo/60 font-bold ml-auto">{sectors.length} selected</span>}
+                        {sectors.length > 0 && <span className="text-[9px] text-sky-400/60 font-bold ml-auto">{sectors.length} selected</span>}
                       </button>
                       {expandedFilters.sectors && (
                         <div className="flex gap-1.5 flex-wrap">
                           {SECTORS.map(s => (
                             <button key={s} onClick={() => toggleFilter(setSectors, s)}
                               className={`text-[9px] px-2 py-1 rounded-md border transition-all ${
-                                sectors.includes(s) ? 'bg-bo/15 border-bo/30 text-bo' : 'border-border/20 text-muted/40 hover:text-muted/60'
+                                sectors.includes(s) ? 'bg-sky-500/15 border-sky-400/30 text-sky-300' : 'border-border/20 text-muted/40 hover:text-muted/60'
                               }`}>{sectors.includes(s) ? '✓ ' : ''}{s}</button>
                           ))}
                         </div>
@@ -1434,14 +1434,14 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                       <button onClick={() => toggleExpanded('stages')} className="flex items-center gap-2 w-full text-left">
                         <span className="text-[9px] text-muted/40">{expandedFilters.stages ? '▾' : '▸'}</span>
                         <span className="text-[11px] text-bright/60 font-medium">Stage</span>
-                        {stages.length > 0 && <span className="text-[9px] text-boro/60 font-bold ml-auto">{stages.length} selected</span>}
+                        {stages.length > 0 && <span className="text-[9px] text-violet-400/60 font-bold ml-auto">{stages.length} selected</span>}
                       </button>
                       {expandedFilters.stages && (
                         <div className="flex gap-1.5 flex-wrap">
                           {STAGES.map(s => (
                             <button key={s} onClick={() => toggleFilter(setStages, s)}
                               className={`text-[9px] px-2 py-1 rounded-md border transition-all ${
-                                stages.includes(s) ? 'bg-boro/15 border-boro/30 text-boro' : 'border-border/20 text-muted/40 hover:text-muted/60'
+                                stages.includes(s) ? 'bg-violet-500/15 border-violet-400/30 text-violet-300' : 'border-border/20 text-muted/40 hover:text-muted/60'
                               }`}>{stages.includes(s) ? '✓ ' : ''}{s}</button>
                           ))}
                         </div>
@@ -1453,14 +1453,14 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                       <button onClick={() => toggleExpanded('geos')} className="flex items-center gap-2 w-full text-left">
                         <span className="text-[9px] text-muted/40">{expandedFilters.geos ? '▾' : '▸'}</span>
                         <span className="text-[11px] text-bright/60 font-medium">Geography</span>
-                        {geos.length > 0 && <span className="text-[9px] text-sm/60 font-bold ml-auto">{geos.length} selected</span>}
+                        {geos.length > 0 && <span className="text-[9px] text-emerald-400/60 font-bold ml-auto">{geos.length} selected</span>}
                       </button>
                       {expandedFilters.geos && (
                         <div className="flex gap-1.5 flex-wrap">
                           {GEOS.map(g => (
                             <button key={g} onClick={() => toggleFilter(setGeos, g)}
                               className={`text-[9px] px-2 py-1 rounded-md border transition-all ${
-                                geos.includes(g) ? 'bg-sm/15 border-sm/30 text-sm' : 'border-border/20 text-muted/40 hover:text-muted/60'
+                                geos.includes(g) ? 'bg-emerald-500/15 border-emerald-400/30 text-emerald-300' : 'border-border/20 text-muted/40 hover:text-muted/60'
                               }`}>{geos.includes(g) ? '✓ ' : ''}{g}</button>
                           ))}
                         </div>
@@ -1472,14 +1472,14 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                       <button onClick={() => toggleExpanded('models')} className="flex items-center gap-2 w-full text-left">
                         <span className="text-[9px] text-muted/40">{expandedFilters.models ? '▾' : '▸'}</span>
                         <span className="text-[11px] text-bright/60 font-medium">Business Model</span>
-                        {models.length > 0 && <span className="text-[9px] text-accent/60 font-bold ml-auto">{models.length} selected</span>}
+                        {models.length > 0 && <span className="text-[9px] text-amber-400/60 font-bold ml-auto">{models.length} selected</span>}
                       </button>
                       {expandedFilters.models && (
                         <div className="flex gap-1.5 flex-wrap">
                           {MODELS.map(m => (
                             <button key={m} onClick={() => toggleFilter(setModels, m)}
                               className={`text-[9px] px-2 py-1 rounded-md border transition-all ${
-                                models.includes(m) ? 'bg-accent/15 border-accent/30 text-accent' : 'border-border/20 text-muted/40 hover:text-muted/60'
+                                models.includes(m) ? 'bg-amber-500/15 border-amber-400/30 text-amber-300' : 'border-border/20 text-muted/40 hover:text-muted/60'
                               }`}>{models.includes(m) ? '✓ ' : ''}{m}</button>
                           ))}
                         </div>
@@ -1491,14 +1491,14 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                       <button onClick={() => toggleExpanded('signals')} className="flex items-center gap-2 w-full text-left">
                         <span className="text-[9px] text-muted/40">{expandedFilters.signals ? '▾' : '▸'}</span>
                         <span className="text-[11px] text-bright/60 font-medium">Deal Signals</span>
-                        {signals.length > 0 && <span className="text-[9px] text-rose/60 font-bold ml-auto">{signals.length} selected</span>}
+                        {signals.length > 0 && <span className="text-[9px] text-pink-400/60 font-bold ml-auto">{signals.length} selected</span>}
                       </button>
                       {expandedFilters.signals && (
                         <div className="flex gap-1.5 flex-wrap">
                           {SIGNALS.map(s => (
                             <button key={s} onClick={() => toggleFilter(setSignals, s)}
                               className={`text-[9px] px-2 py-1 rounded-md border transition-all ${
-                                signals.includes(s) ? 'bg-rose/15 border-rose/30 text-rose' : 'border-border/20 text-muted/40 hover:text-muted/60'
+                                signals.includes(s) ? 'bg-pink-500/15 border-pink-400/30 text-pink-300' : 'border-border/20 text-muted/40 hover:text-muted/60'
                               }`}>{signals.includes(s) ? '✓ ' : ''}{s}</button>
                           ))}
                         </div>
@@ -1510,34 +1510,34 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                       <button onClick={() => toggleExpanded('numerics')} className="flex items-center gap-2 w-full text-left">
                         <span className="text-[9px] text-muted/40">{expandedFilters.numerics ? '▾' : '▸'}</span>
                         <span className="text-[11px] text-bright/60 font-medium">$ Raised / Team / Founded</span>
-                        {(maxRaised || maxValuation || foundedAfter || minTeam || maxTeam) && <span className="text-[9px] text-bo/60 font-bold ml-auto">set</span>}
+                        {(maxRaised || maxValuation || foundedAfter || minTeam || maxTeam) && <span className="text-[9px] text-sky-400/60 font-bold ml-auto">set</span>}
                       </button>
                       {expandedFilters.numerics && (
                         <div className="grid grid-cols-2 gap-2">
                           <div>
                             <label className="text-[9px] text-muted/40">Max Raised</label>
                             <input type="text" value={maxRaised} onChange={e => setMaxRaised(e.target.value)}
-                              placeholder="$5M" className="w-full bg-ink/50 border border-border/25 rounded-lg px-2 py-1.5 text-[10px] text-bright outline-none focus:border-bo/35 placeholder:text-bright/15" />
+                              placeholder="$5M" className="w-full bg-ink/50 border border-border/25 rounded-lg px-2 py-1.5 text-[10px] text-bright outline-none focus:border-sky-400/35 placeholder:text-white/15" />
                           </div>
                           <div>
                             <label className="text-[9px] text-muted/40">Max Valuation</label>
                             <input type="text" value={maxValuation} onChange={e => setMaxValuation(e.target.value)}
-                              placeholder="$30M" className="w-full bg-ink/50 border border-border/25 rounded-lg px-2 py-1.5 text-[10px] text-bright outline-none focus:border-bo/35 placeholder:text-bright/15" />
+                              placeholder="$30M" className="w-full bg-ink/50 border border-border/25 rounded-lg px-2 py-1.5 text-[10px] text-bright outline-none focus:border-sky-400/35 placeholder:text-white/15" />
                           </div>
                           <div>
                             <label className="text-[9px] text-muted/40">Min Team</label>
                             <input type="text" value={minTeam} onChange={e => setMinTeam(e.target.value)}
-                              placeholder="2" className="w-full bg-ink/50 border border-border/25 rounded-lg px-2 py-1.5 text-[10px] text-bright outline-none focus:border-bo/35 placeholder:text-bright/15" />
+                              placeholder="2" className="w-full bg-ink/50 border border-border/25 rounded-lg px-2 py-1.5 text-[10px] text-bright outline-none focus:border-sky-400/35 placeholder:text-white/15" />
                           </div>
                           <div>
                             <label className="text-[9px] text-muted/40">Max Team</label>
                             <input type="text" value={maxTeam} onChange={e => setMaxTeam(e.target.value)}
-                              placeholder="50" className="w-full bg-ink/50 border border-border/25 rounded-lg px-2 py-1.5 text-[10px] text-bright outline-none focus:border-bo/35 placeholder:text-bright/15" />
+                              placeholder="50" className="w-full bg-ink/50 border border-border/25 rounded-lg px-2 py-1.5 text-[10px] text-bright outline-none focus:border-sky-400/35 placeholder:text-white/15" />
                           </div>
                           <div className="col-span-2">
                             <label className="text-[9px] text-muted/40">Founded After</label>
                             <input type="text" value={foundedAfter} onChange={e => setFoundedAfter(e.target.value)}
-                              placeholder="2022" className="w-full bg-ink/50 border border-border/25 rounded-lg px-2 py-1.5 text-[10px] text-bright outline-none focus:border-bo/35 placeholder:text-bright/15" />
+                              placeholder="2022" className="w-full bg-ink/50 border border-border/25 rounded-lg px-2 py-1.5 text-[10px] text-bright outline-none focus:border-sky-400/35 placeholder:text-white/15" />
                           </div>
                         </div>
                       )}
@@ -1558,7 +1558,7 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                       <button onClick={() => toggleExpanded('crm')} className="flex items-center gap-2 w-full text-left">
                         <span className="text-[9px] text-muted/40">{expandedFilters.crm ? '▾' : '▸'}</span>
                         <span className="text-[11px] text-bright/60 font-medium">CRM Pipeline Similarity</span>
-                        {crmStages.length > 0 && <span className="text-[9px] text-bo/60 font-bold ml-auto">{crmStages.length} stages</span>}
+                        {crmStages.length > 0 && <span className="text-[9px] text-sky-400/60 font-bold ml-auto">{crmStages.length} stages</span>}
                       </button>
                       {expandedFilters.crm && (
                         <div className="space-y-1.5">
@@ -1586,7 +1586,7 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                       <label className="text-[11px] text-bright/60 font-medium">Priority Keywords</label>
                       <input type="text" value={keywords} onChange={e => setKeywords(e.target.value)}
                         placeholder="e.g. prediction markets, AI agents, crypto exchange..."
-                        className="w-full bg-ink/50 border border-border/25 rounded-lg px-3 py-2 text-xs text-bright outline-none focus:border-bo/35 transition-colors placeholder:text-bright/15" />
+                        className="w-full bg-ink/50 border border-border/25 rounded-lg px-3 py-2 text-xs text-bright outline-none focus:border-sky-400/35 transition-colors placeholder:text-white/15" />
                     </div>
 
                     {/* Exclude Keywords */}
@@ -1594,7 +1594,7 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                       <label className="text-[11px] text-bright/60 font-medium">Exclude Keywords</label>
                       <input type="text" value={excludeKeywords} onChange={e => setExcludeKeywords(e.target.value)}
                         placeholder="e.g. consulting, NFT collection, metaverse..."
-                        className="w-full bg-ink/50 border border-border/25 rounded-lg px-3 py-2 text-xs text-bright outline-none focus:border-bo/35 transition-colors placeholder:text-bright/15" />
+                        className="w-full bg-ink/50 border border-border/25 rounded-lg px-3 py-2 text-xs text-bright outline-none focus:border-sky-400/35 transition-colors placeholder:text-white/15" />
                     </div>
 
                     {/* Notes for AI */}
@@ -1602,12 +1602,12 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                       <button onClick={() => toggleExpanded('notes')} className="flex items-center gap-2 w-full text-left">
                         <span className="text-[9px] text-muted/40">{expandedFilters.notes ? '▾' : '▸'}</span>
                         <span className="text-[11px] text-bright/60 font-medium">Notes for AI</span>
-                        {notes && <span className="text-[9px] text-boro/60 font-bold ml-auto">set</span>}
+                        {notes && <span className="text-[9px] text-violet-400/60 font-bold ml-auto">set</span>}
                       </button>
                       {expandedFilters.notes && (
                         <textarea value={notes} onChange={e => setNotes(e.target.value)}
                           placeholder="Anything specific for the AI to prioritize or look for..."
-                          rows={3} className="w-full bg-ink/50 border border-border/25 rounded-lg px-3 py-2 text-xs text-bright outline-none focus:border-bo/35 transition-colors placeholder:text-bright/15 resize-none" />
+                          rows={3} className="w-full bg-ink/50 border border-border/25 rounded-lg px-3 py-2 text-xs text-bright outline-none focus:border-sky-400/35 transition-colors placeholder:text-white/15 resize-none" />
                       )}
                     </div>
                   </div>
@@ -1622,11 +1622,11 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                   {/* Action buttons — Save above Run */}
                   <div className="space-y-2">
                     <button onClick={saveCurrentAsPreset}
-                      className="w-full px-4 py-2.5 rounded-xl border border-boro/20 bg-boro/6 text-boro/60 font-medium text-xs hover:bg-boro/12 hover:text-boro transition-all active:scale-[0.98]">
+                      className="w-full px-4 py-2.5 rounded-xl border border-violet-400/20 bg-violet-500/6 text-violet-300/60 font-medium text-xs hover:bg-violet-500/12 hover:text-violet-300 transition-all active:scale-[0.98]">
                       Save Search
                     </button>
                     <button onClick={startScan} disabled={selectedSearchIds !== null && selectedSearchIds.size === 0}
-                      className="w-full px-6 py-3 rounded-xl bg-bo/15 border border-bo/30 text-bo font-bold text-sm hover:bg-bo/25 hover:border-bo/50 transition-all active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed">
+                      className="w-full px-6 py-3 rounded-xl bg-sky-500/15 border border-sky-400/30 text-sky-300 font-bold text-sm hover:bg-sky-500/25 hover:border-sky-400/50 transition-all active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed">
                       Run {selectedTierObj?.name} Scan {dynamicCostEstimate ? `(~$${dynamicCostEstimate})` : `(${selectedTierObj?.cost} max)`}
                     </button>
                   </div>
@@ -1642,7 +1642,7 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
             <div className="space-y-4">
               {viewingScan ? (
                 <>
-                  <button onClick={() => setViewingScan(null)} className="text-[10px] text-bo/60 hover:text-bo font-medium">← Back to History</button>
+                  <button onClick={() => setViewingScan(null)} className="text-[10px] text-sky-400/60 hover:text-sky-300 font-medium">← Back to History</button>
                   <ResultsView data={viewingScan} addFavorite={addFavorite} isFavorited={isFavorited} />
                 </>
               ) : (
