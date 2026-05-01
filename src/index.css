@@ -55,26 +55,88 @@
     background: var(--border);
     border-radius: 2px;
   }
+
+  body.light {
+    --ink: #f4f2ee;
+    --ink-2: #ede9e3;
+    --surface: #ffffff;
+    --card: #ffffff;
+    --card-hi: #f9f7f2;
+    --border: #e1ddd5;
+    --border-2: rgba(20, 28, 48, 0.08);
+
+    --bright: #0f1733;
+    --bright-2: rgba(15, 23, 51, 0.78);
+    --bright-3: rgba(15, 23, 51, 0.5);
+    --muted: #5b6480;
+    --muted-2: rgba(91, 100, 128, 0.78);
+
+    --accent: #2563eb;
+    --accent-2: #1d4ed8;
+    --accent-glow: rgba(37, 99, 235, 0.10);
+
+    --bo: #2563eb;
+    --boro: #6366f1;
+    --sm: #0891b2;
+    --amber: #b45309;
+    --rose: #be123c;
+
+    background-image:
+      radial-gradient(1200px 600px at 80% -10%, rgba(37, 99, 235, 0.05), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(99, 102, 241, 0.04), transparent 60%);
+  }
+  body.light::-webkit-scrollbar-thumb { background: #cfc9bf; }
 }
 
 @layer components {
   .glass-card {
     @apply bg-card/80 backdrop-blur-md border border-border/50 rounded-2xl;
   }
+  body.light .glass-card {
+    background: #ffffff;
+    border-color: var(--border-2);
+    box-shadow: 0 4px 14px rgba(15, 23, 51, 0.04);
+  }
   .glow-accent {
     box-shadow: 0 0 20px var(--accent-glow), 0 0 60px rgba(230, 199, 154, 0.05);
+  }
+  body.light .glow-accent {
+    box-shadow: 0 0 20px rgba(37, 99, 235, 0.08), 0 0 60px rgba(37, 99, 235, 0.03);
   }
   .input-base {
     @apply w-full bg-surface border border-border/60 rounded-xl px-4 py-3 text-bright placeholder-muted/50 focus:outline-none focus:border-accent/50 focus:ring-1 focus:ring-accent/20 transition-all;
   }
+  body.light .input-base {
+    background: var(--card);
+    border-color: var(--border-2);
+  }
   .btn-primary {
     @apply bg-accent text-ink font-bold px-6 py-3 rounded-xl active:scale-[0.97] transition-all;
+  }
+  body.light .btn-primary {
+    color: #ffffff;
   }
   .btn-ghost {
     @apply text-muted hover:text-bright px-4 py-2 rounded-lg transition-colors;
   }
   .tag {
     @apply text-xs font-mono px-2 py-1 rounded-md bg-accent-glow text-accent border border-accent/20;
+  }
+  .v2-glass {
+    background: rgba(46, 42, 37, 0.55);
+  }
+  body.light .v2-glass {
+    background: #ffffff;
+    box-shadow: 0 4px 14px rgba(15, 23, 51, 0.04);
+  }
+  body.light [style*="rgba(46, 42, 37"] {
+    background: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(15, 23, 51, 0.04);
+  }
+  body.light nav.fixed {
+    background: rgba(244, 242, 238, 0.92) !important;
+    border-top-color: rgba(20, 28, 48, 0.08) !important;
+    box-shadow: 0 -4px 28px rgba(15, 23, 51, 0.06), 0 -1px 0 rgba(20, 28, 48, 0.06) !important;
   }
   .fade-in {
     animation: fadeIn 0.18s ease-out;

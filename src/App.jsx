@@ -19,6 +19,7 @@ import AirtablePage from './pages/AirtablePage';
 import PortcosPage from './pages/PortcosPage';
 import ReachoutsPage from './pages/ReachoutsPage';
 import NavBar from './components/NavBar';
+import ThemeToggle from './components/ThemeToggle';
 import Trollbox from './components/Trollbox';
 import { ScanProvider } from './components/ScanContext';
 import { CrmHistory } from './components/CrmButton';
@@ -122,6 +123,7 @@ function AppContent({ ready, setReady }) {
         addFavorite={addFavorite}
         isFavorited={isFavorited}
       />
+      <ThemeToggle />
       <Trollbox userId={userId} nickname={nickname} />
       {/* CRM History — floating top right */}
       <div className="fixed top-3 right-3 z-40">
@@ -179,21 +181,16 @@ export default function App() {
     <BrowserRouter>
       <style>{`
         ::placeholder {
-          color: rgba(184, 174, 160, 0.4) !important;
-          opacity: 1 !important;
-          -webkit-text-fill-color: rgba(184, 174, 160, 0.4) !important;
+          color: var(--muted-2, rgba(184, 174, 160, 0.4)) !important;
+          opacity: 0.6 !important;
         }
         ::-webkit-input-placeholder {
-          color: rgba(184, 174, 160, 0.4) !important;
-          opacity: 1 !important;
-          -webkit-text-fill-color: rgba(184, 174, 160, 0.4) !important;
+          color: var(--muted-2, rgba(184, 174, 160, 0.4)) !important;
+          opacity: 0.6 !important;
         }
         ::-moz-placeholder {
-          color: rgba(184, 174, 160, 0.4) !important;
-          opacity: 1 !important;
-        }
-        :-ms-input-placeholder {
-          color: rgba(184, 174, 160, 0.4) !important;
+          color: var(--muted-2, rgba(184, 174, 160, 0.4)) !important;
+          opacity: 0.6 !important;
         }
       `}</style>
       <ScanProvider>
