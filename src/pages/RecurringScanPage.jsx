@@ -517,11 +517,13 @@ function WebGrowthBadge({ company }) {
 
 function ResultCard({ result, rank, addFavorite, isFavorited }) {
   const [expanded, setExpanded] = useState(false);
-  const card = result.card || {};
+  const cardRaw = result.card || {};
+  const card = result.card ? { ...cardRaw, ...result } : result;
   const score = result.score || 0;
   const isFav = isFavorited ? isFavorited(result.name) : false;
-  const rawWeb = typeof card.website === 'object' ? (card.website?.url || card.website?.domain || '') : (card.website || '');
+  const rawWeb = typeof (card.website || cardRaw.website) === 'object' ? ((card.website || cardRaw.website)?.url || (card.website || cardRaw.website)?.domain || '') : (card.website || cardRaw.website || '');
   const webUrl = rawWeb ? (rawWeb.startsWith('http') ? rawWeb : `https://${rawWeb}`) : null;
+  const companyId = card.id || cardRaw.id;
 
   const scoreColor = score >= 9 ? 'bg-emerald-500/15 text-emerald-300 border-emerald-400/30'
     : score >= 7 ? 'bg-sky-500/15 text-sky-300 border-sky-400/30'
@@ -537,8 +539,8 @@ function ResultCard({ result, rank, addFavorite, isFavorited }) {
         <div className="flex flex-col items-center flex-shrink-0 w-7 pt-0.5">
           <span className={`text-[13px] font-bold ${rankColor}`}>#{rank}</span>
         </div>
-        {card.logo_url ? (
-          <img src={card.logo_url} alt="" className="w-9 h-9 rounded-lg bg-ink/50 flex-shrink-0" onError={e => { e.target.style.display = 'none'; }} />
+        {(card.logo_url || cardRaw.logo_url) ? (
+          <img src={card.logo_url || cardRaw.logo_url} alt="" className="w-9 h-9 rounded-lg bg-ink/50 flex-shrink-0" onError={e => { e.target.style.display = 'none'; }} />
         ) : (
           <div className="w-9 h-9 rounded-lg bg-violet-500/10 flex items-center justify-center flex-shrink-0">
             <span className="text-violet-400 font-bold text-sm">{(result.name || '?')[0]}</span>
@@ -549,19 +551,20 @@ function ResultCard({ result, rank, addFavorite, isFavorited }) {
             <h3 className="font-bold text-bright text-sm truncate">{result.name}</h3>
             <span className={`text-[10px] px-2 py-0.5 rounded-md border font-bold ${scoreColor}`}>{score}/10</span>
             {result.confidence && <span className={`text-[9px] ${confidenceColor}`}>{result.confidence}</span>}
+            {companyId && typeof companyId === 'number' && <a href={`/company/${companyId}`} className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-400 border border-pink-400/15 hover:bg-pink-500/20 font-bold" title="Harmonic Card">H</a>}
             {webUrl && <a href={webUrl} target="_blank" rel="noopener" className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-400/30 hover:bg-sky-500/20 font-medium">🌐</a>}
           </div>
           <div className="flex gap-1.5 mt-0.5 flex-wrap">
             {card.funding_stage && <span className="text-[9px] px-1.5 py-0.5 rounded-md border bg-sky-500/8 text-sky-400/70 border-sky-500/20">{card.funding_stage}</span>}
-            {card.funding_total > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-md border bg-sky-500/10 text-sky-400 border-sky-500/20">💰 {moneyFmt(card.funding_total)}</span>}
-            {card.headcount > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-md border bg-surface/40 text-muted/50 border-border/20">👥 {card.headcount}</span>}
+            {(card.funding_total || cardRaw.funding_total) > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-md border bg-sky-500/10 text-sky-400 border-sky-500/20">💰 {moneyFmt(card.funding_total || cardRaw.funding_total)}</span>}
+            {(card.headcount || cardRaw.headcount) > 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-md border bg-surface/40 text-muted/50 border-border/20">👥 {card.headcount || cardRaw.headcount}</span>}
             <WebGrowthBadge company={result} />
             {result._sourceSearch && <span className="text-[9px] px-1.5 py-0.5 rounded-md border bg-amber-500/8 text-amber-400/60 border-amber-400/15">🔍 {result._sourceSearch}</span>}
           </div>
         </div>
       </div>
 
-      {card.description && <p className="text-[10px] text-muted/50 leading-relaxed line-clamp-2 ml-10">{card.description}</p>}
+      {(card.description || cardRaw.description) && <p className="text-[10px] text-muted/50 leading-relaxed line-clamp-2 ml-10">{card.description || cardRaw.description}</p>}
 
       {result.analysis && (
         <div className="ml-10">
