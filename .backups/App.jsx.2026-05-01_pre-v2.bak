@@ -179,21 +179,21 @@ export default function App() {
     <BrowserRouter>
       <style>{`
         ::placeholder {
-          color: rgba(184, 174, 160, 0.4) !important;
+          color: rgba(255, 255, 255, 0.15) !important;
           opacity: 1 !important;
-          -webkit-text-fill-color: rgba(184, 174, 160, 0.4) !important;
+          -webkit-text-fill-color: rgba(255, 255, 255, 0.15) !important;
         }
         ::-webkit-input-placeholder {
-          color: rgba(184, 174, 160, 0.4) !important;
+          color: rgba(255, 255, 255, 0.15) !important;
           opacity: 1 !important;
-          -webkit-text-fill-color: rgba(184, 174, 160, 0.4) !important;
+          -webkit-text-fill-color: rgba(255, 255, 255, 0.15) !important;
         }
         ::-moz-placeholder {
-          color: rgba(184, 174, 160, 0.4) !important;
+          color: rgba(255, 255, 255, 0.15) !important;
           opacity: 1 !important;
         }
         :-ms-input-placeholder {
-          color: rgba(184, 174, 160, 0.4) !important;
+          color: rgba(255, 255, 255, 0.15) !important;
         }
       `}</style>
       <ScanProvider>
