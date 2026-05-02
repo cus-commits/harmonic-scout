@@ -91,11 +91,36 @@
      LIGHT MODE — Layer 2: Per-component overrides
      ═══════════════════════════════════════════════════════════════ */
 
-  /* Surface unification — inline rgba(46,42,37) or rgba(54,50,44) backgrounds */
+  /* Surface unification — ALL dark brown inline rgba backgrounds */
   body.light [style*="rgba(46, 42, 37"],
-  body.light [style*="rgba(54, 50, 44"] {
+  body.light [style*="rgba(54, 50, 44"],
+  body.light [style*="rgba(38, 35, 32"],
+  body.light [style*="rgba(34, 30, 26"] {
     background: rgb(var(--card)) !important;
+    border-color: var(--border-2) !important;
     box-shadow: 0 1px 0 rgba(15, 23, 51, 0.03), 0 4px 14px rgba(15, 23, 51, 0.04);
+  }
+
+  /* Panels with tinted backgrounds (funding alerts, scan winners) — keep their tint */
+  body.light [style*="rgba(110, 231, 183"] {
+    background: rgba(8, 145, 178, 0.04) !important;
+  }
+  body.light [style*="rgba(196, 181, 253"] {
+    background: rgba(99, 102, 241, 0.04) !important;
+  }
+
+  /* Dark boxShadows → lighter in light mode */
+  body.light [style*="rgba(0,0,0,0.3"],
+  body.light [style*="rgba(0,0,0,0.4"],
+  body.light [style*="rgba(0,0,0,0.5"],
+  body.light [style*="rgba(0,0,0,0.6"],
+  body.light [style*="rgba(0,0,0,0.7"],
+  body.light [style*="rgba(0, 0, 0, 0.3"],
+  body.light [style*="rgba(0, 0, 0, 0.4"],
+  body.light [style*="rgba(0, 0, 0, 0.5"],
+  body.light [style*="rgba(0, 0, 0, 0.6"],
+  body.light [style*="rgba(0, 0, 0, 0.7"] {
+    box-shadow: 0 8px 32px rgba(15, 23, 51, 0.12), 0 2px 8px rgba(15, 23, 51, 0.06) !important;
   }
 
   /* Bottom nav */
@@ -103,6 +128,12 @@
     background: rgba(244, 242, 238, 0.92) !important;
     border-top-color: rgba(20, 28, 48, 0.08) !important;
     box-shadow: 0 -4px 28px rgba(15, 23, 51, 0.06), 0 -1px 0 rgba(20, 28, 48, 0.06) !important;
+  }
+
+  /* Mobile flyout panels */
+  body.light [style*="rgba(46, 42, 37, 0.92"],
+  body.light [style*="rgba(46, 42, 37, 0.9"] {
+    background: rgba(244, 242, 238, 0.96) !important;
   }
 
   /* Tailwind semantic color overrides */
