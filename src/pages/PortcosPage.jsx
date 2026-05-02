@@ -5,25 +5,25 @@ import FindSimilar from '../components/FindSimilar';
 const API_BASE = import.meta.env?.VITE_API_URL || 'https://pigeon-api.up.railway.app';
 
 const PORTFOLIO = [
-  { name: 'steel.dev', domain: 'steel.dev', harmonic_id: 61225765 },  // ✓ Steel — steel.dev
-  { name: 'Bubblemaps', domain: 'bubblemaps.io' },                     // ✓ bubblemaps.io
-  { name: 'pump.fun', domain: 'pump.fun' },                            // ✓ pump.fun
-  { name: 'Xverse', domain: 'xverse.app' },                            // ✓ xverse.app
-  { name: 'Trendex', domain: 'trendex.vip' },                          // ? trendex.vip
-  { name: 'Haloo', domain: 'haloo.ai' },                               // ? haloo.ai
-  { name: 'Hirechain', domain: 'hirechain.io' },                       // ? hirechain.io
-  { name: 'Botanix Labs', domain: 'botanixlabs.xyz' },                 // ? botanixlabs.xyz
-  { name: 'Pear Protocol', domain: 'pear.garden' },                    // ? pear.garden
-  { name: 'Lagoon Finance', domain: 'lagoon.finance' },                // ? lagoon.finance
-  { name: 'Aura Fun', domain: 'aura.fun' },                            // aura.fun — "Aura" too generic
-  { name: 'ord.io', domain: 'ord.io' },                                // ? ord.io
-  { name: 'Kind Designs', domain: 'kinddesigns.com' },                 // ✓ kinddesigns.com
-  { name: 'Raze', domain: 'raze.finance' },                            // ? raze.finance
-  { name: 'Bound Money', domain: 'bound.money' },                      // bound.money — "Bound" too generic
-  { name: 'worm.wtf', domain: 'worm.wtf' },                            // ✓ worm.wtf
-  { name: 'Cob', domain: 'cobfoods.com' },                             // ✓ cobfoods.com
-  { name: 'Vest Markets', domain: 'vest.markets' },                    // ? vest.markets
-  { name: 'Theta Neurotech', domain: 'thetaneurotech.com' },           // ✓ thetaneurotech.com
+  { name: 'steel.dev', domain: 'steel.dev', harmonic_id: 61225765 },
+  { name: 'Bubblemaps', domain: 'bubblemaps.io', harmonic_id: 6628916 },
+  { name: 'pump.fun', domain: 'pump.fun', harmonic_id: 55469102 },
+  { name: 'Xverse', domain: 'xverse.app', harmonic_id: 34986381 },
+  { name: 'Trendex', domain: 'trendex.vip', harmonic_id: 5130948 },
+  { name: 'Haloo', domain: 'haloo.ai', harmonic_id: 46840410 },
+  { name: 'Hirechain', domain: 'hirechain.io', harmonic_id: 11191974 },
+  { name: 'Botanix Labs', domain: 'botanixlabs.xyz' },
+  { name: 'Pear Protocol', domain: 'pear.garden', harmonic_id: 12587778 },
+  { name: 'Lagoon Finance', domain: 'lagoon.finance', harmonic_id: 60704871 },
+  { name: 'Aura Fun', domain: 'aura.fun', harmonic_id: 60335841 },
+  { name: 'ord.io', domain: 'ord.io', harmonic_id: 13038513 },
+  { name: 'Kind Designs', domain: 'kinddesigns.com', harmonic_id: 35417027 },
+  { name: 'Raze', domain: 'raze.finance', harmonic_id: 11438176 },
+  { name: 'Bound Money', domain: 'bound.money', harmonic_id: 67246936 },
+  { name: 'worm.wtf', domain: 'worm.wtf', harmonic_id: 56345624 },
+  { name: 'Cob', domain: 'cobfoods.com', harmonic_id: 64443040 },
+  { name: 'Vest Markets', domain: 'vest.markets' },
+  { name: 'Theta Neurotech', domain: 'thetaneurotech.com', harmonic_id: 49287435 },
 ];
 
 function WebGrowthBadge({ company }) {
