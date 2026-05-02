@@ -250,7 +250,7 @@ export default function HomePage({ addFavorite, isFavorited }) {
                       <span className="text-[13px] font-semibold text-bright truncate">{r.name}</span>
                       <span className={`font-mono text-[9.5px] font-bold px-1.5 py-0.5 rounded-[5px] border ${scoreClass}`}>{r.score}/10</span>
                       {webUrl && <a href={webUrl} target="_blank" rel="noopener" onClick={e => e.stopPropagation()} className="text-bo text-[9px] hover:text-bo/80 flex-shrink-0">🌐</a>}
-                      {cardId && typeof cardId === 'number' && <a href={`/company/${cardId}`} onClick={e => e.stopPropagation()} className="text-[9px] px-[5px] py-[1px] rounded-[4px] bg-pink-400/10 text-pink-400/70 border border-pink-400/18 font-extrabold font-mono leading-none inline-flex items-center hover:bg-pink-400/20 flex-shrink-0">H</a>}
+                      {cardId && typeof cardId === 'number' && <a href={`/company/${cardId}`} onClick={e => e.stopPropagation()} className="h-pill flex-shrink-0">H</a>}
                     </div>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       {card.funding_total > 0 && <span className="text-[9px] text-bo/50">💰 {moneyFmt(card.funding_total)}</span>}

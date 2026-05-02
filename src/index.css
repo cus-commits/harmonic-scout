@@ -694,10 +694,34 @@
     overflow: hidden;
   }
 
-  /* ─── H badge (Harmonic pill) — quiet tag style ─── */
-  .font-extrabold.font-mono.leading-none.inline-flex {
-    line-height: 1;
+  /* ─── H pill (Harmonic company card link) ─── */
+  .h-pill {
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 800;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: rgba(244, 114, 182, 0.10);
+    color: rgba(244, 114, 182, 0.9);
     box-shadow: inset 0 0 0 1px rgba(244, 114, 182, 0.22);
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    transition: background 0.12s, color 0.12s;
+    flex-shrink: 0;
+  }
+  .h-pill:hover {
+    background: rgba(244, 114, 182, 0.18);
+    color: rgba(244, 114, 182, 1);
+  }
+  body.light .h-pill {
+    background: rgba(219, 39, 119, 0.08);
+    color: #be185d;
+    box-shadow: inset 0 0 0 1px rgba(219, 39, 119, 0.22);
+  }
+  body.light .h-pill:hover {
+    background: rgba(219, 39, 119, 0.14);
   }
 
   /* ─── CRM card reachout button as control, not status ─── */

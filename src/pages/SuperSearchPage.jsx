@@ -214,7 +214,7 @@ function SignalCard({ signal, addFavorite, isFavorited }) {
             ↗ {signal.url.replace(/^https?:\/\//, '').slice(0, 45)}
           </a>
         )}
-        {(signal.companyName || signal.source === 'harmonic') && <div className="flex items-center gap-1.5 flex-wrap">{signal.source === 'harmonic' && signal.id && <a href={`/company/${signal.id.replace('hm-','')}`} className="text-[9px] px-[5px] py-[1px] rounded-[4px] bg-pink-400/10 text-pink-400/70 border border-pink-400/18 hover:bg-pink-400/20 font-extrabold font-mono leading-none inline-flex items-center" title="Company Card">H</a>}<FindSimilar addFavorite={addFavorite} isFavorited={isFavorited} companyId={signal.id?.replace('hm-','')} companyName={signal.companyName || signal.title} /><CrmButton company={{ name: signal.companyName || signal.title, website: signal.url }} /></div>}
+        {(signal.companyName || signal.source === 'harmonic') && <div className="flex items-center gap-1.5 flex-wrap">{signal.source === 'harmonic' && signal.id && <a href={`/company/${signal.id.replace('hm-','')}`} className="h-pill" title="Company Card">H</a>}<FindSimilar addFavorite={addFavorite} isFavorited={isFavorited} companyId={signal.id?.replace('hm-','')} companyName={signal.companyName || signal.title} /><CrmButton company={{ name: signal.companyName || signal.title, website: signal.url }} /></div>}
       </div>
     </div>
   );

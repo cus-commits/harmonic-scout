@@ -921,8 +921,8 @@ export default function AirtablePage() {
                       </div>
                     )}
 
-                    {/* Vote summary line — DD style */}
-                    <div className="flex items-center gap-1.5">
+                    {/* Vote summary line */}
+                    <div className="flex items-center gap-1">
                       {(() => {
                         const votes = Array.isArray(c.in_or_out) ? c.in_or_out : (c.in_or_out ? [c.in_or_out] : []);
                         const inVotes = votes.filter(v => typeof v === 'string' && v.toUpperCase().includes('IN'));
@@ -931,9 +931,9 @@ export default function AirtablePage() {
                         const pendingCount = totalVoters - inVotes.length - outVotes.length;
                         return (
                           <>
-                            {inVotes.length > 0 && <span className="font-mono text-[10px] px-2 py-0.5 rounded-full bg-sm/12 text-sm border border-sm/20 font-medium">{inVotes.length} In</span>}
-                            {outVotes.length > 0 && <span className="font-mono text-[10px] px-2 py-0.5 rounded-full bg-rose/12 text-rose border border-rose/20 font-medium">{outVotes.length} Out</span>}
-                            {pendingCount > 0 && <span className="text-[10px] text-muted/40">{pendingCount} pending</span>}
+                            {inVotes.length > 0 && <span className="font-mono text-[7px] px-1 py-px rounded-full bg-sm/10 text-sm/80 font-semibold leading-none">{inVotes.length} in</span>}
+                            {outVotes.length > 0 && <span className="font-mono text-[7px] px-1 py-px rounded-full bg-rose/10 text-rose/80 font-semibold leading-none">{outVotes.length} out</span>}
+                            {pendingCount > 0 && <span className="text-[7px] text-muted/30 leading-none">{pendingCount} pending</span>}
                           </>
                         );
                       })()}
@@ -984,7 +984,7 @@ export default function AirtablePage() {
                     {/* Actions: H + Similar + Enrich + Note + Stage */}
                     <div className="flex items-center gap-1.5 md:gap-3 flex-wrap pt-1 md:justify-center">
                       {hd?.harmonic_id && (
-                        <a href={`/company/${hd.harmonic_id}`} className="text-[9px] px-[5px] py-[1px] rounded-[4px] bg-pink-400/10 text-pink-400/70 border border-pink-400/18 hover:bg-pink-400/20 font-extrabold font-mono leading-none inline-flex items-center" title="Company Card">H</a>
+                        <a href={`/company/${hd.harmonic_id}`} className="h-pill" title="Company Card">H</a>
                       )}
                       <FindSimilar companyName={c.company} companyId={null} />
                       {enrichAvailable[c.company] && <button onClick={() => handleEnrich(c)} disabled={enriching === c.company} className="text-[9px] text-amber-400 font-bold animate-pulse">⚡</button>}
