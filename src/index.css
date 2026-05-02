@@ -639,6 +639,19 @@
   /* ─── Card hover stability (ALIGNMENT_BUGS.md Bug #7) ─── */
   .glass-card, [class*="-card"] { will-change: transform; }
 
+  /* ─── Global card elevation: all rounded-14 cards get shadows ─── */
+  .rounded-\[14px\][style*="rgba(46, 42, 37"],
+  .rounded-\[14px\][style*="rgba(38, 35, 32"],
+  .rounded-\[14px\][style*="rgba(29, 24, 20"] {
+    box-shadow: var(--shadow-sm);
+    will-change: transform;
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.12s;
+  }
+  .rounded-\[14px\][style*="rgba(46, 42, 37"]:hover,
+  .rounded-\[14px\][style*="rgba(38, 35, 32"]:hover {
+    box-shadow: var(--shadow-md);
+  }
+
   /* ═══════════════════════════════════════════════════════════════
      ALIGNMENT BUGS — from ALIGNMENT_BUGS.md
      ═══════════════════════════════════════════════════════════════ */
