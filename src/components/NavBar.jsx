@@ -365,15 +365,11 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
                 >
                   <div className="sc-opt-top">
                     <span className="sc-opt-glyph sc-opt-glyph-scan">🔬</span>
-                    <span className="sc-opt-badge">Recurring</span>
+                    <span className="sc-opt-badge">Long Form</span>
                   </div>
                   <div className="sc-opt-h">Scan Agent</div>
                   <div className="sc-opt-d">
                     Run scheduled scans across your saved theses. Reasoning, ranking, and a vetting report.
-                  </div>
-                  <div className="sc-opt-foot">
-                    <span className="sc-opt-stat">7 active theses</span>
-                    <span className="sc-opt-stat">Last run · 2h</span>
                   </div>
                   <span className="sc-opt-cta">Open Scan Agent →</span>
                 </button>
@@ -390,16 +386,12 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
                   <div className="sc-opt-d">
                     Ad-hoc search of Harmonic's full universe with custom filters and natural-language refining.
                   </div>
-                  <div className="sc-opt-foot">
-                    <span className="sc-opt-stat">42M companies</span>
-                    <span className="sc-opt-stat">Live</span>
-                  </div>
                   <span className="sc-opt-cta">Open Super Search →</span>
                 </button>
               </div>
 
               <div className="sc-foot">
-                <span>Tip: Scan Agent is best for "watch this theme weekly". Super Search is best for "I need it now".</span>
+                <span>Scan Agent is best for longer searches that take hours. Super Search is better for searches that take minutes.</span>
               </div>
             </div>
           </div>
