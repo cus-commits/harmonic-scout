@@ -48,9 +48,10 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
   }, [showSearch]);
 
   useEffect(() => {
-    const handler = (e) => { if (scanRef.current && !scanRef.current.contains(e.target)) setShowScanMenu(false); };
-    if (showScanMenu) document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    if (!showScanMenu) return;
+    const onKey = (e) => { if (e.key === 'Escape') setShowScanMenu(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, [showScanMenu]);
 
   useEffect(() => {
@@ -344,25 +345,62 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
         </div>
       )}
 
-      {/* ─── Scan chooser overlay ─── */}
+      {/* ─── Scan chooser — full modal dialog ─── */}
       {showScanMenu && (
-        <div ref={scanRef} className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-[340px] max-w-[calc(100vw-24px)] bg-card border border-accent/20 rounded-xl z-[60] fade-in"
-          style={{ boxShadow: '0 -8px 40px rgba(0,0,0,0.6)' }}>
-          <div className="p-3">
-            <p className="text-[10px] uppercase tracking-widest text-muted/50 font-bold font-mono mb-3">Choose scan type</p>
-            <div className="grid grid-cols-2 gap-2">
-              <button onClick={() => { navigate('/searchagent'); setShowScanMenu(false); }}
-                className={`text-left p-3 rounded-xl border transition-colors ${location.pathname === '/searchagent' ? 'bg-accent/10 border-accent/30' : 'border-border/30 hover:bg-card-hi'}`}>
-                <div className="text-lg mb-1">🔬</div>
-                <p className="text-xs font-semibold text-bright">Scan Agent</p>
-                <p className="text-[9px] text-muted/60 mt-0.5">Full pipeline AI scan</p>
-              </button>
-              <button onClick={() => { navigate('/super'); setShowScanMenu(false); }}
-                className={`text-left p-3 rounded-xl border transition-colors ${location.pathname === '/super' ? 'bg-accent/10 border-accent/30' : 'border-border/30 hover:bg-card-hi'}`}>
-                <div className="text-lg mb-1">⚡</div>
-                <p className="text-xs font-semibold text-bright">Super Search</p>
-                <p className="text-[9px] text-muted/60 mt-0.5">Multi-source deep scan</p>
-              </button>
+        <div className="sc-bg" onMouseDown={(e) => { if (e.target === e.currentTarget) setShowScanMenu(false); }}>
+          <div className="sc-anchor">
+            <div className="sc-card" role="dialog" aria-label="Choose scan type">
+              <div className="sc-head">
+                <div className="sc-head-l">
+                  <div className="sc-head-h">Start a scan</div>
+                  <div className="sc-head-s">Pick how you want to surface companies today.</div>
+                </div>
+                <button className="sc-x" onClick={() => setShowScanMenu(false)}>×</button>
+              </div>
+
+              <div className="sc-grid">
+                <button
+                  className="sc-opt sc-opt-scan"
+                  onClick={() => { navigate('/searchagent'); setShowScanMenu(false); }}
+                >
+                  <div className="sc-opt-top">
+                    <span className="sc-opt-glyph sc-opt-glyph-scan">🔬</span>
+                    <span className="sc-opt-badge">Recurring</span>
+                  </div>
+                  <div className="sc-opt-h">Scan Agent</div>
+                  <div className="sc-opt-d">
+                    Run scheduled scans across your saved theses. Reasoning, ranking, and a vetting report.
+                  </div>
+                  <div className="sc-opt-foot">
+                    <span className="sc-opt-stat">7 active theses</span>
+                    <span className="sc-opt-stat">Last run · 2h</span>
+                  </div>
+                  <span className="sc-opt-cta">Open Scan Agent →</span>
+                </button>
+
+                <button
+                  className="sc-opt sc-opt-super"
+                  onClick={() => { navigate('/super'); setShowScanMenu(false); }}
+                >
+                  <div className="sc-opt-top">
+                    <span className="sc-opt-glyph sc-opt-glyph-super">⚡</span>
+                    <span className="sc-opt-badge sc-badge-super">One-shot</span>
+                  </div>
+                  <div className="sc-opt-h">Super Search</div>
+                  <div className="sc-opt-d">
+                    Ad-hoc search of Harmonic's full universe with custom filters and natural-language refining.
+                  </div>
+                  <div className="sc-opt-foot">
+                    <span className="sc-opt-stat">42M companies</span>
+                    <span className="sc-opt-stat">Live</span>
+                  </div>
+                  <span className="sc-opt-cta">Open Super Search →</span>
+                </button>
+              </div>
+
+              <div className="sc-foot">
+                <span>Tip: Scan Agent is best for "watch this theme weekly". Super Search is best for "I need it now".</span>
+              </div>
             </div>
           </div>
         </div>
