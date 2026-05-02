@@ -441,7 +441,7 @@ export default function AirtablePage() {
       const r = await fetch(`${API_BASE}/api/harmonic/batch-funding`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ companies: companyList.map(c => ({ name: c.company, website: c.company_link || '', twitter: c.twitter_link || '' })) }),
+        body: JSON.stringify({ companies: companyList.map(c => ({ name: c.company, website: c.company_link || '', twitter: c.twitter_link || '', harmonic_id: c.harmonic_id || null, airtable_id: c.airtable_id || null })) }),
       });
       if (r.ok) {
         const data = await r.json();
