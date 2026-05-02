@@ -126,7 +126,7 @@ export default function HomePage({ addFavorite, isFavorited }) {
       {/* Brand header — v2 style */}
       <div className="text-center mb-8 select-none">
         <p className="font-mono text-[9px] text-muted/58 tracking-[0.32em] uppercase mb-2">🐦 pigeon finder</p>
-        <h1 className="text-[22px] font-bold text-accent tracking-[0.42em] uppercase">Daxos Capital</h1>
+        <h1 className="font-serif text-[28px] font-semibold text-accent tracking-[0.08em]" style={{ letterSpacing: '-0.02em' }}>Daxos Capital</h1>
         <p className="font-serif italic text-sm text-bright/62 mt-1.5 tracking-wide">
           {user ? `Welcome back, ${user}` : 'Claim your identity below'} · {dayName()}
         </p>

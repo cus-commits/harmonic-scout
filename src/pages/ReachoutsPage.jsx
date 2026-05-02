@@ -340,7 +340,7 @@ export default function ReachoutsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-bright flex items-center gap-2">
+          <h1 className="font-serif text-xl font-semibold text-bright flex items-center gap-2">
             📡 Reachouts
             {totalUnread > 0 && (
               <span className="text-sm px-2 py-0.5 rounded-full bg-accent/20 text-accent font-bold">

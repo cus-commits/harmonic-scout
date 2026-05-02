@@ -1225,7 +1225,7 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-xl font-bold text-bright">🔬 Scan Agent</h1>
+          <h1 className="font-serif text-xl font-semibold text-bright">🔬 Scan Agent</h1>
           <p className="text-[11px] text-muted/40 mt-1">AI-powered pipeline across all Harmonic saved searches</p>
         </div>
         <span className="text-[11px] text-bo/70 font-medium">{crmUser}</span>

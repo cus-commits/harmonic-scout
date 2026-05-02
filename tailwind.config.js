@@ -31,6 +31,17 @@ export default {
         serif: ['Fraunces', 'Georgia', 'serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
+      boxShadow: {
+        'sm': 'var(--shadow-sm)',
+        'md': 'var(--shadow-md)',
+        'lg': 'var(--shadow-lg)',
+      },
+      borderRadius: {
+        'pill': '6px',
+        'btn': '10px',
+        'card': '14px',
+        'modal': '20px',
+      },
     },
   },
   plugins: [],

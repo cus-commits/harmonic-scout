@@ -77,7 +77,7 @@ export default function CompanyDetail({ addFavorite, isFavorited }) {
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <h1 className="text-lg font-bold text-bright">{company.name}</h1>
+          <h1 className="font-serif text-lg font-semibold text-bright">{company.name}</h1>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
             {webUrl && <a href={webUrl} target="_blank" rel="noopener" className="text-[10px] px-1.5 py-0.5 rounded bg-bo/10 text-bo border border-bo/15 hover:bg-bo/20">🌐 {webUrl.replace(/https?:\/\//, '').replace(/\/$/, '')}</a>}
             {company.socials?.twitter && <a href={company.socials.twitter} target="_blank" rel="noopener" className="text-[10px] px-1.5 py-0.5 rounded bg-bo/10 text-bo border border-bo/15 hover:bg-bo/20">𝕏</a>}

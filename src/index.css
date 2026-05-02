@@ -4,23 +4,27 @@
 
 @layer base {
   :root {
-    --ink: 34 30 26;
-    --ink-2: 28 24 21;
-    --surface: 46 42 37;
-    --card: 54 50 44;
-    --card-hi: 61 56 48;
+    /* ═══════════════════════════════════════════════════════════════
+       DARK MODE — Deepened surface ramp per FIX_MANUAL Section 1
+       Each level ~5% lighter than the one below for clear elevation
+       ═══════════════════════════════════════════════════════════════ */
+    --ink: 20 17 14;
+    --ink-2: 14 12 10;
+    --surface: 29 24 20;
+    --card: 39 31 26;
+    --card-hi: 50 40 33;
     --border: 74 68 60;
-    --border-2: rgba(245, 240, 232, 0.09);
+    --border-2: rgba(255, 230, 200, 0.10);
 
-    --bright: 250 246 239;
-    --bright-2: rgba(250, 246, 239, 0.72);
-    --bright-3: rgba(250, 246, 239, 0.50);
-    --muted: 184 174 160;
-    --muted-2: rgba(184, 174, 160, 0.66);
+    --bright: 245 234 216;
+    --bright-2: rgba(245, 234, 216, 0.72);
+    --bright-3: rgba(245, 234, 216, 0.50);
+    --muted: 138 122 100;
+    --muted-2: rgba(138, 122, 100, 0.66);
 
-    --accent: 230 199 154;
-    --accent-2: 240 217 182;
-    --accent-glow: rgba(230, 199, 154, 0.14);
+    --accent: 232 181 74;
+    --accent-2: 241 197 96;
+    --accent-glow: rgba(232, 181, 74, 0.14);
 
     --bo: 147 218 253;
     --boro: 211 197 254;
@@ -31,6 +35,11 @@
     --sans: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
     --serif: 'Fraunces', Georgia, serif;
     --mono: 'JetBrains Mono', ui-monospace, monospace;
+
+    /* Shadow system — per FIX_MANUAL Section 2 */
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.6);
+    --shadow-lg: 0 16px 40px rgba(0,0,0,0.6), 0 2px 4px rgba(0,0,0,0.7);
   }
 
   * { -webkit-tap-highlight-color: transparent; }
@@ -42,12 +51,12 @@
     color: rgb(var(--bright));
     transition: background-color 0.2s, color 0.2s;
     background-image:
-      radial-gradient(1200px 600px at 80% -10%, rgba(230, 199, 154, 0.06), transparent 60%),
-      radial-gradient(900px 500px at -10% 110%, rgba(230, 199, 154, 0.04), transparent 60%);
+      radial-gradient(1200px 600px at 80% -10%, rgba(232, 181, 74, 0.06), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(232, 181, 74, 0.04), transparent 60%);
   }
 
-  ::placeholder { color: rgb(var(--muted) / 0.4) !important; opacity: 0.6 !important; }
-  ::-webkit-input-placeholder { color: rgb(var(--muted) / 0.4) !important; }
+  ::placeholder { color: rgb(var(--muted) / 0.5) !important; opacity: 0.7 !important; }
+  ::-webkit-input-placeholder { color: rgb(var(--muted) / 0.5) !important; }
 
   ::-webkit-scrollbar { width: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
@@ -57,21 +66,21 @@
      LIGHT MODE — Layer 1: Token redefines
      ═══════════════════════════════════════════════════════════════ */
   body.light {
-    --ink: 244 242 238;
-    --ink-2: 237 233 227;
+    --ink: 247 243 236;
+    --ink-2: 237 231 220;
     --surface: 255 255 255;
     --card: 255 255 255;
     --card-hi: 249 247 242;
     --border: 225 221 213;
-    --border-2: rgba(20, 28, 48, 0.08);
+    --border-2: rgba(40, 30, 20, 0.10);
 
-    --bright: 15 23 51;
-    --bright-2: rgba(15, 23, 51, 0.78);
-    --bright-3: rgba(15, 23, 51, 0.5);
-    --muted: 91 100 128;
-    --muted-2: rgba(91, 100, 128, 0.78);
+    --bright: 28 24 20;
+    --bright-2: rgba(28, 24, 20, 0.78);
+    --bright-3: rgba(28, 24, 20, 0.50);
+    --muted: 122 111 96;
+    --muted-2: rgba(122, 111, 96, 0.78);
 
-    /* NOTE: --accent stays gold — it's the brand color, intentionally unchanged */
+    /* --accent stays gold — brand color, intentionally unchanged */
 
     --bo: 37 99 235;
     --boro: 99 102 241;
@@ -80,6 +89,11 @@
     --rose: 190 18 60;
 
     --accent-glow: rgba(37, 99, 235, 0.10);
+
+    /* Shadows — real shadows, critical for light mode elevation */
+    --shadow-sm: 0 1px 2px rgba(40,30,20,0.06);
+    --shadow-md: 0 4px 12px rgba(40,30,20,0.08), 0 1px 2px rgba(40,30,20,0.04);
+    --shadow-lg: 0 16px 40px rgba(40,30,20,0.12), 0 2px 4px rgba(40,30,20,0.06);
 
     background-image:
       radial-gradient(1200px 600px at 80% -10%, rgba(37, 99, 235, 0.05), transparent 60%),
@@ -95,13 +109,16 @@
   body.light [style*="rgba(46, 42, 37"],
   body.light [style*="rgba(54, 50, 44"],
   body.light [style*="rgba(38, 35, 32"],
-  body.light [style*="rgba(34, 30, 26"] {
+  body.light [style*="rgba(34, 30, 26"],
+  body.light [style*="rgba(39, 31, 26"],
+  body.light [style*="rgba(29, 24, 20"],
+  body.light [style*="rgba(50, 40, 33"] {
     background: rgb(var(--card)) !important;
     border-color: var(--border-2) !important;
-    box-shadow: 0 1px 0 rgba(15, 23, 51, 0.03), 0 4px 14px rgba(15, 23, 51, 0.04);
+    box-shadow: var(--shadow-md);
   }
 
-  /* Panels with tinted backgrounds (funding alerts, scan winners) — keep their tint */
+  /* Panels with tinted backgrounds — keep their tint */
   body.light [style*="rgba(110, 231, 183"] {
     background: rgba(8, 145, 178, 0.04) !important;
   }
@@ -120,20 +137,21 @@
   body.light [style*="rgba(0, 0, 0, 0.5"],
   body.light [style*="rgba(0, 0, 0, 0.6"],
   body.light [style*="rgba(0, 0, 0, 0.7"] {
-    box-shadow: 0 8px 32px rgba(15, 23, 51, 0.12), 0 2px 8px rgba(15, 23, 51, 0.06) !important;
+    box-shadow: var(--shadow-lg) !important;
   }
 
-  /* Bottom nav */
+  /* Bottom nav — per FIX_MANUAL Section 4 */
   body.light nav.fixed {
-    background: rgba(244, 242, 238, 0.92) !important;
-    border-top-color: rgba(20, 28, 48, 0.08) !important;
-    box-shadow: 0 -4px 28px rgba(15, 23, 51, 0.06), 0 -1px 0 rgba(20, 28, 48, 0.06) !important;
+    background: rgba(255, 255, 255, 0.85) !important;
+    backdrop-filter: blur(20px) !important;
+    border-top-color: var(--border-2) !important;
+    box-shadow: 0 -4px 16px rgba(40,30,20,0.04) !important;
   }
 
   /* Mobile flyout panels */
   body.light [style*="rgba(46, 42, 37, 0.92"],
   body.light [style*="rgba(46, 42, 37, 0.9"] {
-    background: rgba(244, 242, 238, 0.96) !important;
+    background: rgba(247, 243, 236, 0.96) !important;
   }
 
   /* Tailwind semantic color overrides */
@@ -177,32 +195,57 @@
   body.light .text-white { color: rgb(var(--bright)) !important; }
   body.light .border-gray-700, body.light .border-gray-800 { border-color: rgb(var(--border)) !important; }
 
-  /* White-alpha → navy-alpha in light mode */
-  body.light [class*="border-white\/"] { border-color: rgba(15, 23, 51, 0.08) !important; }
-  body.light [class*="bg-white\/"] { background-color: rgba(15, 23, 51, 0.04) !important; }
+  /* White-alpha → dark-alpha in light mode */
+  body.light [class*="border-white\/"] { border-color: rgba(40, 30, 20, 0.08) !important; }
+  body.light [class*="bg-white\/"] { background-color: rgba(40, 30, 20, 0.04) !important; }
   body.light .bg-black\/40, body.light .bg-black\/50, body.light .bg-black\/60 {
-    background-color: rgba(15, 23, 51, 0.32) !important;
+    background-color: rgba(40, 30, 20, 0.32) !important;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     INPUT STYLING — per FIX_MANUAL Section 3e
+     ═══════════════════════════════════════════════════════════════ */
+  body.light input:not([type="checkbox"]):not([type="radio"]),
+  body.light textarea,
+  body.light select {
+    border-color: var(--border-2);
+    box-shadow: inset 0 1px 2px rgba(40,30,20,0.04);
+  }
+  body.light input:focus,
+  body.light textarea:focus,
+  body.light select:focus {
+    border-color: rgb(var(--accent));
+    box-shadow: 0 0 0 3px rgba(232, 181, 74, 0.12);
   }
 }
 
 @layer components {
-  /* ─── Glass card ─── */
+  /* ─── Glass card — with elevation per FIX_MANUAL Section 2 ─── */
   .glass-card {
     background: rgb(var(--card) / 0.8);
     backdrop-filter: blur(12px);
     border: 1px solid var(--border-2);
-    border-radius: 1rem;
-    transition: border-color 0.15s, background 0.15s;
+    border-radius: 14px;
+    box-shadow: var(--shadow-sm);
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s, transform 0.12s;
+  }
+  .glass-card:hover {
+    border-color: rgba(255, 230, 200, 0.18);
+    box-shadow: var(--shadow-md);
   }
   body.light .glass-card {
     background: #ffffff;
     border-color: var(--border-2);
-    box-shadow: 0 4px 14px rgba(15, 23, 51, 0.04);
+    box-shadow: var(--shadow-md);
+  }
+  body.light .glass-card:hover {
+    box-shadow: var(--shadow-lg);
+    border-color: rgba(40, 30, 20, 0.14);
   }
 
   /* ─── Glow ─── */
   .glow-accent {
-    box-shadow: 0 0 20px var(--accent-glow), 0 0 60px rgba(230, 199, 154, 0.05);
+    box-shadow: 0 0 20px var(--accent-glow), 0 0 60px rgba(232, 181, 74, 0.05);
   }
   body.light .glow-accent {
     box-shadow: 0 0 20px rgba(37, 99, 235, 0.08), 0 0 60px rgba(37, 99, 235, 0.03);
@@ -210,30 +253,40 @@
 
   /* ─── Inputs ─── */
   .input-base {
-    @apply w-full rounded-xl px-4 py-3 focus:outline-none transition-all;
+    @apply w-full rounded-[10px] px-4 py-3 focus:outline-none transition-all;
     background: rgb(var(--surface));
     border: 1px solid var(--border-2);
     color: rgb(var(--bright));
+    font-size: 13px;
   }
   .input-base:focus {
     border-color: rgb(var(--accent) / 0.5);
-    box-shadow: 0 0 0 1px rgb(var(--accent) / 0.2);
+    box-shadow: 0 0 0 3px rgb(var(--accent) / 0.12);
   }
   body.light .input-base {
     background: rgb(var(--card));
     border-color: var(--border-2);
+    box-shadow: inset 0 1px 2px rgba(40,30,20,0.04);
+  }
+  body.light .input-base:focus {
+    border-color: rgb(var(--accent));
+    box-shadow: 0 0 0 3px rgba(232, 181, 74, 0.12);
   }
 
-  /* ─── Buttons ─── */
+  /* ─── Buttons — per FIX_MANUAL Section 10 ─── */
   .btn-primary {
-    @apply font-bold px-6 py-3 rounded-xl active:scale-[0.97] transition-all;
+    @apply font-bold px-6 py-3 rounded-[10px] transition-all;
     background: rgb(var(--accent));
     color: rgb(var(--ink));
   }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-primary:active { transform: translateY(1px); }
+  .btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px rgb(var(--accent) / 0.3); }
   body.light .btn-primary { color: #ffffff; }
 
   .btn-ghost { color: rgb(var(--muted)); @apply px-4 py-2 rounded-lg transition-colors; }
-  .btn-ghost:hover { color: rgb(var(--bright)); }
+  .btn-ghost:hover { color: rgb(var(--bright)); background: rgb(var(--card) / 0.5); }
+  .btn-ghost:active { transform: translateY(1px); }
 
   /* ─── Tags ─── */
   .tag {
@@ -244,10 +297,13 @@
   }
 
   /* ─── V2 glass ─── */
-  .v2-glass { background: rgba(46, 42, 37, 0.55); }
+  .v2-glass {
+    background: rgba(46, 42, 37, 0.55);
+    box-shadow: var(--shadow-sm);
+  }
   body.light .v2-glass {
     background: #ffffff;
-    box-shadow: 0 4px 14px rgba(15, 23, 51, 0.04);
+    box-shadow: var(--shadow-md);
   }
 
   /* ─── Animations ─── */
@@ -265,19 +321,31 @@
   /* ─── Card hover stability (ALIGNMENT_BUGS.md Bug #7) ─── */
   .glass-card, [class*="-card"] { will-change: transform; }
 
-  /* ─── Scan Chooser modal ─── */
+  /* ═══════════════════════════════════════════════════════════════
+     GLOBAL INTERACTIVE STATES — per FIX_MANUAL Section 10
+     ═══════════════════════════════════════════════════════════════ */
+  button:not(.sc-x):not(.sc-opt):focus-visible,
+  a:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgb(var(--accent) / 0.25);
+    border-radius: inherit;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     SCAN CHOOSER MODAL
+     ═══════════════════════════════════════════════════════════════ */
   .sc-bg {
     position: fixed; inset: 0;
     z-index: 900;
-    background: rgba(20, 17, 15, 0.55);
-    backdrop-filter: blur(4px);
+    background: rgba(10, 8, 6, 0.72);
+    backdrop-filter: blur(8px);
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
     padding-bottom: 80px;
     animation: fadeIn .14s ease;
   }
-  body.light .sc-bg { background: rgba(15, 23, 51, 0.32); }
+  body.light .sc-bg { background: rgba(40, 30, 20, 0.32); }
 
   .sc-anchor {
     width: 760px;
@@ -288,12 +356,15 @@
 
   .sc-card {
     background: rgb(var(--card));
-    border: 1px solid rgb(var(--border));
-    border-radius: 18px;
-    box-shadow: 0 24px 60px rgba(0,0,0,0.45);
+    border: 1px solid rgba(255, 230, 200, 0.18);
+    border-radius: 20px;
+    box-shadow: var(--shadow-lg);
     overflow: hidden;
   }
-  body.light .sc-card { box-shadow: 0 24px 60px rgba(15,23,51,0.18); }
+  body.light .sc-card {
+    border-color: var(--border-2);
+    box-shadow: 0 24px 60px rgba(40,30,20,0.18);
+  }
 
   .sc-head { display: flex; padding: 18px 22px 14px; border-bottom: 1px solid var(--border-2); }
   .sc-head-l { flex: 1; }
@@ -308,8 +379,9 @@
     padding: 0 6px;
     line-height: 1;
     border-radius: 6px;
+    transition: color 0.12s, background 0.12s;
   }
-  .sc-x:hover { color: rgb(var(--bright)); background: rgba(255,255,255,0.04); }
+  .sc-x:hover { color: rgb(var(--bright)); background: rgba(255,255,255,0.06); }
   body.light .sc-x:hover { background: rgba(0,0,0,0.04); }
 
   .sc-grid {
@@ -322,10 +394,10 @@
 
   .sc-opt {
     text-align: left;
-    background: rgba(46, 42, 37, 0.4);
+    background: rgb(var(--surface));
     border: 1px solid var(--border-2);
     border-radius: 14px;
-    padding: 18px;
+    padding: 20px;
     cursor: pointer;
     transition: all .15s;
     color: inherit;
@@ -337,7 +409,15 @@
     overflow: hidden;
   }
   body.light .sc-opt { background: rgb(var(--card)); }
-  .sc-opt:hover { transform: translateY(-2px); border-color: rgba(210, 180, 140, 0.30); box-shadow: 0 12px 32px rgba(0,0,0,0.18); }
+  .sc-opt:hover {
+    transform: translateY(-2px);
+    border-color: rgba(232, 181, 74, 0.30);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.18);
+  }
+  body.light .sc-opt:hover {
+    border-color: rgba(40, 30, 20, 0.14);
+    box-shadow: var(--shadow-lg);
+  }
 
   .sc-opt::before {
     content: '';
@@ -403,7 +483,7 @@
     color: var(--muted-2);
     padding: 3px 7px;
     border-radius: 5px;
-    background: rgba(255,255,255,0.03);
+    background: rgba(255,255,255,0.04);
   }
   body.light .sc-opt-stat { background: rgba(0,0,0,0.03); }
 
@@ -422,5 +502,16 @@
     font-size: 11px;
     color: var(--muted-2);
     border-top: 1px solid var(--border-2);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     OVERLINE / SECTION HEADERS — per FIX_MANUAL Section 3g
+     ═══════════════════════════════════════════════════════════════ */
+  .text-overline {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgb(var(--muted));
   }
 }

@@ -111,7 +111,7 @@ export default function RealTimeScanPage() {
             ← Back to Scans
           </button>
           <div>
-            <h1 className="text-lg font-bold text-bright flex items-center gap-2">
+            <h1 className="font-serif text-lg font-semibold text-bright flex items-center gap-2">
               <span className="text-sm">⚡</span> Real Time Scan View
             </h1>
             <p className="text-[10px] text-muted/40">Scan {scanId?.slice(0, 8)}... {scan?.tier?.name && `· ${scan.tier.name}`} {scan?.user && `· by ${scan.user}`}</p>
