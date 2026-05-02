@@ -179,20 +179,6 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <style>{`
-        ::placeholder {
-          color: var(--muted-2, rgba(184, 174, 160, 0.4)) !important;
-          opacity: 0.6 !important;
-        }
-        ::-webkit-input-placeholder {
-          color: var(--muted-2, rgba(184, 174, 160, 0.4)) !important;
-          opacity: 0.6 !important;
-        }
-        ::-moz-placeholder {
-          color: var(--muted-2, rgba(184, 174, 160, 0.4)) !important;
-          opacity: 0.6 !important;
-        }
-      `}</style>
       <ScanProvider>
         <AppContent ready={ready} setReady={setReady} />
       </ScanProvider>
