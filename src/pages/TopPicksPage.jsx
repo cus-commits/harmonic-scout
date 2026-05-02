@@ -210,7 +210,7 @@ function VettingCard({ company, onHide, onBackburn, addFavorite, isFavorited }) 
             <div className="flex items-center gap-1.5 flex-wrap">
               <h3 className="font-bold text-bright text-sm">{company.name}</h3>
               {company.id && typeof company.id === "number" && (
-                <a href={`/company/${company.id}`} className="text-[9px] px-1.5 py-0.5 rounded bg-rose/10 text-rose border border-rose/15 hover:bg-rose/20 font-bold" title="Harmonic Card">H</a>
+                <a href={`/company/${company.id}`} className="text-[9px] px-[5px] py-[1px] rounded-[4px] bg-pink-400/10 text-pink-400/70 border border-pink-400/18 hover:bg-pink-400/20 font-extrabold font-mono leading-none inline-flex items-center" title="Harmonic Card">H</a>
               )}
               {webUrl && (
                 <a href={webUrl} target="_blank" rel="noopener"

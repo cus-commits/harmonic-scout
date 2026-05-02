@@ -551,7 +551,7 @@ function ResultCard({ result, rank, addFavorite, isFavorited }) {
             <h3 className="font-bold text-bright text-sm truncate">{result.name}</h3>
             <span className={`text-[10px] px-2 py-0.5 rounded-md border font-bold ${scoreColor}`}>{score}/10</span>
             {result.confidence && <span className={`text-[9px] ${confidenceColor}`}>{result.confidence}</span>}
-            {companyId && typeof companyId === 'number' && <a href={`/company/${companyId}`} className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded bg-rose/10 text-rose border border-rose/15 hover:bg-rose/20 font-bold" title="Harmonic Card">H</a>}
+            {companyId && typeof companyId === 'number' && <a href={`/company/${companyId}`} className="flex-shrink-0 text-[9px] px-[5px] py-[1px] rounded-[4px] bg-pink-400/10 text-pink-400/70 border border-pink-400/18 hover:bg-pink-400/20 font-extrabold font-mono leading-none inline-flex items-center" title="Harmonic Card">H</a>}
             {webUrl && <a href={webUrl} target="_blank" rel="noopener" className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded bg-bo/15 text-bo border border-bo/30 hover:bg-bo/20 font-medium">🌐</a>}
           </div>
           <div className="flex gap-1.5 mt-0.5 flex-wrap">

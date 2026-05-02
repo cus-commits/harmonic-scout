@@ -525,7 +525,7 @@ function ScanResultCard({ company: raw, onFavorite, isFavorited, onDismiss, onSh
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h3 className="font-bold text-bright text-sm truncate">{company.name}</h3>
-            {companyId && typeof companyId === "number" && <a href={`/company/${companyId}`} className="text-[9px] px-1.5 py-0.5 rounded bg-rose/10 text-rose border border-rose/15 hover:bg-rose/20 font-bold" title="Harmonic Card">H</a>}
+            {companyId && typeof companyId === "number" && <a href={`/company/${companyId}`} className="text-[9px] px-[5px] py-[1px] rounded-[4px] bg-pink-400/10 text-pink-400/70 border border-pink-400/18 hover:bg-pink-400/20 font-extrabold font-mono leading-none inline-flex items-center" title="Harmonic Card">H</a>}
             {webUrl && (
               <a href={webUrl} target="_blank" rel="noopener"
                 className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded-md bg-bo/15 text-bo border border-bo/30 hover:bg-bo/20 font-medium">
@@ -792,7 +792,7 @@ function HistoryPanel({ personId }) {
                         </div>
                         {(c.description || c.card?.description) && <p className="text-[9px] text-muted/45 line-clamp-1 mt-0.5">{c.description || c.card?.description}</p>}
                       </div>
-                      {cardId && typeof cardId === 'number' && <a href={`/company/${cardId}`} className="text-[8px] px-1.5 py-0.5 rounded bg-rose/10 text-rose border border-rose/15 font-bold hover:bg-rose/20">H</a>}
+                      {cardId && typeof cardId === 'number' && <a href={`/company/${cardId}`} className="text-[9px] px-[5px] py-[1px] rounded-[4px] bg-pink-400/10 text-pink-400/70 border border-pink-400/18 hover:bg-pink-400/20 font-extrabold font-mono leading-none inline-flex items-center">H</a>}
                     </div>
                   );
                 })}
@@ -1596,7 +1596,7 @@ function SavedSearchSelector({ activeProfile, onSaveProfile }) {
       <button onClick={() => { if (!expanded) fetchSearches(); setExpanded(!expanded); }}
         className="w-full flex items-center justify-between px-4 py-3 hover:bg-bright/[0.02] transition-colors">
         <div className="flex items-center gap-2.5">
-          <span className="text-[11px] px-1.5 py-0.5 rounded bg-rose/10 text-rose border border-rose/15 font-bold">H</span>
+          <span className="text-[10px] px-[5px] py-[1px] rounded-[4px] bg-pink-400/10 text-pink-400/70 border border-pink-400/18 font-extrabold font-mono leading-none inline-flex items-center">H</span>
           <div className="text-left">
             <p className="text-xs font-bold text-bright/80">Harmonic Saved Searches</p>
             <p className="text-[10px] text-muted/45">

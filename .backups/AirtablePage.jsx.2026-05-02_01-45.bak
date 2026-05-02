@@ -812,11 +812,10 @@ export default function AirtablePage() {
         <p className="text-muted/35 text-xs text-center py-8">No companies</p>
       ) : (
         <div>
-          {/* Pipeline Header — per FIX_MANUAL Section 6 */}
-          <div className="flex items-baseline gap-2.5 mb-3 pb-2.5 border-b border-border/[0.06]">
-            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted/50">Pipeline</span>
-            <span className="text-[11px] text-muted/30">{filtered.length} companies</span>
-            {fundingLoading && <span className="text-[9px] text-amber-400/55 flex items-center gap-1 ml-auto"><span className="w-2.5 h-2.5 border border-amber-400 border-t-transparent rounded-full animate-spin" /> Loading...</span>}
+          {/* Grid Header */}
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] text-muted/40 font-bold uppercase tracking-wider">Pipeline</span>
+            {fundingLoading && <span className="text-[9px] text-amber-400/55 flex items-center gap-1"><span className="w-2.5 h-2.5 border border-amber-400 border-t-transparent rounded-full animate-spin" /> Loading...</span>}
           </div>
           {/* Rows — DD-style cards in 2-col grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start max-h-[calc(100vh-220px)] overflow-y-auto pr-1">
@@ -836,7 +835,7 @@ export default function AirtablePage() {
               const twitterWarn = ta && ta.days_since !== null && ta.days_since > 10;
 
               return (
-                <div key={c.airtable_id || i} className="rounded-[14px] border border-border/[0.06] hover:border-accent/18 transition-all relative shadow-sm hover:shadow-md" style={{ background: 'rgba(46, 42, 37, 0.55)' }}>
+                <div key={c.airtable_id || i} className="rounded-[14px] border border-border/[0.06] hover:border-accent/18 transition-all relative" style={{ background: 'rgba(46, 42, 37, 0.55)' }}>
                   <button
                     onClick={async (e) => {
                       e.stopPropagation();
@@ -853,12 +852,12 @@ export default function AirtablePage() {
                         }
                       }
                     }}
-                    className="absolute top-3 right-3 text-[10px] px-2.5 py-1 rounded-[6px] border border-border/20 bg-ink/40 text-muted/70 hover:border-accent/30 hover:text-accent font-semibold transition-colors z-10"
+                    className="absolute top-2 right-2 text-[10px] px-2 py-0.5 rounded bg-accent/20 text-accent hover:bg-accent/30 transition-colors z-10"
                     title="View initial reachout notes"
                   >
                     Reachouts
                   </button>
-                  <div className="px-[18px] py-4 space-y-2.5">
+                  <div className="p-3 space-y-1.5">
                     {/* Row 1: Logo + Name + Website + Twitter */}
                     <div className="flex items-start gap-3">
                       {logoUrl ? (
@@ -984,7 +983,7 @@ export default function AirtablePage() {
                     {/* Actions: H + Similar + Enrich + Note + Stage */}
                     <div className="flex items-center gap-1.5 md:gap-3 flex-wrap pt-1 md:justify-center">
                       {hd?.harmonic_id && (
-                        <a href={`/company/${hd.harmonic_id}`} className="text-[9px] px-[5px] py-[1px] rounded-[4px] bg-pink-400/10 text-pink-400/70 border border-pink-400/18 hover:bg-pink-400/20 font-extrabold font-mono leading-none inline-flex items-center" title="Company Card">H</a>
+                        <a href={`/company/${hd.harmonic_id}`} className="text-[8px] px-1.5 py-0.5 rounded bg-rose/10 text-rose border border-rose/15 hover:bg-rose/20 font-bold" title="Company Card">H</a>
                       )}
                       <FindSimilar companyName={c.company} companyId={null} />
                       {enrichAvailable[c.company] && <button onClick={() => handleEnrich(c)} disabled={enriching === c.company} className="text-[9px] text-amber-400 font-bold animate-pulse">⚡</button>}

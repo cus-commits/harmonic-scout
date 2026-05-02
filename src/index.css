@@ -456,6 +456,85 @@
 
   /* --- Tabular nums for numbers everywhere --- */
   body.light .font-mono { font-variant-numeric: tabular-nums; }
+
+  /* --- CRM modals in light mode --- */
+  body.light .bg-card.border-accent\/20,
+  body.light .bg-card.border-accent\/25 {
+    background: #ffffff !important;
+    box-shadow: 0 24px 60px rgba(40,30,20,0.18), 0 2px 8px rgba(40,30,20,0.08) !important;
+  }
+  body.light .bg-surface.border-border\/50 {
+    background: #ffffff !important;
+    box-shadow: 0 24px 60px rgba(40,30,20,0.18) !important;
+  }
+  body.light .bg-black\/60 {
+    background-color: rgba(15, 23, 51, 0.40) !important;
+  }
+
+  /* --- CRM reachout history rows in light mode --- */
+  body.light .bg-surface\/30 {
+    background-color: rgba(255, 255, 255, 0.60) !important;
+  }
+  body.light .bg-surface\/30:hover,
+  body.light .hover\:bg-surface\/50:hover {
+    background-color: rgba(255, 255, 255, 0.85) !important;
+  }
+
+  /* --- CRM enrichment/note inputs in light mode --- */
+  body.light .bg-ink\/60 {
+    background: #ffffff !important;
+    border-color: rgba(40, 30, 20, 0.12) !important;
+  }
+  body.light .bg-white\/\[0\.03\] {
+    background: rgba(37, 99, 235, 0.03) !important;
+  }
+
+  /* --- Toast notifications in light mode --- */
+  body.light .bg-sm\/20 { background-color: rgba(8, 145, 178, 0.10) !important; }
+  body.light .bg-rose\/20 { background-color: rgba(190, 18, 60, 0.10) !important; }
+
+  /* --- Pink/H badge in light mode --- */
+  body.light .bg-pink-400\/10 { background-color: rgba(219, 39, 119, 0.08) !important; }
+  body.light .text-pink-400\/70 { color: #be185d !important; }
+  body.light .border-pink-400\/18 { border-color: rgba(219, 39, 119, 0.18) !important; }
+
+  /* --- Pending vote notification box in light mode --- */
+  body.light .bg-accent\/8 { background-color: rgba(232, 181, 74, 0.06) !important; }
+  body.light .border-accent\/20 { border-color: rgba(232, 181, 74, 0.18) !important; }
+  body.light .text-accent\/80 { color: rgba(200, 144, 32, 0.85) !important; }
+  body.light .text-accent\/70 { color: rgba(200, 144, 32, 0.75) !important; }
+  body.light .text-accent\/55 { color: rgba(200, 144, 32, 0.60) !important; }
+
+  /* --- CRM pending vote mini-buttons in light mode --- */
+  body.light .bg-bo\/8 { background-color: rgba(37, 99, 235, 0.06) !important; }
+  body.light .border-bo\/10 { border-color: rgba(37, 99, 235, 0.12) !important; }
+  body.light .text-bo\/65 { color: rgba(37, 99, 235, 0.70) !important; }
+  body.light .border-boro\/20 { border-color: rgba(99, 102, 241, 0.18) !important; }
+  body.light .text-boro\/80 { color: rgba(99, 102, 241, 0.85) !important; }
+  body.light .text-boro\/70 { color: rgba(99, 102, 241, 0.75) !important; }
+
+  /* --- CRM action buttons in light mode --- */
+  body.light .bg-accent\/10 { background-color: rgba(232, 181, 74, 0.08) !important; }
+  body.light .bg-accent\/20 { background-color: rgba(232, 181, 74, 0.12) !important; }
+  body.light .border-accent\/30 { border-color: rgba(232, 181, 74, 0.25) !important; }
+  body.light .bg-bo\/10 { background-color: rgba(37, 99, 235, 0.08) !important; }
+  body.light .border-bo\/20 { border-color: rgba(37, 99, 235, 0.16) !important; }
+
+  /* --- CRM card metadata chips in light mode --- */
+  body.light .bg-card\/40 { background-color: rgba(255, 255, 255, 0.80) !important; }
+  body.light .bg-muted\/12 { background-color: rgba(122, 111, 96, 0.08) !important; }
+  body.light .text-muted\/50 { color: rgba(122, 111, 96, 0.60) !important; }
+  body.light .border-muted\/20 { border-color: rgba(122, 111, 96, 0.18) !important; }
+
+  /* --- Solid voter pills (CRM) in light mode --- */
+  body.light .text-ink.bg-sm {
+    background-color: #0891b2 !important;
+    color: #ffffff !important;
+  }
+  body.light .text-bright.bg-rose\/80 {
+    background-color: rgba(190, 18, 60, 0.85) !important;
+    color: #ffffff !important;
+  }
 }
 
 @layer components {
@@ -585,6 +664,13 @@
     line-height: 1;
   }
 
+  /* Bug #6: Action buttons — normalize sizing */
+  .text-\[8px\].rounded,
+  .text-\[9px\].rounded-lg,
+  .text-\[10px\].rounded-md {
+    line-height: 1;
+  }
+
   /* Bug #8: Nav badges — center alignment for multi-digit numbers */
   nav.fixed .rounded-full.bg-accent {
     display: flex;
@@ -593,6 +679,23 @@
     line-height: 1;
     max-width: 28px;
     overflow: hidden;
+  }
+
+  /* ─── H badge (Harmonic pill) — quiet tag style ─── */
+  .font-extrabold.font-mono.leading-none.inline-flex {
+    line-height: 1;
+    box-shadow: inset 0 0 0 1px rgba(244, 114, 182, 0.22);
+  }
+
+  /* ─── CRM card reachout button as control, not status ─── */
+  body.light .border-border\/20.bg-ink\/40 {
+    background: rgba(255, 255, 255, 0.80) !important;
+    border-color: rgba(40, 30, 20, 0.12) !important;
+    color: rgb(var(--muted)) !important;
+  }
+  body.light .border-border\/20.bg-ink\/40:hover {
+    border-color: rgba(232, 181, 74, 0.30) !important;
+    color: rgb(var(--accent)) !important;
   }
 
   /* ═══════════════════════════════════════════════════════════════

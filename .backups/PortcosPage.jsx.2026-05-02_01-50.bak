@@ -145,7 +145,7 @@ export default function PortcosPage({ addFavorite, isFavorited }) {
           const funding = ft && typeof ft === 'number' ? (ft >= 1e9 ? `$${(ft/1e9).toFixed(1)}B` : ft >= 1e6 ? `$${(ft/1e6).toFixed(1)}M` : ft >= 1e3 ? `$${(ft/1e3).toFixed(0)}K` : `$${ft}`) : null;
 
           return (
-            <div key={c.id || i} className="px-4 py-3.5 rounded-[14px] border border-border/[0.06] hover:border-accent/18 shadow-sm hover:shadow-md transition-all will-change-transform" style={{ background: 'rgba(46, 42, 37, 0.55)' }}>
+            <div key={c.id || i} className="px-3 py-3 rounded-xl border border-border/[0.06] hover:bg-white/[0.02] transition-colors" style={{ background: 'rgba(46, 42, 37, 0.55)' }}>
               <div className="flex items-start gap-3">
                 {c.logo_url ? (
                   <img src={c.logo_url} alt="" className="w-9 h-9 rounded-[7px] bg-ink-2 flex-shrink-0 object-contain" onError={e => { e.target.style.display='none'; }} />
@@ -172,7 +172,7 @@ export default function PortcosPage({ addFavorite, isFavorited }) {
               </div>
               {/* Actions */}
               <div className="flex items-center gap-1.5 mt-2 ml-12">
-                {c.id && typeof c.id === "number" && <a href={`/company/${c.id}`} className="text-[9px] px-[5px] py-[1px] rounded-[4px] bg-pink-400/10 text-pink-400/70 border border-pink-400/18 hover:bg-pink-400/20 font-extrabold font-mono leading-none inline-flex items-center" title="Company Card">H</a>}<FindSimilar addFavorite={addFavorite} isFavorited={isFavorited} companyId={c.id} companyName={c.name} />
+                {c.id && typeof c.id === "number" && <a href={`/company/${c.id}`} className="text-[8px] px-1.5 py-0.5 rounded bg-rose/10 text-rose border border-rose/15 hover:bg-rose/20 font-bold" title="Company Card">H</a>}<FindSimilar addFavorite={addFavorite} isFavorited={isFavorited} companyId={c.id} companyName={c.name} />
                 {addFavorite && (
                   <button onClick={() => { if (!(isFavorited && isFavorited(c.name))) addFavorite({ name: c.name, description: c.description, website: c.website, logo_url: c.logo_url, funding_total: c.funding_total }); }}
                     className={`text-[8px] px-1.5 py-0.5 rounded border font-medium ${
