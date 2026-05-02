@@ -126,7 +126,7 @@ export default function HomePage({ addFavorite, isFavorited }) {
       {/* Brand header — v2 style */}
       <div className="text-center mb-8 select-none">
         <p className="font-mono text-[9px] text-muted/58 tracking-[0.32em] uppercase mb-2">🐦 pigeon finder</p>
-        <h1 className="font-serif text-[28px] font-semibold text-accent tracking-[0.08em]" style={{ letterSpacing: '-0.02em' }}>Daxos Capital</h1>
+        <h1 className="font-serif text-[32px] font-medium text-accent" style={{ letterSpacing: '-0.02em' }}>Daxos Capital</h1>
         <p className="font-serif italic text-sm text-bright/62 mt-1.5 tracking-wide">
           {user ? `Welcome back, ${user}` : 'Claim your identity below'} · {dayName()}
         </p>
@@ -155,14 +155,14 @@ export default function HomePage({ addFavorite, isFavorited }) {
       </div>
       <div className="grid grid-cols-2 gap-1.5 mb-6">
         <button onClick={() => navigate('/chat')}
-          className="py-3 px-3 rounded-xl border border-border/50 bg-card/30 hover:bg-card/60 transition-all text-center flex items-center justify-center gap-2">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          <span className="text-[10px] font-bold text-muted tracking-wide">Ask Pigeon</span>
+          className="py-2.5 px-3 rounded-[10px] border border-border/20 bg-surface/40 hover:bg-card/60 hover:border-border/40 transition-all flex items-center justify-center gap-2 group">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="text-muted group-hover:text-bright transition-colors"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span className="text-[11px] font-semibold text-muted group-hover:text-bright transition-colors">Ask Pigeon</span>
         </button>
         <button onClick={() => navigate('/favorites')}
-          className="py-3 px-3 rounded-xl border border-border/50 bg-card/30 hover:bg-card/60 transition-all text-center flex items-center justify-center gap-2">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          <span className="text-[10px] font-bold text-accent/80 tracking-wide">Favorites</span>
+          className="py-2.5 px-3 rounded-[10px] border border-border/20 bg-surface/40 hover:bg-card/60 hover:border-accent/20 transition-all flex items-center justify-center gap-2 group">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="text-accent/60 group-hover:text-accent transition-colors"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span className="text-[11px] font-semibold text-accent/70 group-hover:text-accent transition-colors">Favorites</span>
         </button>
       </div>
 
@@ -306,7 +306,7 @@ export default function HomePage({ addFavorite, isFavorited }) {
         <div className="space-y-4">
           {/* Section heading */}
           <div className="flex items-center gap-2 mt-2">
-            <h2 className="text-sm font-bold text-bright tracking-tight">Needs your vote</h2>
+            <h2 className="font-serif text-[15px] font-semibold text-bright">Needs your vote</h2>
             <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-full bg-accent/12 text-accent border border-accent/22">{pending.length}</span>
           </div>
 

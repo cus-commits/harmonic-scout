@@ -203,6 +203,44 @@
   }
 
   /* ═══════════════════════════════════════════════════════════════
+     LIGHT MODE — Layer 3: Per-page & component overrides
+     (from _ref/light-mode-overrides.css checklist)
+     ═══════════════════════════════════════════════════════════════ */
+
+  /* Hover states — blue-tinted instead of brown-tinted */
+  body.light button:hover,
+  body.light a:hover {
+    transition: all 0.12s ease;
+  }
+
+  /* Funding numbers go gold in light mode (per LIGHT_MODE.md Section 19) */
+  body.light .text-bo.font-semibold,
+  body.light [class*="text-bo"][class*="font-"] {
+    color: rgb(var(--accent));
+  }
+
+  /* Vote pill overrides */
+  body.light [class*="bg-sm/1"][class*="text-sm"][class*="border-sm"] {
+    font-weight: 700;
+  }
+  body.light [class*="bg-rose/1"][class*="text-rose"][class*="border-rose"] {
+    font-weight: 700;
+  }
+
+  /* Settings overlay light mode */
+  body.light .glass-card.p-3,
+  body.light div[class*="glass-card"][class*="space-y"] {
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 24px 60px rgba(40,30,20,0.18), 0 2px 8px rgba(40,30,20,0.08);
+  }
+
+  /* Theme toggle light mode */
+  body.light [class*="fixed top-"][class*="rounded-full"] {
+    background: rgba(255, 255, 255, 0.85);
+    border-color: var(--border-2);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
      INPUT STYLING — per FIX_MANUAL Section 3e
      ═══════════════════════════════════════════════════════════════ */
   body.light input:not([type="checkbox"]):not([type="radio"]),
