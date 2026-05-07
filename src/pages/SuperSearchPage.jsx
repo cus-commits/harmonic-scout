@@ -1163,9 +1163,32 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
               {displayResults?.sourceStats.producthunt > 0 && <span className="text-accent/60">🐱 {displayResults?.sourceStats.producthunt}</span>}
               {displayResults?.sourceStats.harmonic > 0 && <span className="text-accent/60">🔮 {displayResults?.sourceStats.harmonic}</span>}
               {displayResults?.elapsed && <><span className="text-border/30">|</span><span className="text-muted/40">⏱ {displayResults?.elapsed}s</span></>}
-              {displayResults?.estimatedCost && <><span className="text-border/30">|</span><span className="text-accent/40">💲 ~${displayResults?.estimatedCost}</span></>}
+              {displayResults?.estimatedCost && <><span className="text-border/30">|</span><span className="text-accent/40">💲 ${displayResults?.estimatedCost}</span></>}
+              {displayResults?.opusScoredCount > 0 && <><span className="text-border/30">|</span><span className="text-boro/60">🧠 {displayResults?.opusScoredCount} Opus-scored</span></>}
               {displayResults?.ddPushed > 0 && <><span className="text-border/30">|</span><span className="text-sm/60">📋 {displayResults?.ddPushed} → DD</span></>}
             </div>
+          )}
+          {displayResults?.sourcesSkipped?.length > 0 && (
+            <div className="bg-rose/5 border border-rose/15 rounded-lg px-3 py-2 text-[10px] text-rose/75 leading-relaxed">
+              <p className="font-bold mb-0.5">⚠ Some sources didn't run</p>
+              <ul className="space-y-0.5 ml-3">
+                {displayResults.sourcesSkipped.map(s => (
+                  <li key={s.source}>• <span className="font-mono text-rose/90">{s.source}</span> — {s.reason}</li>
+                ))}
+              </ul>
+              <p className="text-rose/45 mt-1 text-[9px]">Add the missing API keys on Railway to enable. Search ran with available sources only.</p>
+            </div>
+          )}
+          {displayResults?.costBreakdown && (
+            <details className="text-[10px] text-muted/40">
+              <summary className="cursor-pointer hover:text-bright/60">💰 Cost breakdown (actual tokens)</summary>
+              <div className="mt-2 space-y-0.5 pl-3 font-mono">
+                {displayResults.costBreakdown.sonnet > 0 && <p>Sonnet: ${displayResults.costBreakdown.sonnet.toFixed(3)} · {displayResults.costBreakdown.tokens.sonnetIn?.toLocaleString()} in / {displayResults.costBreakdown.tokens.sonnetOut?.toLocaleString()} out</p>}
+                {displayResults.costBreakdown.opus > 0 && <p>Opus: ${displayResults.costBreakdown.opus.toFixed(3)} · {displayResults.costBreakdown.tokens.opusIn?.toLocaleString()} in / {displayResults.costBreakdown.tokens.opusOut?.toLocaleString()} out</p>}
+                {displayResults.costBreakdown.haiku > 0 && <p>Haiku: ${displayResults.costBreakdown.haiku.toFixed(3)} · {displayResults.costBreakdown.tokens.haikuIn?.toLocaleString()} in / {displayResults.costBreakdown.tokens.haikuOut?.toLocaleString()} out</p>}
+                <p className="text-bright/60">Total: ${displayResults.costBreakdown.total.toFixed(3)}</p>
+              </div>
+            </details>
           )}
           {displayResults?.analysis && (
             <div className="bg-bo/4 border border-bo/12 rounded-xl p-4 shadow-sm">
