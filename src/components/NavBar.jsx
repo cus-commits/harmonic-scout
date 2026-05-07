@@ -275,7 +275,7 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
   const isActive = (item) => {
     if (item.id === 'home') return location.pathname === '/';
     if (item.id === 'search') return showSearch || location.pathname === '/chat';
-    if (item.id === 'scan') return showScanMenu || ['/super', '/searchagent', '/recurring', '/deepsearch'].includes(location.pathname);
+    if (item.id === 'scan') return showScanMenu || ['/super', '/searchagent', '/recurring'].includes(location.pathname);
     if (item.id === 'apps') return showApps || ['/chat', '/twitter', '/farcaster', '/producthunt', '/github'].includes(location.pathname);
     if (item.path) return location.pathname === item.path;
     return false;
@@ -365,11 +365,11 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
                 >
                   <div className="sc-opt-top">
                     <span className="sc-opt-glyph sc-opt-glyph-scan">🔬</span>
-                    <span className="sc-opt-badge">Long Form</span>
+                    <span className="sc-opt-badge">Scheduled</span>
                   </div>
                   <div className="sc-opt-h">Scan Agent</div>
                   <div className="sc-opt-d">
-                    Run scheduled scans across your saved theses. Reasoning, ranking, and a vetting report.
+                    Long-running scheduled scans across saved theses. Best for nightly sweeps and large vetting batches with deep analysis.
                   </div>
                   <span className="sc-opt-cta">Open Scan Agent →</span>
                 </button>
@@ -380,33 +380,18 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
                 >
                   <div className="sc-opt-top">
                     <span className="sc-opt-glyph sc-opt-glyph-super">⚡</span>
-                    <span className="sc-opt-badge sc-badge-super">One-shot</span>
+                    <span className="sc-opt-badge sc-badge-super">On-demand</span>
                   </div>
                   <div className="sc-opt-h">Super Search</div>
                   <div className="sc-opt-d">
-                    Ad-hoc search of Harmonic's full universe with custom filters and natural-language refining.
+                    Custom hunt — anchor on baseline companies, layer CRM/portfolio context, weight by importance, AI scores results.
                   </div>
                   <span className="sc-opt-cta">Open Super Search →</span>
-                </button>
-
-                <button
-                  className="sc-opt sc-opt-super"
-                  onClick={() => { navigate('/deepsearch'); setShowScanMenu(false); }}
-                >
-                  <div className="sc-opt-top">
-                    <span className="sc-opt-glyph sc-opt-glyph-super">🎯</span>
-                    <span className="sc-opt-badge sc-badge-super">Similar</span>
-                  </div>
-                  <div className="sc-opt-h">Deep Search</div>
-                  <div className="sc-opt-d">
-                    Start from a company, find similar ones via Harmonic + AI scoring. Fast and focused.
-                  </div>
-                  <span className="sc-opt-cta">Open Deep Search →</span>
                 </button>
               </div>
 
               <div className="sc-foot">
-                <span>Scan Agent for long-form thesis scans. Super Search for ad-hoc filters. Deep Search to explore from a baseline company.</span>
+                <span>Scan Agent runs scheduled scans on saved profiles. Super Search lets you design a one-off custom search with baseline companies, CRM/portfolio anchors, importance weights, and filters — fast, ad-hoc, AI-scored.</span>
               </div>
             </div>
           </div>

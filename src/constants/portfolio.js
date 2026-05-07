@@ -1,0 +1,22 @@
+// Daxos Capital portfolio companies — shared across Portcos page and Super Search
+export const PORTFOLIO = [
+  { name: 'steel.dev', domain: 'steel.dev', harmonic_id: 61225765 },
+  { name: 'Bubblemaps', domain: 'bubblemaps.io', harmonic_id: 6628916 },
+  { name: 'pump.fun', domain: 'pump.fun', harmonic_id: 55469102 },
+  { name: 'Xverse', domain: 'xverse.app', harmonic_id: 34986381 },
+  { name: 'Trendex', domain: 'trendex.vip', harmonic_id: 5130948 },
+  { name: 'Haloo', domain: 'haloo.ai', harmonic_id: 46840410 },
+  { name: 'Hirechain', domain: 'hirechain.io', harmonic_id: 11191974 },
+  { name: 'Botanix Labs', domain: 'botanixlabs.xyz' },
+  { name: 'Pear Protocol', domain: 'pear.garden', harmonic_id: 12587778 },
+  { name: 'Lagoon Finance', domain: 'lagoon.finance', harmonic_id: 60704871 },
+  { name: 'Aura Fun', domain: 'aura.fun', harmonic_id: 60335841 },
+  { name: 'ord.io', domain: 'ord.io', harmonic_id: 13038513 },
+  { name: 'Kind Designs', domain: 'kinddesigns.com', harmonic_id: 35417027 },
+  { name: 'Raze', domain: 'raze.finance', harmonic_id: 11438176 },
+  { name: 'Bound Money', domain: 'bound.money', harmonic_id: 67246936 },
+  { name: 'worm.wtf', domain: 'worm.wtf', harmonic_id: 56345624 },
+  { name: 'Cob', domain: 'cobfoods.com', harmonic_id: 64443040 },
+  { name: 'Vest Markets', domain: 'vest.markets' },
+  { name: 'Theta Neurotech', domain: 'thetaneurotech.com', harmonic_id: 49287435 },
+];
