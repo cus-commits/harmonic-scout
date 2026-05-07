@@ -119,7 +119,87 @@ function BaselinesSection({ baselines, setBaselines, importance, setImportance }
   );
 }
 
-// ─── Importance Slider ───
+// ─── Popular keywords (curated for Daxos thesis) ───
+const POPULAR_KEYWORDS = [
+  // Crypto / Trading
+  { label: 'prediction markets', group: 'crypto' },
+  { label: 'polymarket', group: 'crypto' },
+  { label: 'social betting', group: 'crypto' },
+  { label: 'sportsbook', group: 'crypto' },
+  { label: 'perps', group: 'crypto' },
+  { label: 'derivatives', group: 'crypto' },
+  { label: 'memecoins', group: 'crypto' },
+  { label: 'launchpad', group: 'crypto' },
+  { label: 'pump.fun', group: 'crypto' },
+  // Infrastructure
+  { label: 'wallet', group: 'infra' },
+  { label: 'account abstraction', group: 'infra' },
+  { label: 'embedded wallet', group: 'infra' },
+  { label: 'bridge', group: 'infra' },
+  { label: 'restaking', group: 'infra' },
+  { label: 'L2 / L3', group: 'infra' },
+  // Bitcoin / BRC
+  { label: 'bitcoin L2', group: 'btc' },
+  { label: 'ordinals', group: 'btc' },
+  { label: 'BRC-20', group: 'btc' },
+  // AI
+  { label: 'AI agents', group: 'ai' },
+  { label: 'LLM tools', group: 'ai' },
+  { label: 'AI x crypto', group: 'ai' },
+  { label: 'developer tools', group: 'ai' },
+  // Stablecoins / RWA
+  { label: 'stablecoins', group: 'fin' },
+  { label: 'RWA', group: 'fin' },
+  { label: 'on-chain payments', group: 'fin' },
+  { label: 'yield', group: 'fin' },
+  // Consumer
+  { label: 'social tokens', group: 'consumer' },
+  { label: 'consumer crypto', group: 'consumer' },
+  { label: 'NFT marketplace', group: 'consumer' },
+];
+
+function PopularKeywordsPanel({ onAdd, currentKeywords }) {
+  const [open, setOpen] = useState(false);
+  const isAdded = (kw) => {
+    const tokens = (currentKeywords || '').toLowerCase().split(/[,;]/).map(t => t.trim());
+    return tokens.includes(kw.toLowerCase());
+  };
+  return (
+    <div className="relative">
+      <button onClick={() => setOpen(!open)}
+        className="text-[10px] px-2.5 py-1.5 rounded-lg border border-accent/25 bg-accent/8 text-accent/85 hover:bg-accent/15 hover:border-accent/40 transition-all flex items-center gap-1 whitespace-nowrap">
+        ✨ Popular keywords
+        <span className={`transition-transform text-[9px] ${open ? 'rotate-180' : ''}`}>▾</span>
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+          <div className="absolute z-40 right-0 top-full mt-1 w-[320px] bg-card border border-border/30 rounded-xl shadow-2xl shadow-black/40 p-3 space-y-2.5">
+            <p className="text-[9px] uppercase tracking-wider text-muted/50 font-bold">Curated for Daxos thesis</p>
+            <div className="flex flex-wrap gap-1">
+              {POPULAR_KEYWORDS.map(kw => {
+                const added = isAdded(kw.label);
+                return (
+                  <button key={kw.label} onClick={() => onAdd(kw.label)} disabled={added}
+                    className={`text-[10px] px-2 py-0.5 rounded-md border transition-all ${
+                      added
+                        ? 'bg-sm/10 border-sm/25 text-sm/70 cursor-default'
+                        : 'border-border/25 text-muted/70 hover:border-accent/35 hover:text-accent hover:bg-accent/5'
+                    }`}>
+                    {added ? '✓ ' : '+ '}{kw.label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[9px] text-muted/40 leading-relaxed">Click to append to your keywords. These reflect Daxos focus + portfolio sectors (crypto, betting, AI, infra, RWA, consumer).</p>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Importance Slider (0-100%) ───
 function ImportanceSlider({ value, onChange, label, hint, color = 'bo' }) {
   const colorMap = {
     bo: 'accent-bo',
@@ -127,14 +207,15 @@ function ImportanceSlider({ value, onChange, label, hint, color = 'bo' }) {
     sm: 'accent-sm',
     accent: 'accent-accent',
   };
-  const labels = ['Off', 'Light', 'Light', 'Mild', 'Mild', 'Medium', 'Medium', 'Strong', 'Strong', 'Heavy', 'Max'];
+  // 0-100% with descriptive band for context
+  const band = value === 0 ? 'Off' : value <= 25 ? 'Light' : value <= 50 ? 'Mild' : value <= 75 ? 'Strong' : 'Max';
   return (
     <div className="bg-ink/30 border border-border/15 rounded-lg p-2.5 space-y-1.5">
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-semibold text-muted/70">{label}</span>
-        <span className={`text-[10px] font-mono text-${color}`}>{labels[value]} ({value}/10)</span>
+        <span className={`text-[10px] font-mono text-${color}`}>{band} · {value}%</span>
       </div>
-      <input type="range" min="0" max="10" step="1" value={value} onChange={e => onChange(parseInt(e.target.value))}
+      <input type="range" min="0" max="100" step="5" value={value} onChange={e => onChange(parseInt(e.target.value))}
         className={`w-full h-1.5 rounded-lg appearance-none cursor-pointer bg-surface ${colorMap[color] || 'accent-bo'}`} />
       {hint && <p className="text-[9px] text-muted/40">{hint}</p>}
     </div>
@@ -171,8 +252,8 @@ function CRMSection({ enabled, setEnabled, stages, setStages, importance, setImp
             ))}
           </div>
           <ImportanceSlider value={importance} onChange={setImportance}
-            label="CRM Importance"
-            hint={stages.length === 0 ? "Pick at least one CRM stage above" : `Influence of ${stages.join(', ')} companies`}
+            label="CRM Influence"
+            hint={stages.length === 0 ? "Pick at least one CRM stage above" : `Weight of ${stages.join(', ')} companies on scoring`}
             color="boro" />
         </>
       )}
@@ -486,13 +567,14 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
 
   // ── Baselines / CRM / Portfolio ──
   const [baselines, setBaselines] = useState([]);
-  const [baselineImportance, setBaselineImportance] = useState(7);
+  const [baselineImportance, setBaselineImportance] = useState(70);
   const [includeCRM, setIncludeCRM] = useState(false);
   const [crmStages, setCRMStages] = useState(['BO', 'BORO']);
-  const [crmImportance, setCRMImportance] = useState(5);
+  const [crmImportance, setCRMImportance] = useState(50);
   const [portfolioSelected, setPortfolioSelected] = useState([]);
-  const [portfolioImportance, setPortfolioImportance] = useState(5);
+  const [portfolioImportance, setPortfolioImportance] = useState(50);
   const [showAnchors, setShowAnchors] = useState(false);
+  const [additionalInfo, setAdditionalInfo] = useState('');
 
   // Pre-populate from URL params (when arriving from FindSimilar's Deep Search button)
   useEffect(() => {
@@ -509,7 +591,7 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
   const { superSearchStatus, superSearchResults, superSearchHistory, runSuperSearch, cancelSuperSearch } = useScan();
   const [showHistory, setShowHistory] = useState(false);
   const [showSavePrompt, setShowSavePrompt] = useState(false);
-  const [superTier, setSuperTier] = useState('opus20'); // 'sonnet' | 'opus20' | 'opus80'
+  const [superTier, setSuperTier] = useState('opus20'); // haiku|sonnet|opus20|opus80|extreme
   const [showCostConfirm, setShowCostConfirm] = useState(false);
   const [results, setResults] = useState(null);
 
@@ -615,6 +697,9 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
       const selected = PORTFOLIO.filter(p => portfolioSelected.includes(p.name));
       anchors.portfolioCompanies = selected.map(p => ({ name: p.name, id: p.harmonic_id || null, domain: p.domain }));
       anchors.portfolioImportance = portfolioImportance;
+    }
+    if (additionalInfo.trim()) {
+      anchors.additionalInfo = additionalInfo.trim();
     }
 
     await runSuperSearch({ sectors, chains, sources, timeRange, minFollowers, minEngagement, stage, customKeywords, superTier, ...anchors });
@@ -774,10 +859,40 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
         </div>
         <div className="border-t border-border/15" />
         <div className="space-y-2">
-          <SectionHeader title="Keywords" subtitle="Comma-separated, searched across all sources" />
+          <div className="flex items-center justify-between">
+            <SectionHeader title="Keywords" subtitle="Comma-separated, searched across all sources" />
+            <PopularKeywordsPanel
+              currentKeywords={customKeywords}
+              onAdd={(kw) => {
+                const cur = customKeywords.trim();
+                const tokens = cur.split(/[,;]/).map(t => t.trim()).filter(Boolean);
+                if (tokens.includes(kw)) return;
+                setCustomKeywords(cur ? `${cur}, ${kw}` : kw);
+              }}
+            />
+          </div>
           <input type="text" value={customKeywords} onChange={e => setCustomKeywords(e.target.value)}
             placeholder="pump.fun clone, polymarket, restaking..."
             className="w-full bg-ink/50 border border-border/25 rounded-lg px-3 py-2.5 text-xs text-bright outline-none focus:border-bo/35 transition-colors placeholder:text-muted/40" />
+        </div>
+
+        {/* Additional Info — large freeform context */}
+        <div className="border-t border-border/15" />
+        <div className="space-y-2">
+          <SectionHeader title="Additional Info" subtitle="Optional — paste anything (call transcripts, write-ups, SAFE docs, briefs, theses)" />
+          <textarea value={additionalInfo} onChange={e => setAdditionalInfo(e.target.value)} rows={4}
+            placeholder="Paste any extra context here — a call transcript, write-up, term sheet, SAFE doc, deal memo, thesis brief... Then explain in 1-2 sentences how this should shape the search (what to prioritize, what to avoid, what patterns to look for)."
+            className="w-full bg-ink/50 border border-border/25 rounded-lg px-3 py-2.5 text-xs text-bright outline-none focus:border-bo/35 transition-colors placeholder:text-muted/35 resize-y leading-relaxed font-mono" />
+          <div className="flex items-center justify-between">
+            <p className="text-[9px] text-muted/40 leading-relaxed">
+              Claude reads this alongside your filters and anchors. Use it to load any unstructured context — a deal memo, founder bio, market analysis, transcript snippets — and tell Claude how to weigh it.
+            </p>
+            {additionalInfo && (
+              <span className="text-[9px] text-muted/35 font-mono flex-shrink-0 ml-2">
+                {additionalInfo.length.toLocaleString()} chars · ~{Math.ceil(additionalInfo.length / 3.5).toLocaleString()} tokens
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -789,71 +904,121 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
         </p>
       </div>
 
-      {/* Cost Tier Selector */}
-      <div className="mb-3 flex items-center gap-2">
-        <span className="text-[9px] text-muted/40 uppercase tracking-wider font-bold">Scoring Tier</span>
-        {[
-          { id: 'sonnet', label: '💰 Sonnet Only', cost: '~$0.08', desc: 'Fast & cheap — Sonnet screens all signals' },
-          { id: 'opus20', label: '⚡ + Opus Top 20', cost: '~$0.40', desc: 'Opus deep-scores top 20 HIGH signals' },
-          { id: 'opus80', label: '🧠 + Opus Top 80', cost: '~$1.20', desc: 'Opus deep-scores top 80 signals' },
-        ].map(t => (
-          <button key={t.id} onClick={() => setSuperTier(t.id)}
-            className={`text-[10px] px-3 py-1.5 rounded-lg border transition-all ${
-              superTier === t.id ? 'bg-bo/12 border-bo/30 text-bo font-bold' : 'border-border/20 text-muted/40 hover:border-border/40'
-            }`} title={t.desc}>
-            {t.label} <span className="text-[8px] text-muted/30">{t.cost}</span>
-          </button>
-        ))}
+      {/* Cost Tier Selector — 5 tiers */}
+      <div className="mb-3 space-y-1.5">
+        <span className="text-[9px] text-muted/40 uppercase tracking-wider font-bold">Scoring Depth</span>
+        <div className="grid grid-cols-5 gap-1.5">
+          {[
+            { id: 'haiku',   label: 'Quick',     emoji: '⚡', baseCost: '$0.05', desc: 'Haiku screen, no deep scoring — fastest, cheapest' },
+            { id: 'sonnet',  label: 'Standard',  emoji: '💰', baseCost: '$0.20', desc: 'Sonnet screens all signals, no Opus deep scoring' },
+            { id: 'opus20',  label: 'Deep',      emoji: '🔍', baseCost: '$0.50', desc: 'Sonnet screen + Opus deep-scores top 20 HIGH signals' },
+            { id: 'opus80',  label: 'Max',       emoji: '🧠', baseCost: '$1.80', desc: 'Sonnet screen + Opus deep-scores top 80 signals' },
+            { id: 'extreme', label: 'Extreme',   emoji: '🚀', baseCost: '$4.50', desc: 'Sonnet screen + Opus deep-scores top 200 + larger context, longer analysis' },
+          ].map(t => (
+            <button key={t.id} onClick={() => setSuperTier(t.id)}
+              className={`text-left rounded-lg border p-2 transition-all ${
+                superTier === t.id ? 'bg-bo/12 border-bo/35 ring-1 ring-bo/15' : 'border-border/20 hover:border-border/40'
+              }`} title={t.desc}>
+              <div className="flex items-center justify-between gap-1">
+                <span className={`text-[10px] font-bold ${superTier === t.id ? 'text-bo' : 'text-bright/80'}`}>
+                  {t.emoji} {t.label}
+                </span>
+              </div>
+              <p className={`text-[9px] mt-0.5 font-mono ${superTier === t.id ? 'text-bo/70' : 'text-muted/35'}`}>~{t.baseCost}+</p>
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Cost Confirmation Modal */}
+      {/* Cost Confirmation Modal — accurate breakdown with anchors + addt'l info */}
       {showCostConfirm && (() => {
-        // Estimate signal count based on sources and sectors
+        // Source signal estimates (per source, lightly multiplied by sector count)
         const estSignalsPerSource = { twitter: 15, farcaster: 12, github: 8, producthunt: 5, harmonic: 20 };
-        const estTotalSignals = sources.reduce((sum, s) => sum + (estSignalsPerSource[s] || 10), 0) * Math.max(1, (sectors.length || 1));
-        const estForClaude = estTotalSignals; // All signals get batched through Sonnet
-        const sonnetCost = estForClaude * 0.001;
-        const opusCost = superTier === 'opus80' ? Math.min(estForClaude, 80) * 0.015 : superTier === 'opus20' ? Math.min(estForClaude, 20) * 0.015 : 0;
-        const totalEst = sonnetCost + opusCost;
+        const sectorMultiplier = Math.max(1, Math.min(3, sectors.length || 0)); // diminishing returns past 3 sectors
+        const sourceSignals = sources.reduce((sum, s) => sum + (estSignalsPerSource[s] || 10), 0) * sectorMultiplier;
+
+        // Anchor signals: each baseline/portfolio fetches `importance` similar companies (max 100)
+        const anchorBaselineSignals = baselines.length * Math.min(100, baselineImportance);
+        const anchorPortfolioSignals = portfolioSelected.length * Math.min(100, portfolioImportance);
+        const anchorSignals = anchorBaselineSignals + anchorPortfolioSignals;
+
+        const totalSignals = sourceSignals + anchorSignals;
+
+        // Token estimates for additional info (it gets sent on every Sonnet + Opus call)
+        const additionalInfoTokens = additionalInfo ? Math.ceil(additionalInfo.length / 3.5) : 0;
+        const sonnetBatches = Math.ceil(totalSignals / 30); // 30 signals per Sonnet batch
+        const additionalInfoSonnetCost = (additionalInfoTokens * sonnetBatches * 3) / 1_000_000; // $3/M input
+
+        // Tier pricing
+        const tierConfig = {
+          haiku:   { screenCostPerSignal: 0.0003, opusN: 0,   opusCostPerSignal: 0,     summary: 0.02, eta: '30s-1m'  },
+          sonnet:  { screenCostPerSignal: 0.001,  opusN: 0,   opusCostPerSignal: 0,     summary: 0.05, eta: '1-2m'    },
+          opus20:  { screenCostPerSignal: 0.001,  opusN: 20,  opusCostPerSignal: 0.018, summary: 0.10, eta: '2-3m'    },
+          opus80:  { screenCostPerSignal: 0.001,  opusN: 80,  opusCostPerSignal: 0.018, summary: 0.20, eta: '4-7m'    },
+          extreme: { screenCostPerSignal: 0.0012, opusN: 200, opusCostPerSignal: 0.025, summary: 0.50, eta: '8-15m'   },
+        };
+        const cfg = tierConfig[superTier] || tierConfig.opus20;
+
+        // Costs
+        const screenCost = totalSignals * cfg.screenCostPerSignal;
+        const opusEffective = Math.min(cfg.opusN, totalSignals);
+        const opusCost = opusEffective * cfg.opusCostPerSignal;
+        // Additional info goes to Opus too (heavier penalty since Opus is 5x Sonnet input cost)
+        const additionalInfoOpusCost = (additionalInfoTokens * Math.ceil(opusEffective / 8) * 15) / 1_000_000;
+        const overhead = cfg.summary; // base summary/orchestration overhead
+
+        const totalEst = screenCost + opusCost + additionalInfoSonnetCost + additionalInfoOpusCost + overhead;
         const isExpensive = totalEst > 4;
-        
+
+        const tierLabel = { haiku: 'Quick', sonnet: 'Standard', opus20: 'Deep', opus80: 'Max', extreme: 'Extreme' }[superTier] || superTier;
+
         return (
           <div className={`mb-4 bg-ink/40 border rounded-xl p-4 space-y-3 ${isExpensive ? 'border-rose/30' : 'border-accent/20'}`}>
-            <p className="text-[10px] text-accent/60 uppercase tracking-wider font-bold">Cost Breakdown — Super Search</p>
+            <p className="text-[10px] text-accent/60 uppercase tracking-wider font-bold">Cost Breakdown — {tierLabel}</p>
             {isExpensive && (
               <div className="bg-rose/10 border border-rose/25 rounded-lg px-3 py-2">
-                <p className="text-[11px] text-rose font-bold">⚠️ High cost warning</p>
-                <p className="text-[10px] text-rose/60 mt-0.5">This search is estimated at ~${totalEst.toFixed(2)} due to {sectors.length} sectors × {sources.length} sources. Consider reducing sectors or switching to Sonnet-only tier.</p>
+                <p className="text-[11px] text-rose font-bold">⚠️ High cost search</p>
+                <p className="text-[10px] text-rose/60 mt-0.5">~${totalEst.toFixed(2)} estimated — driven by {totalSignals} signals × Opus on top {opusEffective}{additionalInfoTokens > 1000 ? ` + ${additionalInfoTokens.toLocaleString()} tokens of additional info` : ''}.</p>
               </div>
             )}
             <div className="space-y-1.5 text-[11px]">
               <div className="flex justify-between text-muted/50">
                 <span>Signal collection ({sources.length} sources × {sectors.length || 1} sectors)</span>
-                <span className="text-muted/30">free · ~{estTotalSignals} est. signals</span>
+                <span className="text-muted/30">free · ~{sourceSignals} signals</span>
               </div>
+              {anchorSignals > 0 && (
+                <div className="flex justify-between text-muted/50">
+                  <span>Anchor expansion ({baselines.length + portfolioSelected.length} anchor{baselines.length + portfolioSelected.length === 1 ? '' : 's'} × Harmonic similar)</span>
+                  <span className="text-muted/30">free · ~{anchorSignals} signals</span>
+                </div>
+              )}
               <div className="flex justify-between text-muted/50">
-                <span>Sonnet screening (rate up to {estForClaude} signals)</span>
-                <span className="text-accent/60">~${sonnetCost.toFixed(2)}</span>
+                <span>{cfg.opusN === 0 && superTier === 'haiku' ? 'Haiku' : 'Sonnet'} screening (~{totalSignals} signals)</span>
+                <span className="text-accent/60">~${screenCost.toFixed(2)}</span>
               </div>
-              {superTier === 'opus20' && (
+              {opusEffective > 0 && (
                 <div className="flex justify-between text-muted/50">
-                  <span>Opus deep scoring (top 20 signals)</span>
-                  <span className="text-accent/60">~${(Math.min(20, estForClaude) * 0.015).toFixed(2)}</span>
+                  <span>Opus deep scoring (top {opusEffective} signals)</span>
+                  <span className="text-accent/60">~${opusCost.toFixed(2)}</span>
                 </div>
               )}
-              {superTier === 'opus80' && (
+              {additionalInfoTokens > 100 && (
                 <div className="flex justify-between text-muted/50">
-                  <span>Opus deep scoring (top 80 signals)</span>
-                  <span className="text-accent/60">~${(Math.min(80, estForClaude) * 0.015).toFixed(2)}</span>
+                  <span>Additional info context ({additionalInfoTokens.toLocaleString()} tokens × all batches)</span>
+                  <span className="text-accent/60">~${(additionalInfoSonnetCost + additionalInfoOpusCost).toFixed(2)}</span>
                 </div>
               )}
+              <div className="flex justify-between text-muted/50">
+                <span>Orchestration + summary</span>
+                <span className="text-accent/60">~${overhead.toFixed(2)}</span>
+              </div>
               <div className="border-t border-border/15 pt-1.5 flex justify-between font-bold">
                 <span className="text-bright/60">Estimated total</span>
                 <span className={totalEst > 4 ? 'text-rose' : 'text-accent'}>~${totalEst.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-[9px] text-muted/30">
-                <span>DD push: {sources.includes('harmonic') ? 'up to 15 (Harmonic 3x)' : 'up to 5 (strict)'}</span>
-                <span>ETA: ~{superTier === 'opus80' ? '3-5' : superTier === 'opus20' ? '2-3' : '1-2'} min</span>
+                <span>DD push: up to {sources.includes('harmonic') ? 15 : 5}</span>
+                <span>ETA: {cfg.eta}</span>
               </div>
             </div>
             <div className="flex gap-2">
