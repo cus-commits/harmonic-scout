@@ -215,7 +215,7 @@ function ImportanceSlider({ value, onChange, label, hint, color = 'bo' }) {
         <span className="text-[10px] font-semibold text-muted/70">{label}</span>
         <span className={`text-[10px] font-mono text-${color}`}>{band} · {value}%</span>
       </div>
-      <input type="range" min="0" max="100" step="5" value={value} onChange={e => onChange(parseInt(e.target.value))}
+      <input type="range" min="0" max="100" step="1" value={value} onChange={e => onChange(parseInt(e.target.value))}
         className={`w-full h-1.5 rounded-lg appearance-none cursor-pointer bg-surface ${colorMap[color] || 'accent-bo'}`} />
       {hint && <p className="text-[9px] text-muted/40">{hint}</p>}
     </div>
