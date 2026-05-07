@@ -1173,11 +1173,11 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
               <p className="text-xs text-bright/80 leading-relaxed whitespace-pre-wrap">{displayResults?.analysis}</p>
             </div>
           )}
-          {results.signals?.length > 0 && (
+          {displayResults?.signals?.length > 0 && (
             <div className="flex flex-col gap-2 bg-ink/20 rounded-xl p-2.5 border border-border/15">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="text-[9px] text-muted/40 uppercase tracking-wider font-bold mr-0.5">Source</span>
-                <FilterPill label={`All (${results.signals.length})`} active={filterSource === 'all'} onClick={() => setFilterSource('all')} />
+                <FilterPill label={`All (${displayResults.signals.length})`} active={filterSource === 'all'} onClick={() => setFilterSource('all')} />
                 {Object.entries(sourceCounts).map(([src, count]) => (
                   <FilterPill key={src} label={`${sourceIcons[src]} ${count}`} active={filterSource === src} onClick={() => setFilterSource(filterSource === src ? 'all' : src)} />
                 ))}
@@ -1197,7 +1197,7 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
               <p className="text-[11px] text-muted/40">{filteredSignals.length} signals{filterSource !== 'all' || filterSignal !== 'all' ? ' (filtered)' : ''}</p>
               {filteredSignals.map(s => <SignalCard key={s.id} signal={s} addFavorite={addFavorite} isFavorited={isFavorited} />)}
             </div>
-          ) : results.signals?.length > 0 ? (
+          ) : displayResults?.signals?.length > 0 ? (
             <p className="text-center text-muted/40 text-sm py-8">No signals match current filters</p>
           ) : !displayResults?.error ? (
             <p className="text-center text-muted/40 text-sm py-8">No signals found. Broaden topics or enable more sources.</p>
