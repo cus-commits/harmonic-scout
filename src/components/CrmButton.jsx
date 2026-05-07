@@ -204,11 +204,27 @@ export function CrmButton({ company }) {
           style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.7)', width: '160px',
             ...(ref.current ? (() => {
               const rect = ref.current.getBoundingClientRect();
-              const menuH = confirmSM ? 130 : 190;
-              // Horizontal: align left edge to button left, clamp to viewport
-              const left = Math.min(Math.max(8, rect.left), window.innerWidth - 168);
-              // Vertical: open upward if button is in lower half of screen
-              const openUp = rect.top > window.innerHeight / 2;
+              const menuW = 160;
+              const menuH = confirmSM ? 130 : 200;
+              const pad = 8;
+
+              // Horizontal: prefer left-align (menu opens to right of button-left).
+              // If that overflows the viewport right edge, right-align instead
+              // (menu's right edge matches button's right edge — opens to the LEFT).
+              let left;
+              if (rect.left + menuW + pad <= window.innerWidth) {
+                left = rect.left;                                  // room to right — left-align
+              } else if (rect.right - menuW >= pad) {
+                left = rect.right - menuW;                         // no room right — right-align to button right
+              } else {
+                left = Math.max(pad, window.innerWidth - menuW - pad); // last resort — clamp to viewport
+              }
+
+              // Vertical: open downward by default; flip up only when there's no room below
+              // and the button itself is far enough from the top to fit the menu above.
+              const fitsBelow = rect.bottom + menuH + pad <= window.innerHeight;
+              const fitsAbove = rect.top - menuH - pad >= 0;
+              const openUp = !fitsBelow && fitsAbove;
               if (openUp) {
                 return { bottom: window.innerHeight - rect.top + 4, left };
               }
