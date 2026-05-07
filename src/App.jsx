@@ -18,6 +18,7 @@ import TopPicksPage from './pages/TopPicksPage';
 import AirtablePage from './pages/AirtablePage';
 import PortcosPage from './pages/PortcosPage';
 import ReachoutsPage from './pages/ReachoutsPage';
+import DeepSearchPage from './pages/DeepSearchPage';
 import NavBar from './components/NavBar';
 import ThemeToggle from './components/ThemeToggle';
 import Trollbox from './components/Trollbox';
@@ -163,6 +164,7 @@ function AppContent({ ready, setReady }) {
           <Route path="/airtable" element={<AirtablePage />} />
           <Route path="/portcos" element={<PortcosPage addFavorite={addFavorite} isFavorited={isFavorited} />} />
           <Route path="/reachouts" element={<ReachoutsPage />} />
+          <Route path="/deepsearch" element={<DeepSearchPage addFavorite={addFavorite} isFavorited={isFavorited} />} />
           <Route path="/recurring" element={<RecurringScanPage addFavorite={addFavorite} isFavorited={isFavorited} />} />
           <Route path="/searchagent" element={<RecurringScanPage addFavorite={addFavorite} isFavorited={isFavorited} />} />
           <Route path="/recurring/live/:scanId" element={<RealTimeScanPage />} />

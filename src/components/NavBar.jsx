@@ -275,7 +275,7 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
   const isActive = (item) => {
     if (item.id === 'home') return location.pathname === '/';
     if (item.id === 'search') return showSearch || location.pathname === '/chat';
-    if (item.id === 'scan') return showScanMenu || ['/super', '/searchagent', '/recurring'].includes(location.pathname);
+    if (item.id === 'scan') return showScanMenu || ['/super', '/searchagent', '/recurring', '/deepsearch'].includes(location.pathname);
     if (item.id === 'apps') return showApps || ['/chat', '/twitter', '/farcaster', '/producthunt', '/github'].includes(location.pathname);
     if (item.path) return location.pathname === item.path;
     return false;
@@ -388,10 +388,25 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
                   </div>
                   <span className="sc-opt-cta">Open Super Search →</span>
                 </button>
+
+                <button
+                  className="sc-opt sc-opt-super"
+                  onClick={() => { navigate('/deepsearch'); setShowScanMenu(false); }}
+                >
+                  <div className="sc-opt-top">
+                    <span className="sc-opt-glyph sc-opt-glyph-super">🎯</span>
+                    <span className="sc-opt-badge sc-badge-super">Similar</span>
+                  </div>
+                  <div className="sc-opt-h">Deep Search</div>
+                  <div className="sc-opt-d">
+                    Start from a company, find similar ones via Harmonic + AI scoring. Fast and focused.
+                  </div>
+                  <span className="sc-opt-cta">Open Deep Search →</span>
+                </button>
               </div>
 
               <div className="sc-foot">
-                <span>Scan Agent is best for longer searches that take hours. Super Search is better for searches that take minutes.</span>
+                <span>Scan Agent for long-form thesis scans. Super Search for ad-hoc filters. Deep Search to explore from a baseline company.</span>
               </div>
             </div>
           </div>

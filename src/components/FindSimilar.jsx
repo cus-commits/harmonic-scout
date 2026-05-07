@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CrmButton } from './CrmButton';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://pigeon-api.up.railway.app';
@@ -60,6 +61,23 @@ function CompanyMiniCard({ company, addFavorite, isFavorited }) {
       )}
       <CrmButton company={company} />
     </div>
+  );
+}
+
+function DeepSearchButton({ company }) {
+  const navigate = useNavigate();
+  const handleClick = (e) => {
+    e.stopPropagation();
+    const params = new URLSearchParams({ name: company.name || '' });
+    if (company.id) params.set('id', company.id);
+    if (company.logo_url) params.set('logo', company.logo_url);
+    navigate(`/deepsearch?${params.toString()}`);
+  };
+  return (
+    <button onClick={handleClick}
+      className="w-full mt-2 py-2 rounded-lg border border-accent/25 bg-accent/8 text-accent text-[10px] font-semibold hover:bg-accent/15 hover:border-accent/40 transition-all flex items-center justify-center gap-1.5">
+      🔬 Run Deep Search with AI
+    </button>
   );
 }
 
@@ -159,6 +177,7 @@ function LiveSearch({ addFavorite, isFavorited }) {
           <p className="text-[9px] text-boro/40 uppercase tracking-wider font-bold">
             Showing {visible.length} of {similarResults.length} similar to {selectedCompany?.name}
           </p>
+          <DeepSearchButton company={selectedCompany} />
           <div className="space-y-0.5 max-h-[400px] overflow-y-auto">
             {visible.map((c, i) => (
               <CompanyMiniCard key={`${c.name}-${i}`} company={c} addFavorite={addFavorite} isFavorited={isFavorited} />
@@ -242,6 +261,7 @@ export default function FindSimilar({ companyId, companyName, addFavorite, isFav
               <p className="text-[9px] text-boro/40 uppercase tracking-wider font-bold">
                 Showing {visibleResults.length} of {results.length} similar to {companyName}
               </p>
+              <DeepSearchButton company={{ name: companyName, id: companyId }} />
               <div className="space-y-0.5 max-h-[500px] overflow-y-auto">
                 {visibleResults.map((c, i) => (
                   <CompanyMiniCard key={`${c.name}-${i}`} company={c} addFavorite={addFavorite} isFavorited={isFavorited} />
