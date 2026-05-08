@@ -1279,37 +1279,80 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
       )}
 
       {/* Scan progress panel */}
-      {isScanning && (
-        <div className="mb-5 bg-ink/30 border border-bo/15 rounded-xl p-4 space-y-3">
-          <div className="flex items-center gap-1 text-[9px] font-mono">
-            {['import', 'filter', 'screen', 'done'].map((s, i) => {
-              const labels = { import: '📡 Import', filter: '🧹 Filter', screen: '🧠 Score', done: '✅ Done' };
-              const stage = displayStage || 'import';
-              const isActive = stage === s;
-              const isPast = ['import','filter','screen','done'].indexOf(stage) > i;
-              return (
-                <React.Fragment key={s}>
-                  {i > 0 && <span className="text-muted/20">→</span>}
-                  <span className={`px-2 py-0.5 rounded ${isActive ? 'bg-bo/15 text-bo font-bold' : isPast ? 'text-sm/50' : 'text-muted/25'}`}>{labels[s]}</span>
-                </React.Fragment>
-              );
-            })}
-          </div>
-          <div className="flex items-center justify-between">
-            <p className="text-[11px] text-bright/60">{displayProgress}</p>
-            <div className="flex items-center gap-3">
-              {displayStartTime && <SuperElapsed startTime={displayStartTime} />}
-              <span className="text-[9px] text-muted/30">
-                ETA: {displayStage === 'import' ? '~60-90s' : displayStage === 'filter' ? '~30s' : displayStage === 'screen' ? '~20-40s' : '...'}
+      {isScanning && (() => {
+        // Map backend stage names → frontend stage groups (so badge highlighting works for all sub-stages)
+        const STAGE_GROUPS = {
+          import: 'import', 'ai-query-gen': 'import', 'ai-query-run': 'import', 'ai-query-enrich': 'import', 'ai-query-done': 'import', anchors: 'import', multihop: 'import',
+          filter: 'filter', dedupe: 'filter',
+          prescreen: 'score', screen: 'score', meritscore: 'score', deepscore: 'score', 'enrich-survivors': 'score', 'anchor-rating': 'score',
+          done: 'done',
+        };
+        const stageGroup = STAGE_GROUPS[displayStage] || 'import';
+        const groupOrder = ['import', 'filter', 'score', 'done'];
+        const currentIdx = groupOrder.indexOf(stageGroup);
+
+        // Tier-based ETA (total minutes), then subtract elapsed
+        const tierEta = { haiku: 1.5, sonnet: 3, opus20: 5, opus80: 12, extreme: 20 };
+        const totalMin = tierEta[superTier] || 5;
+        const elapsedMin = displayStartTime ? (Date.now() - displayStartTime) / 60000 : 0;
+        const remainMin = Math.max(0, totalMin - elapsedMin);
+        const etaText = remainMin < 1 ? `<1 min` : remainMin < 2 ? `~1-2 min` : `~${Math.ceil(remainMin)} min`;
+
+        // Tier-based cost label (matches the cost confirmation modal range)
+        const tierCost = { haiku: '~$0.05', sonnet: '~$0.20', opus20: '~$0.60', opus80: '~$3.50', extreme: '~$12' };
+        const tierLabel = { haiku: 'Quick', sonnet: 'Standard', opus20: 'Deep', opus80: 'Max', extreme: 'Extreme' };
+
+        return (
+          <div className="mb-5 bg-ink/30 border border-bo/15 rounded-xl p-4 space-y-3">
+            {/* Stage badges */}
+            <div className="flex items-center gap-1 text-[9px] font-mono">
+              {[
+                { id: 'import', label: '📡 Import' },
+                { id: 'filter', label: '🧹 Filter' },
+                { id: 'score',  label: '🧠 Score' },
+                { id: 'done',   label: '✅ Done' },
+              ].map((s, i) => {
+                const isActive = s.id === stageGroup;
+                const isPast = currentIdx > i;
+                return (
+                  <React.Fragment key={s.id}>
+                    {i > 0 && <span className="text-muted/20">→</span>}
+                    <span className={`px-2 py-0.5 rounded ${isActive ? 'bg-bo/15 text-bo font-bold animate-pulse' : isPast ? 'text-sm/50' : 'text-muted/25'}`}>{s.label}</span>
+                  </React.Fragment>
+                );
+              })}
+              <span className="ml-auto text-[9px] text-muted/45 font-normal">
+                Tier: <span className="text-bright/70 font-semibold">{tierLabel[superTier] || superTier}</span>
               </span>
             </div>
+
+            {/* Live progress text + elapsed/ETA */}
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-[11px] text-bright/70 leading-snug flex-1">{displayProgress || 'Working...'}</p>
+              <div className="flex items-center gap-3 flex-shrink-0">
+                {displayStartTime && <SuperElapsed startTime={displayStartTime} />}
+                <span className="text-[9px] text-muted/40 font-mono">ETA {etaText}</span>
+              </div>
+            </div>
+
+            {/* Cost + Cancel */}
+            <div className="flex items-center justify-between pt-1.5 border-t border-border/10">
+              <span className="text-[9px] text-accent/55">
+                Est. total cost: <span className="font-mono font-bold">{tierCost[superTier]}</span>
+                {(superTier === 'opus80' || superTier === 'extreme') && <span className="text-muted/40"> (rich pool from AI Query Expansion)</span>}
+              </span>
+              <button onClick={cancelSuperSearch} className="text-[9px] px-2 py-1 rounded border border-rose/25 text-rose/60 hover:text-rose hover:border-rose/40">Cancel</button>
+            </div>
+
+            {/* Recovered-on-refresh notice */}
+            {superSearchStatus?.recovered && (
+              <div className="text-[10px] text-accent/55 bg-accent/5 border border-accent/15 rounded-md px-2 py-1.5">
+                ⏳ Reconnected to a scan that's still running on the server. It will continue and results will appear here when done.
+              </div>
+            )}
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-[9px] text-accent/40">Est. cost: ~$0.08-0.15 (Sonnet only)</span>
-            <button onClick={cancelSuperSearch} className="text-[9px] px-2 py-1 rounded border border-rose/25 text-rose/60 hover:text-rose hover:border-rose/40">Cancel</button>
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Results */}
       {displayResults && (
