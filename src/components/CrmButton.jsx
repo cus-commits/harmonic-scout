@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://pigeon-api.up.railway.app';
 const CRM_STAGES = ['BO', 'BORO', 'BORO-SM', 'Backburn'];
@@ -105,12 +106,21 @@ export function CrmButton({ company }) {
   const [confirmSM, setConfirmSM] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const ref = useRef(null);
+  const portalDropdownRef = useRef(null);
 
   const user = getCrmUser();
   const isRestricted = RESTRICTED.includes(user);
 
   useEffect(() => {
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) { setOpen(false); setConfirmSM(false); } };
+    const handler = (e) => {
+      // Close only if click is outside BOTH the trigger button and the portaled dropdown
+      const insideButton = ref.current && ref.current.contains(e.target);
+      const insideDropdown = portalDropdownRef.current && portalDropdownRef.current.contains(e.target);
+      if (!insideButton && !insideDropdown) {
+        setOpen(false);
+        setConfirmSM(false);
+      }
+    };
     if (open) document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
@@ -199,62 +209,68 @@ export function CrmButton({ company }) {
         )}
       </button>
 
-      {open && !result?.stage && (
-        <div className="fixed z-[200] bg-card border border-accent/20 rounded-lg overflow-visible shadow-2xl"
-          style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.7)', width: '160px',
-            ...(ref.current ? (() => {
-              const rect = ref.current.getBoundingClientRect();
-              const menuW = 160;
-              const menuH = confirmSM ? 130 : 200;
-              const pad = 8;
+      {open && !result?.stage && ref.current && createPortal(
+        (() => {
+          const rect = ref.current.getBoundingClientRect();
+          const menuW = 160;
+          const menuH = confirmSM ? 130 : 200;
+          const pad = 8;
 
-              // Horizontal: prefer left-align (menu opens to right of button-left).
-              // If that overflows the viewport right edge, right-align instead
-              // (menu's right edge matches button's right edge — opens to the LEFT).
-              let left;
-              if (rect.left + menuW + pad <= window.innerWidth) {
-                left = rect.left;                                  // room to right — left-align
-              } else if (rect.right - menuW >= pad) {
-                left = rect.right - menuW;                         // no room right — right-align to button right
-              } else {
-                left = Math.max(pad, window.innerWidth - menuW - pad); // last resort — clamp to viewport
-              }
+          // Horizontal: prefer left-align (menu opens to right). If that overflows the
+          // viewport right edge, right-align instead (menu's right edge = button's right edge).
+          let left;
+          if (rect.left + menuW + pad <= window.innerWidth) {
+            left = rect.left;
+          } else if (rect.right - menuW >= pad) {
+            left = rect.right - menuW;
+          } else {
+            left = Math.max(pad, window.innerWidth - menuW - pad);
+          }
 
-              // Vertical: open downward by default; flip up only when there's no room below
-              // and the button itself is far enough from the top to fit the menu above.
-              const fitsBelow = rect.bottom + menuH + pad <= window.innerHeight;
-              const fitsAbove = rect.top - menuH - pad >= 0;
-              const openUp = !fitsBelow && fitsAbove;
-              if (openUp) {
-                return { bottom: window.innerHeight - rect.top + 4, left };
-              }
-              return { top: rect.bottom + 4, left };
-            })() : { top: 100, left: 100 }),
-          }}>
-          {!confirmSM ? (
-            <>
-              <p className="text-[8px] text-muted/40 uppercase tracking-wider font-bold px-2.5 pt-2 pb-1">Add to CRM as {user}</p>
-              {CRM_STAGES.map(stage => (
-                <button key={stage} onClick={(e) => { e.stopPropagation(); handleStageClick(stage); }}
-                  className={`w-full text-left text-[11px] px-2.5 py-2 border-t border-border/5 font-medium transition-colors ${stageColors[stage]}`}>
-                  {stage === 'BORO-SM' ? '🏆 ' : ''}{stage}
-                </button>
-              ))}
-              {result?.error && <p className="text-rose/60 text-[9px] px-2.5 py-1">{result.error}</p>}
-            </>
-          ) : (
-            <div className="p-3 space-y-2">
-              <p className="text-[11px] text-bright font-medium text-center">Add to <span className="text-sm font-bold">BORO-SM</span>?</p>
-              <p className="text-[9px] text-muted/50 text-center">Highest conviction bucket</p>
-              <div className="flex gap-2">
-                <button onClick={(e) => { e.stopPropagation(); setConfirmSM(false); }}
-                  className="flex-1 text-[10px] py-1.5 rounded-md border border-border/20 text-muted/50 hover:text-bright hover:border-border/40">Cancel</button>
-                <button onClick={(e) => { e.stopPropagation(); addToCRM('BORO-SM'); }}
-                  className="flex-1 text-[10px] py-1.5 rounded-md bg-sm/20 border border-sm/30 text-sm hover:bg-sm/30 font-bold">🏆 Confirm</button>
-              </div>
+          // Vertical: open downward by default; flip up only when there's no room below.
+          const fitsBelow = rect.bottom + menuH + pad <= window.innerHeight;
+          const fitsAbove = rect.top - menuH - pad >= 0;
+          const openUp = !fitsBelow && fitsAbove;
+          const positionStyle = openUp
+            ? { bottom: window.innerHeight - rect.top + 4, left }
+            : { top: rect.bottom + 4, left };
+
+          // Portal to document.body — bypasses any parent transform/filter/will-change
+          // that would otherwise break position:fixed coordinate behavior.
+          return (
+            <div
+              ref={portalDropdownRef}
+              className="fixed z-[200] bg-card border border-accent/20 rounded-lg overflow-visible shadow-2xl"
+              style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.7)', width: '160px', ...positionStyle }}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              {!confirmSM ? (
+                <>
+                  <p className="text-[8px] text-muted/40 uppercase tracking-wider font-bold px-2.5 pt-2 pb-1">Add to CRM as {user}</p>
+                  {CRM_STAGES.map(stage => (
+                    <button key={stage} onClick={(e) => { e.stopPropagation(); handleStageClick(stage); }}
+                      className={`w-full text-left text-[11px] px-2.5 py-2 border-t border-border/5 font-medium transition-colors ${stageColors[stage]}`}>
+                      {stage === 'BORO-SM' ? '🏆 ' : ''}{stage}
+                    </button>
+                  ))}
+                  {result?.error && <p className="text-rose/60 text-[9px] px-2.5 py-1">{result.error}</p>}
+                </>
+              ) : (
+                <div className="p-3 space-y-2">
+                  <p className="text-[11px] text-bright font-medium text-center">Add to <span className="text-sm font-bold">BORO-SM</span>?</p>
+                  <p className="text-[9px] text-muted/50 text-center">Highest conviction bucket</p>
+                  <div className="flex gap-2">
+                    <button onClick={(e) => { e.stopPropagation(); setConfirmSM(false); }}
+                      className="flex-1 text-[10px] py-1.5 rounded-md border border-border/20 text-muted/50 hover:text-bright hover:border-border/40">Cancel</button>
+                    <button onClick={(e) => { e.stopPropagation(); addToCRM('BORO-SM'); }}
+                      className="flex-1 text-[10px] py-1.5 rounded-md bg-sm/20 border border-sm/30 text-sm hover:bg-sm/30 font-bold">🏆 Confirm</button>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          );
+        })(),
+        document.body
       )}
     </div>
   );
