@@ -1069,8 +1069,8 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
             { id: 'haiku',   label: 'Quick',     emoji: '⚡', baseCost: '$0.05', desc: 'Haiku screen, initial similar pool only — fastest, cheapest' },
             { id: 'sonnet',  label: 'Standard',  emoji: '💰', baseCost: '$0.20', desc: 'Sonnet screens all signals from initial pool, no Opus' },
             { id: 'opus20',  label: 'Deep',      emoji: '🔍', baseCost: '$0.60', desc: 'Sonnet + Opus 5-dim merit scoring on top 20 (anchored)' },
-            { id: 'opus80',  label: 'Max',       emoji: '🧠', baseCost: '$2.50', desc: '+ 1-hop expansion (5 seeds × 100 similar) + Opus on top 80' },
-            { id: 'extreme', label: 'Extreme',   emoji: '🚀', baseCost: '$6.00', desc: '+ 2-hop expansion (up to 1500 candidates) + Opus 5-dim on top 300' },
+            { id: 'opus80',  label: 'Max',       emoji: '🧠', baseCost: '$2.50', desc: '+ AI Query Expansion (12 diverse Harmonic searches across full DB) → ~500-1500 candidates → Opus on top 80' },
+            { id: 'extreme', label: 'Extreme',   emoji: '🚀', baseCost: '$7.00', desc: '+ AI Query Expansion (30 diverse queries × 300 results each) → ~2000-5000 candidates → Opus 5-dim on top 300' },
           ].map(t => (
             <button key={t.id} onClick={() => setSuperTier(t.id)}
               className={`text-left rounded-lg border p-2 transition-all ${
@@ -1099,13 +1099,13 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
         const anchorPortfolioSignals = portfolioSelected.length * Math.min(100, portfolioImportance);
         let anchorSignals = anchorBaselineSignals + anchorPortfolioSignals;
 
-        // Multi-hop expansion adds a lot for Max/Extreme tiers
-        // (Max = 1 hop × 5 seeds × 100 = +500; Extreme = 2 hops × 15 seeds × 100 = +3000)
-        // Apply ~50% dedup/funding-filter loss
+        // AI Query Expansion adds a lot for Max/Extreme tiers
+        // (Max = 12 queries × ~150 results = ~1800 raw, ~50% dedup/funding loss = ~900 net)
+        // (Extreme = 30 queries × ~300 results = ~9000 raw, ~50% dedup/funding loss = ~4500 net but Opus only rates top 300)
         if (superTier === 'opus80' && (baselines.length > 0 || portfolioSelected.length > 0)) {
-          anchorSignals += Math.round(5 * 100 * 0.5);
+          anchorSignals += Math.round(12 * 150 * 0.5);
         } else if (superTier === 'extreme' && (baselines.length > 0 || portfolioSelected.length > 0)) {
-          anchorSignals += Math.round((15 * 100 + 15 * 15 * 100) * 0.4);
+          anchorSignals += Math.round(30 * 300 * 0.5);
         }
 
         const totalSignals = sourceSignals + anchorSignals;
