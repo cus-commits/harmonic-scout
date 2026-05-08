@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CrmButton } from '../components/CrmButton';
+import ActiveScansPanel from '../components/ActiveScansPanel';
 
 const API_BASE = import.meta.env?.VITE_API_URL || 'https://pigeon-api.up.railway.app';
 
@@ -131,6 +132,9 @@ export default function HomePage({ addFavorite, isFavorited }) {
           {user ? `Welcome back, ${user}` : 'Claim your identity below'} · {dayName()}
         </p>
       </div>
+
+      {/* Live scans across the team — pulls from /api/signals/super/status, polls every 10s */}
+      <ActiveScansPanel />
 
       {/* Quick nav — glass tiles */}
       <div className="grid grid-cols-2 gap-2.5 mb-5">
