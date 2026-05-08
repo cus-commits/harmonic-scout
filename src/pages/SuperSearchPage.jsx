@@ -1066,11 +1066,11 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
         <span className="text-[9px] text-muted/40 uppercase tracking-wider font-bold">Scoring Depth</span>
         <div className="grid grid-cols-5 gap-1.5">
           {[
-            { id: 'haiku',   label: 'Quick',     emoji: '⚡', baseCost: '$0.05', desc: 'Haiku screen, no deep scoring — fastest, cheapest' },
-            { id: 'sonnet',  label: 'Standard',  emoji: '💰', baseCost: '$0.20', desc: 'Sonnet screens all signals, no Opus deep scoring' },
-            { id: 'opus20',  label: 'Deep',      emoji: '🔍', baseCost: '$0.50', desc: 'Sonnet screen + Opus deep-scores top 20 HIGH signals' },
-            { id: 'opus80',  label: 'Max',       emoji: '🧠', baseCost: '$1.80', desc: 'Sonnet screen + Opus deep-scores top 80 signals' },
-            { id: 'extreme', label: 'Extreme',   emoji: '🚀', baseCost: '$4.50', desc: 'Sonnet screen + Opus deep-scores top 200 + larger context, longer analysis' },
+            { id: 'haiku',   label: 'Quick',     emoji: '⚡', baseCost: '$0.05', desc: 'Haiku screen, initial similar pool only — fastest, cheapest' },
+            { id: 'sonnet',  label: 'Standard',  emoji: '💰', baseCost: '$0.20', desc: 'Sonnet screens all signals from initial pool, no Opus' },
+            { id: 'opus20',  label: 'Deep',      emoji: '🔍', baseCost: '$0.60', desc: 'Sonnet + Opus 5-dim merit scoring on top 20 (anchored)' },
+            { id: 'opus80',  label: 'Max',       emoji: '🧠', baseCost: '$2.50', desc: '+ 1-hop expansion (5 seeds × 100 similar) + Opus on top 80' },
+            { id: 'extreme', label: 'Extreme',   emoji: '🚀', baseCost: '$6.00', desc: '+ 2-hop expansion (up to 1500 candidates) + Opus 5-dim on top 300' },
           ].map(t => (
             <button key={t.id} onClick={() => setSuperTier(t.id)}
               className={`text-left rounded-lg border p-2 transition-all ${
@@ -1097,7 +1097,16 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
         // Anchor signals: each baseline/portfolio fetches `importance` similar companies (max 100)
         const anchorBaselineSignals = baselines.length * Math.min(100, baselineImportance);
         const anchorPortfolioSignals = portfolioSelected.length * Math.min(100, portfolioImportance);
-        const anchorSignals = anchorBaselineSignals + anchorPortfolioSignals;
+        let anchorSignals = anchorBaselineSignals + anchorPortfolioSignals;
+
+        // Multi-hop expansion adds a lot for Max/Extreme tiers
+        // (Max = 1 hop × 5 seeds × 100 = +500; Extreme = 2 hops × 15 seeds × 100 = +3000)
+        // Apply ~50% dedup/funding-filter loss
+        if (superTier === 'opus80' && (baselines.length > 0 || portfolioSelected.length > 0)) {
+          anchorSignals += Math.round(5 * 100 * 0.5);
+        } else if (superTier === 'extreme' && (baselines.length > 0 || portfolioSelected.length > 0)) {
+          anchorSignals += Math.round((15 * 100 + 15 * 15 * 100) * 0.4);
+        }
 
         const totalSignals = sourceSignals + anchorSignals;
 
@@ -1112,7 +1121,7 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
           sonnet:  { screenCostPerSignal: 0.001,  opusN: 0,   opusCostPerSignal: 0,     summary: 0.05, eta: '1-2m'    },
           opus20:  { screenCostPerSignal: 0.001,  opusN: 20,  opusCostPerSignal: 0.018, summary: 0.10, eta: '2-3m'    },
           opus80:  { screenCostPerSignal: 0.001,  opusN: 80,  opusCostPerSignal: 0.018, summary: 0.20, eta: '4-7m'    },
-          extreme: { screenCostPerSignal: 0.0012, opusN: 200, opusCostPerSignal: 0.025, summary: 0.50, eta: '8-15m'   },
+          extreme: { screenCostPerSignal: 0.0012, opusN: 300, opusCostPerSignal: 0.025, summary: 0.50, eta: '8-15m'   },
         };
         const cfg = tierConfig[superTier] || tierConfig.opus20;
 
