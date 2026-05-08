@@ -738,15 +738,40 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
   const [activeSearchName, setActiveSearchName] = useState(null); // tracks which saved search is loaded
   const [showOverridePrompt, setShowOverridePrompt] = useState(false);
 
+  // Build the full saved-search payload (includes ALL config — anchors, importance,
+  // funding filter, tier, additional info — so loading restores the exact search)
+  const buildSavedSearchPayload = (name) => ({
+    name,
+    // Core filters
+    sectors, chains, sources, timeRange, minFollowers, minEngagement, stage, customKeywords,
+    // Tier + funding
+    superTier, fundingFilter,
+    // Anchors
+    baselines: baselines.map(b => ({ name: b.name, id: b.id, logo_url: b.logo_url })),
+    baselineImportance,
+    includeCRM, crmStages, crmImportance,
+    portfolioSelected, portfolioImportance,
+    // Free-form context
+    additionalInfo,
+    savedAt: Date.now(),
+  });
+
   const handleSaveSearch = () => {
-    // If we have an active loaded search and user clicks Save, ask to override
+    // Case 1: active search loaded & input not shown — ask: override or save as new?
     if (activeSearchName && !showSaveInput) {
       setShowOverridePrompt(true);
       return;
     }
+    // Case 2: no active search, input not yet shown — show the name input field
+    if (!activeSearchName && !showSaveInput) {
+      setSaveName('');
+      setShowSaveInput(true);
+      return;
+    }
+    // Case 3: input is visible — actually save with the typed name
     const name = saveName.trim();
     if (!name) return;
-    const search = { name, sectors, chains, sources, timeRange, minFollowers, minEngagement, stage, customKeywords, savedAt: Date.now() };
+    const search = buildSavedSearchPayload(name);
     const updated = [search, ...savedSearches.filter(s => s.name !== name)].slice(0, 20);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     setSavedSearches(updated);
@@ -756,7 +781,7 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
   };
 
   const handleOverrideSave = () => {
-    const search = { name: activeSearchName, sectors, chains, sources, timeRange, minFollowers, minEngagement, stage, customKeywords, savedAt: Date.now() };
+    const search = buildSavedSearchPayload(activeSearchName);
     const updated = [search, ...savedSearches.filter(s => s.name !== activeSearchName)].slice(0, 20);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     setSavedSearches(updated);
@@ -767,9 +792,11 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
     setShowOverridePrompt(false);
     setSaveName('');
     setShowSaveInput(true);
+    setActiveSearchName(null); // clear active so handleSaveSearch case 3 fires correctly
   };
 
   const handleLoadSearch = (search) => {
+    // Core filters
     setSectors(search.sectors || []);
     setChains(search.chains || []);
     setSources(search.sources || [...ALL_SOURCE_KEYS]);
@@ -778,6 +805,23 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
     setMinEngagement(search.minEngagement || 0);
     setStage(search.stage || []);
     setCustomKeywords(search.customKeywords || '');
+    // Tier + funding
+    if (search.superTier) setSuperTier(search.superTier);
+    if (search.fundingFilter) setFundingFilter(search.fundingFilter);
+    // Anchors
+    setBaselines(search.baselines || []);
+    if (typeof search.baselineImportance === 'number') setBaselineImportance(search.baselineImportance);
+    setIncludeCRM(!!search.includeCRM);
+    setCRMStages(search.crmStages || ['BO', 'BORO']);
+    if (typeof search.crmImportance === 'number') setCRMImportance(search.crmImportance);
+    setPortfolioSelected(search.portfolioSelected || []);
+    if (typeof search.portfolioImportance === 'number') setPortfolioImportance(search.portfolioImportance);
+    // Additional info
+    setAdditionalInfo(search.additionalInfo || '');
+    // Open anchors panel if any anchor was set
+    if ((search.baselines?.length > 0) || search.includeCRM || (search.portfolioSelected?.length > 0)) {
+      setShowAnchors(true);
+    }
     setShowDropdown(false);
     setActiveSearchName(search.name);
   };

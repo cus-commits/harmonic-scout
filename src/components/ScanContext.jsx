@@ -569,9 +569,11 @@ export function ScanProvider({ children }) {
 
   const runSuperSearch = useCallback(async (params) => {
     if (superSearchStatus?.status === 'scanning') return;
-    
+
     const startTime = Date.now();
-    setSuperSearchStatus({ status: 'scanning', progress: 'Initializing...', stage: 'import', startedAt: startTime, params });
+    // Generate a unique scanId so Cancel can target this specific scan on the backend
+    const scanId = 'super_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+    setSuperSearchStatus({ status: 'scanning', progress: 'Initializing...', stage: 'import', startedAt: startTime, params, scanId });
     setSuperSearchResults(null);
 
     const controller = new AbortController();
@@ -585,7 +587,7 @@ export function ScanProvider({ children }) {
       const res = await fetch(`${API_BASE}/api/signals/super`, {
         method: 'POST',
         headers,
-        body: JSON.stringify(params),
+        body: JSON.stringify({ ...params, scanId }),
         signal: controller.signal,
       });
 
@@ -603,6 +605,11 @@ export function ScanProvider({ children }) {
           if (!line.startsWith('data: ')) continue;
           try {
             const data = JSON.parse(line.slice(6));
+            // Backend echoes its scanId on first message — confirm we're tracking the right one
+            if (data.scanId && !data.progress && !data.signals && !data.error) {
+              setSuperSearchStatus(prev => prev ? { ...prev, scanId: data.scanId } : prev);
+              continue;
+            }
             if (data.progress) {
               setSuperSearchStatus(prev => ({
                 ...prev,
@@ -610,6 +617,10 @@ export function ScanProvider({ children }) {
                 stage: data.stage || prev?.stage,
                 meta: data.meta || prev?.meta,
               }));
+            } else if (data.cancelled) {
+              // Backend acknowledged cancellation
+              setSuperSearchStatus({ status: 'cancelled', finishedAt: Date.now(), startedAt: startTime });
+              setSuperSearchResults(null);
             } else {
               // Final results
               setSuperSearchResults(data);
@@ -645,13 +656,25 @@ export function ScanProvider({ children }) {
     superAbortRef.current = null;
   }, [superSearchStatus]);
 
-  const cancelSuperSearch = useCallback(() => {
+  const cancelSuperSearch = useCallback(async () => {
+    // Set a "cancelling..." state so the user knows we're working on it
+    setSuperSearchStatus(prev => prev ? { ...prev, progress: 'Cancelling...', cancelling: true } : prev);
+    // Tell the backend to actually stop the running scan (otherwise it just keeps running server-side)
+    const scanId = superSearchStatus?.scanId;
+    try {
+      await fetch(`${API_BASE}/api/signals/super/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scanId }),
+      });
+    } catch (e) { /* best effort */ }
+    // Abort the SSE stream from the frontend side
     if (superAbortRef.current) {
       superAbortRef.current.abort();
       superAbortRef.current = null;
     }
     setSuperSearchStatus(null);
-  }, []);
+  }, [superSearchStatus]);
 
   const value = {
     team: TEAM,
