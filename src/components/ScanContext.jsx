@@ -515,17 +515,18 @@ export function ScanProvider({ children }) {
         const statuses = await r.json();
         const now = Date.now();
         for (const [scanId, s] of Object.entries(statuses)) {
-          if (s.status === 'done' && s.results && s.finishedAt > now - 10 * 60 * 1000) {
+          // Extended windows: Extreme tier can run 25+ min; results worth keeping for 60 min
+          if (s.status === 'done' && s.results && s.finishedAt > now - 60 * 60 * 1000) {
             // Recent completed scan — show results
             if (!superSearchResults) {
               setSuperSearchResults(s.results);
               setSuperSearchStatus({ status: 'done', finishedAt: s.finishedAt });
               console.log('[SuperRecovery] Recovered completed super search results');
             }
-          } else if (s.status === 'scanning' && s.progress && s.startedAt && (now - s.startedAt) < 10 * 60 * 1000) {
-            // Active scan — reconnect via polling
+          } else if (s.status === 'scanning' && s.progress && s.startedAt && (now - s.startedAt) < 35 * 60 * 1000) {
+            // Active scan — reconnect via polling (window extended to 35 min for Extreme tier)
             console.log(`[SuperRecovery] Reconnecting to active super search: "${s.progress}"`);
-            setSuperSearchStatus({ status: 'scanning', progress: s.progress, stage: s.stage, startedAt: s.startedAt, recovered: true });
+            setSuperSearchStatus({ status: 'scanning', progress: s.progress, stage: s.stage, startedAt: s.startedAt, scanId, recovered: true });
             
             const pollInterval = setInterval(async () => {
               try {
@@ -558,13 +559,22 @@ export function ScanProvider({ children }) {
                 }
               } catch (e) {}
             }, 3000);
-            setTimeout(() => clearInterval(pollInterval), 10 * 60 * 1000);
+            setTimeout(() => clearInterval(pollInterval), 35 * 60 * 1000); // matches active-scan window
             break; // Only reconnect to one scan
           }
         }
       } catch (e) { console.log('[SuperRecovery] Check failed:', e.message); }
     };
     recoverSuper();
+    // Re-check every 15s — catches scans that started AFTER mount or SSE drops mid-scan.
+    // No-ops cheaply when nothing is running. Keeps UI in sync when backend is alive
+    // but our SSE connection died (Railway 10-min HTTP proxy timeout, network blips, etc).
+    const periodicId = setInterval(() => {
+      // Only re-check if we don't already have an active scan tracked locally
+      // (otherwise the existing pollInterval is doing the work)
+      if (!superAbortRef.current && !superSearchResults) recoverSuper();
+    }, 15000);
+    return () => clearInterval(periodicId);
   }, []);
 
   const runSuperSearch = useCallback(async (params) => {
