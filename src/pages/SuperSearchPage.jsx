@@ -419,6 +419,129 @@ const signalStyles = {
   LOW: { card: 'border-border/15', badge: 'bg-rose/8 text-rose/65 border-rose/15', dot: '🔴' },
 };
 
+// ─── Merit-mode company card (5-dim breakdown) ───
+const MERIT_MODIFIER_LABELS = {
+  equity_crowdfunding_only: { sign: '−', val: 1.0, label: 'Equity crowdfunding only', tone: 'rose' },
+  stale_series_a:           { sign: '−', val: 1.0, label: 'Stale Series A', tone: 'rose' },
+  shrinking_post_seed:      { sign: '−', val: 1.0, label: 'Shrinking post-seed', tone: 'rose' },
+  founder_moved:            { sign: '−', val: 1.5, label: 'Founder moved on', tone: 'rose' },
+  headcount_mismatch:       { sign: '−', val: 0.5, label: 'HC/raise mismatch', tone: 'rose' },
+  buzzword_soup:            { sign: '−', val: 1.0, label: 'Buzzword soup', tone: 'rose' },
+  repeat_investor:          { sign: '+', val: 0.5, label: 'Repeat investor', tone: 'sm' },
+  quantified_roi:           { sign: '+', val: 0.5, label: 'Quantified ROI', tone: 'sm' },
+  strategic_distribution:   { sign: '+', val: 0.5, label: 'Strategic distribution', tone: 'sm' },
+  patent_lab_ip:            { sign: '+', val: 0.5, label: 'Patent lab IP', tone: 'sm' },
+  major_award:              { sign: '+', val: 0.25, label: 'Major award', tone: 'sm' },
+  tier1_academic_equity:    { sign: '+', val: 0.25, label: 'Tier-1 academic equity', tone: 'sm' },
+};
+
+function DimBar({ label, score, reason }) {
+  const tone = score >= 8 ? 'sm' : score >= 6 ? 'accent' : score >= 4 ? 'bo' : 'rose';
+  return (
+    <div className="flex items-baseline gap-2 text-[10px] py-0.5">
+      <span className="text-muted/60 font-medium w-[60px] flex-shrink-0">{label}</span>
+      <div className="w-[80px] h-1.5 bg-surface rounded-full overflow-hidden flex-shrink-0">
+        <div className={`h-full rounded-full bg-${tone}/60`} style={{ width: `${score * 10}%` }} />
+      </div>
+      <span className={`font-mono font-bold text-${tone} w-[28px] flex-shrink-0`}>{score}/10</span>
+      <span className="text-muted/45 italic flex-1 leading-snug">{reason}</span>
+    </div>
+  );
+}
+
+function MeritCompanyCard({ signal, addFavorite, isFavorited }) {
+  const m = signal._merit;
+  if (!m) return null;
+  const meta = signal.meta || {};
+  const fundingStr = meta.funding ? `$${(meta.funding / 1e6).toFixed(1)}M` : 'undisclosed';
+  const finalScore = m.final;
+  const finalTone = finalScore >= 8 ? 'sm' : finalScore >= 6.5 ? 'accent' : finalScore >= 4.5 ? 'bo' : 'muted';
+  const saved = isFavorited && isFavorited(signal.companyName || signal.title);
+  const company = { name: signal.companyName || signal.title, website: meta.website || signal.url };
+
+  return (
+    <div className={`bg-surface/40 backdrop-blur-sm border rounded-xl p-3.5 space-y-2.5 transition-all border-${finalTone}/25 shadow-[0_0_12px_rgba(0,0,0,0.05)]`}>
+      <div className="flex items-start gap-3">
+        {signal.pfp ? (
+          <img src={signal.pfp} alt="" className="w-10 h-10 rounded-lg bg-ink/60 flex-shrink-0 object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
+        ) : (
+          <div className="w-10 h-10 rounded-lg bg-bo/12 flex items-center justify-center flex-shrink-0">
+            <span className="text-bo font-bold text-sm">{(signal.companyName || signal.title || '?')[0]}</span>
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[14px] font-bold text-bright">{signal.companyName || signal.title}</span>
+            <span className={`text-[14px] font-mono font-extrabold text-${finalTone} px-2 py-0.5 rounded-md bg-${finalTone}/10 border border-${finalTone}/25`}>
+              {finalScore.toFixed(1)}/10
+            </span>
+            {m.capped_to_anchor && (
+              <span className="text-[8px] px-1.5 py-0.5 rounded bg-rose/10 text-rose/70 border border-rose/20" title="Capped to anchor — didn't beat anchor on any dimension">
+                ⚠ capped to anchor
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 mt-1 text-[10px] text-muted/55 flex-wrap">
+            <span>💰 {fundingStr}</span>
+            {meta.stage && <span>• {meta.stage}</span>}
+            {meta.headcount > 0 && <span>• 👥 {meta.headcount}</span>}
+            {signal.url && (
+              <a href={signal.url} target="_blank" rel="noopener" className="text-bo/70 hover:text-bo hover:underline truncate">
+                ↗ {signal.url.replace(/^https?:\/\//, '').slice(0, 40)}
+              </a>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {addFavorite && (
+            <button onClick={() => !saved && addFavorite({ name: company.name, description: signal.text?.slice(0, 200), website: company.website })}
+              className={`text-base ${saved ? 'text-bo' : 'text-muted/40 hover:text-bo'}`}>
+              {saved ? '★' : '☆'}
+            </button>
+          )}
+          <CrmButton company={company} />
+        </div>
+      </div>
+
+      {/* 5-dim breakdown */}
+      <div className="bg-ink/30 rounded-lg p-2 space-y-0">
+        <DimBar label="Pedigree"     score={m.pedigree}     reason={m.pedigree_reason} />
+        <DimBar label="Traction"     score={m.traction}     reason={m.traction_reason} />
+        <DimBar label="Capital"      score={m.capital}      reason={m.capital_reason} />
+        <DimBar label="Investors"    score={m.investor}     reason={m.investor_reason} />
+        <DimBar label="Defensibility" score={m.defensibility} reason={m.defensibility_reason} />
+      </div>
+
+      {/* Modifiers */}
+      {m.modifiers?.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-[9px] text-muted/40 font-bold uppercase tracking-wider">Modifiers:</span>
+          {m.modifiers.map(mod => {
+            const cfg = MERIT_MODIFIER_LABELS[mod];
+            if (!cfg) return null;
+            return (
+              <span key={mod} className={`text-[9px] px-1.5 py-0.5 rounded bg-${cfg.tone}/10 text-${cfg.tone}/80 border border-${cfg.tone}/25 font-medium`}>
+                {cfg.sign}{cfg.val} {cfg.label}
+              </span>
+            );
+          })}
+          <span className="text-[9px] text-muted/40 font-mono ml-1">
+            (net {m.modifier_total > 0 ? '+' : ''}{m.modifier_total.toFixed(2)})
+          </span>
+        </div>
+      )}
+
+      {/* Bottom line */}
+      {m.bottom_line && (
+        <div className="text-[11px] text-bright/75 leading-relaxed pt-1.5 border-t border-border/10">
+          <span className="text-muted/40 font-bold uppercase tracking-wider text-[9px] mr-1.5">Bottom Line:</span>
+          {m.bottom_line}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SignalCard({ signal, addFavorite, isFavorited }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [hidden, setHidden] = useState(false);
@@ -575,6 +698,7 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
   const [portfolioImportance, setPortfolioImportance] = useState(50);
   const [showAnchors, setShowAnchors] = useState(false);
   const [additionalInfo, setAdditionalInfo] = useState('');
+  const [fundingFilter, setFundingFilter] = useState('auto'); // auto|under_2m|under_10m|under_25m|all
 
   // Pre-populate from URL params (when arriving from FindSimilar's Deep Search button)
   useEffect(() => {
@@ -702,7 +826,7 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
       anchors.additionalInfo = additionalInfo.trim();
     }
 
-    await runSuperSearch({ sectors, chains, sources, timeRange, minFollowers, minEngagement, stage, customKeywords, superTier, ...anchors });
+    await runSuperSearch({ sectors, chains, sources, timeRange, minFollowers, minEngagement, stage, customKeywords, superTier, fundingFilter, ...anchors });
     setShowSavePrompt(true);
   };
 
@@ -710,6 +834,12 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
     if (filterSource !== 'all' && s.source !== filterSource) return false;
     if (filterSignal !== 'all' && s.signal !== filterSignal) return false;
     return true;
+  }).sort((a, b) => {
+    // Merit-scored signals first (sorted by merit final score), then everything else
+    if (a._merit && b._merit) return (b._merit.final || 0) - (a._merit.final || 0);
+    if (a._merit && !b._merit) return -1;
+    if (!a._merit && b._merit) return 1;
+    return 0;
   });
 
   const sourceCounts = {};
@@ -809,6 +939,33 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
             <PortfolioSection
               selected={portfolioSelected} setSelected={setPortfolioSelected}
               importance={portfolioImportance} setImportance={setPortfolioImportance} />
+            <div className="border-t border-border/15" />
+            {/* Funding filter — auto-defaults to under-$10M when anchors are active */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-bright/90 uppercase tracking-wider">Funding Cap</h3>
+                <span className="text-[10px] text-muted/40">Daxos default: under $10M</span>
+              </div>
+              <p className="text-[10px] text-muted/50">Filter Harmonic-similar results by total raised. Sub-$250K checks fit best at Pre-Seed/Seed.</p>
+              <div className="grid grid-cols-4 gap-1.5">
+                {[
+                  { id: 'under_2m',  label: '< $2M',  hint: 'Highest priority' },
+                  { id: 'under_10m', label: '< $10M', hint: 'Default for anchored search' },
+                  { id: 'under_25m', label: '< $25M', hint: 'Expanded — includes Series A' },
+                  { id: 'all',       label: 'All',    hint: 'No funding limit' },
+                ].map(opt => {
+                  const active = fundingFilter === opt.id || (fundingFilter === 'auto' && opt.id === 'under_10m' && (baselines.length > 0 || portfolioSelected.length > 0));
+                  return (
+                    <button key={opt.id} onClick={() => setFundingFilter(opt.id)} title={opt.hint}
+                      className={`text-[10px] px-2 py-1.5 rounded-lg border transition-all ${
+                        active ? 'bg-accent/12 border-accent/35 text-accent font-bold' : 'border-border/20 text-muted/50 hover:border-border/40'
+                      }`}>
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -1153,6 +1310,30 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
               <p className="text-rose/90 text-sm">{displayResults?.error}</p>
             </div>
           )}
+          {/* Merit-mode anchor banner — shows anchor's standalone rating + filter status */}
+          {displayResults?.meritMode && (
+            <div className="bg-bo/5 border border-bo/15 rounded-xl p-3 space-y-1.5">
+              <p className="text-[10px] font-bold text-bo/85 uppercase tracking-wider">🎯 Merit-Mode Search</p>
+              {displayResults.anchorRatings && Object.keys(displayResults.anchorRatings).length > 0 && (
+                <div className="space-y-1">
+                  {Object.entries(displayResults.anchorRatings).map(([name, r]) => (
+                    <div key={name} className="text-[11px] flex items-baseline gap-2 flex-wrap">
+                      <span className="text-bright/75 font-semibold capitalize">{name}</span>
+                      <span className="text-muted/40">— anchor's standalone rating:</span>
+                      <span className="text-bo font-mono font-bold">{r.final.toFixed(1)}/10</span>
+                      <span className="text-muted/40 text-[10px]">(P{r.pedigree} T{r.traction} C{r.capital} I{r.investor} D{r.defensibility})</span>
+                    </div>
+                  ))}
+                  <p className="text-[10px] text-muted/45 italic">Surfaced companies cannot exceed an anchor's score unless they beat it on at least one sub-dimension by ≥1 point.</p>
+                </div>
+              )}
+              {displayResults.fundingFilter && displayResults.fundingFilter !== 'all' && (
+                <p className="text-[10px] text-accent/70">
+                  Filter applied: total raised <span className="font-mono">{ {under_2m:'< $2M', under_10m:'< $10M', under_25m:'< $25M'}[displayResults.fundingFilter] || displayResults.fundingFilter }</span>. Pick "All" in the funding cap toggle to disable.
+                </p>
+              )}
+            </div>
+          )}
           {displayResults?.sourceStats && (
             <div className="flex flex-wrap items-center gap-2.5 text-[10px] py-1">
               <span className="text-muted/50 font-medium">{displayResults?.totalSignals || 0} signals collected</span>
@@ -1218,7 +1399,10 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
           {filteredSignals.length > 0 ? (
             <div className="space-y-2.5">
               <p className="text-[11px] text-muted/40">{filteredSignals.length} signals{filterSource !== 'all' || filterSignal !== 'all' ? ' (filtered)' : ''}</p>
-              {filteredSignals.map(s => <SignalCard key={s.id} signal={s} addFavorite={addFavorite} isFavorited={isFavorited} />)}
+              {filteredSignals.map(s => s._merit
+                ? <MeritCompanyCard key={s.id} signal={s} addFavorite={addFavorite} isFavorited={isFavorited} />
+                : <SignalCard key={s.id} signal={s} addFavorite={addFavorite} isFavorited={isFavorited} />
+              )}
             </div>
           ) : displayResults?.signals?.length > 0 ? (
             <p className="text-center text-muted/40 text-sm py-8">No signals match current filters</p>
