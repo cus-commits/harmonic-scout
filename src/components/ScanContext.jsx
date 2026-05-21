@@ -500,6 +500,11 @@ export function ScanProvider({ children }) {
     try { return JSON.parse(localStorage.getItem('supersearch_history') || '[]'); } catch { return []; }
   });
   const superAbortRef = useRef(null);
+  // Synchronous run-guard: state updates are async so two rapid clicks can both pass the
+  // `superSearchStatus !== 'scanning'` check before React re-renders. The ref blocks that.
+  const superRunningRef = useRef(false);
+  // Track last-run params signature + time so we can warn on identical re-runs.
+  const lastSuperRunRef = useRef({ signature: null, at: 0 });
 
   const saveSuperHistory = (entry) => {
     setSuperSearchHistory(prev => {
@@ -581,13 +586,21 @@ export function ScanProvider({ children }) {
   }, []);
 
   const runSuperSearch = useCallback(async (params) => {
-    if (superSearchStatus?.status === 'scanning') return;
+    // Synchronous guard — protects against rapid double-clicks where React state
+    // hasn't re-rendered yet. The async `superSearchStatus` check alone is racy.
+    if (superRunningRef.current || superSearchStatus?.status === 'scanning') {
+      console.warn('[SuperSearch] Blocked duplicate run — scan already in progress');
+      return { blocked: true, reason: 'in_progress' };
+    }
+    superRunningRef.current = true;
 
     const startTime = Date.now();
     // Generate a unique scanId so Cancel can target this specific scan on the backend
     const scanId = 'super_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
     setSuperSearchStatus({ status: 'scanning', progress: 'Initializing...', stage: 'import', startedAt: startTime, params, scanId });
     setSuperSearchResults(null);
+    // Record signature for duplicate-warning detection
+    try { lastSuperRunRef.current = { signature: JSON.stringify(params), at: Date.now() }; } catch (e) {}
 
     const controller = new AbortController();
     superAbortRef.current = controller;
@@ -669,7 +682,21 @@ export function ScanProvider({ children }) {
       }
     }
     superAbortRef.current = null;
+    superRunningRef.current = false;
   }, [superSearchStatus]);
+
+  // Returns 'fresh' | 'duplicate' | 'recent' so the caller can decide whether to warn.
+  // 'duplicate' = exact same params hashed less than 60s ago.
+  const checkSuperSearchSignature = useCallback((params) => {
+    try {
+      const sig = JSON.stringify(params);
+      const last = lastSuperRunRef.current || { signature: null, at: 0 };
+      const ageMs = Date.now() - (last.at || 0);
+      if (last.signature === sig && ageMs < 60_000) return { kind: 'duplicate', ageMs };
+      if (last.signature === sig && ageMs < 5 * 60_000) return { kind: 'recent', ageMs };
+      return { kind: 'fresh', ageMs };
+    } catch (e) { return { kind: 'fresh', ageMs: 0 }; }
+  }, []);
 
   const cancelSuperSearch = useCallback(async () => {
     // Set a "cancelling..." state so the user knows we're working on it
@@ -688,6 +715,7 @@ export function ScanProvider({ children }) {
       superAbortRef.current.abort();
       superAbortRef.current = null;
     }
+    superRunningRef.current = false;
     setSuperSearchStatus(null);
   }, [superSearchStatus]);
 
@@ -711,6 +739,7 @@ export function ScanProvider({ children }) {
     superSearchHistory,
     runSuperSearch,
     cancelSuperSearch,
+    checkSuperSearchSignature,
   };
 
   return <ScanContext.Provider value={value}>{children}</ScanContext.Provider>;

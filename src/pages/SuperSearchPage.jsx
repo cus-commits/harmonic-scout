@@ -741,7 +741,11 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
   }, []);
 
   // Use ScanContext for persistence across tab switches
-  const { superSearchStatus, superSearchResults, superSearchHistory, runSuperSearch, cancelSuperSearch } = useScan();
+  const { superSearchStatus, superSearchResults, superSearchHistory, runSuperSearch, cancelSuperSearch, checkSuperSearchSignature } = useScan();
+  // Submit-in-flight guard for the confirmation dialog — prevents the user from clicking
+  // "Run Search" twice before React re-renders with the new scanning state.
+  const [submitting, setSubmitting] = React.useState(false);
+  const progressPanelRef = React.useRef(null);
   const [showHistory, setShowHistory] = useState(false);
   const [showSavePrompt, setShowSavePrompt] = useState(false);
   const [superTier, setSuperTier] = useState('opus20'); // haiku|sonnet|opus20|opus80|extreme
@@ -874,10 +878,13 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
   };
 
   const confirmAndScan = async () => {
-    setShowCostConfirm(false);
-    setFilterSource('all');
-    setFilterSignal('all');
-    setResults(null);
+    // Block rapid double-clicks at the UI layer — even if React state hasn't re-rendered,
+    // the in-flight flag short-circuits.
+    if (submitting || isScanning) {
+      console.warn('[SuperSearch] Click ignored — submission already in progress');
+      return;
+    }
+    setSubmitting(true);
 
     // Build anchor payload — only include when active
     const anchors = {};
@@ -899,8 +906,36 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
       anchors.additionalInfo = additionalInfo.trim();
     }
 
-    await runSuperSearch({ sectors, chains, sources, timeRange, minFollowers, minEngagement, stage, customKeywords, superTier, fundingFilter, ...anchors });
-    setShowSavePrompt(true);
+    const fullParams = { sectors, chains, sources, timeRange, minFollowers, minEngagement, stage, customKeywords, superTier, fundingFilter, ...anchors };
+
+    // Warn on identical params within 60s — prevents accidental duplicate scans
+    const sigCheck = checkSuperSearchSignature ? checkSuperSearchSignature(fullParams) : { kind: 'fresh' };
+    if (sigCheck.kind === 'duplicate') {
+      const proceed = window.confirm(
+        `You just ran an identical search ${Math.round((sigCheck.ageMs || 0) / 1000)} seconds ago. Run it again anyway?`
+      );
+      if (!proceed) { setSubmitting(false); return; }
+    }
+
+    setShowCostConfirm(false);
+    setFilterSource('all');
+    setFilterSignal('all');
+    setResults(null);
+
+    // Scroll progress panel into view so the user sees the scan started.
+    // requestAnimationFrame ensures the panel has rendered before we scroll.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        try { progressPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {}
+      });
+    });
+
+    try {
+      await runSuperSearch(fullParams);
+      setShowSavePrompt(true);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const filteredSignals = (displayResults?.signals || []).filter(s => {
@@ -1261,14 +1296,14 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
               </div>
             </div>
             <div className="flex gap-2">
-              <button onClick={confirmAndScan}
-                className={`flex-1 py-2 rounded-lg font-bold text-[11px] transition-all ${
+              <button onClick={confirmAndScan} disabled={submitting || isScanning}
+                className={`flex-1 py-2 rounded-lg font-bold text-[11px] transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                   isExpensive ? 'bg-rose/15 border border-rose/30 text-rose hover:bg-rose/25' : 'bg-sm/15 border border-sm/30 text-sm hover:bg-sm/25'
                 }`}>
-                {isExpensive ? '⚠️ Run Anyway' : '✓ Run Search'}
+                {submitting ? '⏳ Starting…' : (isExpensive ? '⚠️ Run Anyway' : '✓ Run Search')}
               </button>
-              <button onClick={() => setShowCostConfirm(false)}
-                className="px-4 py-2 rounded-lg border border-border/20 text-muted/40 text-[11px]">
+              <button onClick={() => setShowCostConfirm(false)} disabled={submitting}
+                className="px-4 py-2 rounded-lg border border-border/20 text-muted/40 text-[11px] disabled:opacity-40">
                 Cancel
               </button>
             </div>
@@ -1277,7 +1312,7 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
       })()}
 
       {/* Scan Button */}
-      <button onClick={handleScan} disabled={isScanning}
+      <button onClick={handleScan} disabled={isScanning || submitting || showCostConfirm}
         className="w-full py-3.5 rounded-xl font-extrabold text-sm tracking-wide active:scale-[0.98] transition-all duration-200 disabled:opacity-40 mb-5 hover:brightness-110 text-bright"
         style={{
           background: 'linear-gradient(135deg, #1e3a5f 0%, #3b82f6 35%, #6366f1 60%, #be123c 100%)',
@@ -1352,6 +1387,7 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
       )}
 
       {/* Scan progress panel */}
+      <div ref={progressPanelRef} />
       {isScanning && (() => {
         // Map backend stage names → frontend stage groups (so badge highlighting works for all sub-stages)
         const STAGE_GROUPS = {
