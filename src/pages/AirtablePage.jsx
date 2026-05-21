@@ -944,15 +944,21 @@ export default function AirtablePage() {
                       {c.in_or_out && (Array.isArray(c.in_or_out) ? c.in_or_out : typeof c.in_or_out === 'string' && c.in_or_out ? [c.in_or_out] : []).map((v, j) => {
                         const isIn = typeof v === 'string' && v.toUpperCase().includes('IN');
                         const name = typeof v === 'string' ? v.split(':')[0].trim() : '';
-                        const isMe = crmUser && name.toLowerCase() === crmUser.toLowerCase();
+                        // Airtable stores votes under display name ("Joe C"), localStorage stores
+                        // claimed handle ("Joe"). Translate via VOTER_MAP so the user can cancel
+                        // their own vote. Without this, the click handler never attaches.
+                        const myAirtableName = (getAirtableVoter(crmUser) || '').toLowerCase();
+                        const isMe = !!crmUser && name.toLowerCase() === myAirtableName;
                         if (isMe) {
+                          const busy = votingOn === `${c.company}-UNDO`;
                           return (
                             <button key={j} onClick={() => handleUndoVote(c)}
-                              disabled={votingOn === `${c.company}-UNDO`}
-                              className={`font-mono text-[9px] px-2 py-0.5 rounded-full font-bold cursor-pointer hover:opacity-60 border ${
-                                isIn ? 'text-ink bg-sm border-sm/50' : 'text-bright bg-rose/80 border-rose/50'
-                              }`} title="Click to undo">
-                              {votingOn === `${c.company}-UNDO` ? '...' : `${name}${isIn ? '✓' : '✗'}`}
+                              disabled={busy}
+                              className={`group relative font-mono text-[9px] px-2 py-0.5 rounded-full font-bold cursor-pointer border transition-all ${
+                                isIn ? 'text-ink bg-sm border-sm/50 hover:bg-rose/70 hover:text-bright hover:border-rose/50' : 'text-bright bg-rose/80 border-rose/50 hover:bg-muted/40 hover:text-bright'
+                              }`} title="Click to cancel your vote">
+                              <span className="group-hover:hidden">{busy ? '...' : `${name}${isIn ? '✓' : '✗'}`}</span>
+                              <span className="hidden group-hover:inline">✕ cancel</span>
                             </button>
                           );
                         }
