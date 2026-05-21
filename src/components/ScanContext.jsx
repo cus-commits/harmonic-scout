@@ -367,8 +367,9 @@ export function ScanProvider({ children }) {
         }
       }
 
-      // Recovery: if stream ended without data or stream errored, poll server for results
-      if (!data || streamError) {
+      // Recovery: if stream ended without data or stream errored, poll server for results.
+      // Skip recovery if user cancelled — the abort already cleared the abortRef, so detect that.
+      if ((!data || streamError) && abortRef.current[personId]) {
         console.log('[Scan] Stream ended without data — polling server for results...');
         setActiveScans(prev => ({ ...prev, [personId]: { ...prev[personId], progress: 'Recovering results...' } }));
         let idleCount = 0;
@@ -439,6 +440,11 @@ export function ScanProvider({ children }) {
         setNextRuns(prev => ({ ...prev, [personId]: Date.now() + SCAN_INTERVAL_MS + (idx * STAGGER_MS) }));
       }
     } catch (err) {
+      // Don't overwrite 'cancelled' status with 'error' — AbortError means user explicitly cancelled
+      if (err.name === 'AbortError') {
+        console.log(`[Scan] Aborted for ${personId}`);
+        return;
+      }
       console.error(`[Scan] Error for ${personId}:`, err.message);
       setScanResults(prev => ({ ...prev, [personId]: { results: [], message: `Error: ${err.message}` } }));
       setActiveScans(prev => ({ ...prev, [personId]: { status: 'error', error: err.message } }));
@@ -530,6 +536,12 @@ export function ScanProvider({ children }) {
               setSuperSearchResults(s.results);
               setSuperSearchStatus({ status: 'done', finishedAt: s.finishedAt });
               console.log('[SuperRecovery] Recovered completed super search results');
+            }
+          } else if (s.status === 'interrupted' && s.finishedAt && s.finishedAt > now - 60 * 60 * 1000) {
+            // Server was restarted mid-scan — surface the message so the user knows to re-run
+            if (!superSearchStatus) {
+              setSuperSearchStatus({ status: 'error', error: s.message || 'Scan was interrupted by a server restart. Please re-run.', scanId, finishedAt: s.finishedAt });
+              console.log('[SuperRecovery] Surfaced interrupted scan');
             }
           } else if (s.status === 'scanning' && s.progress && s.startedAt && (now - s.startedAt) < 35 * 60 * 1000) {
             // Active scan — reconnect via polling (window extended to 35 min for Extreme tier)

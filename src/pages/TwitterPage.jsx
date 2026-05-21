@@ -211,8 +211,8 @@ function TweetCard({ tweet, addFavorite, isFavorited }) {
       )}
       <div className="flex items-center gap-1.5 flex-wrap">
         <FindSimilar addFavorite={addFavorite} isFavorited={isFavorited} companyName={tweet.companyName || tweet.harmonic?.name || tweet.author} />
-        <CrmButton company={{ name: tweet.companyName || tweet.author, website: tweet.tweetUrl }} />
-        <RemoveMenu company={{ name: tweet.companyName || tweet.author, website: tweet.tweetUrl }} />
+        <CrmButton company={{ name: tweet.companyName || tweet.author, website: tweet.meta?.website || '' }} />
+        <RemoveMenu company={{ name: tweet.companyName || tweet.author, website: tweet.meta?.website || '', harmonic_id: tweet.meta?.id || null }} />
       </div>
     </div>
   );

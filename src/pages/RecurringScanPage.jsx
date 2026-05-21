@@ -1085,9 +1085,18 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
     } catch (e) {}
   };
 
-  const crmUser = localStorage.getItem('crm_user') || 'Mark';
+  // Read inside startScan so identity changes mid-session take effect for the next scan.
+  // Synchronous run-guard ref blocks rapid-fire duplicate POSTs.
+  const startingScanRef = useRef(false);
+  const [startingScan, setStartingScan] = useState(false);
 
   const startScan = async () => {
+    if (startingScanRef.current) { console.warn('[RecurringScan] Click ignored — scan already starting'); return; }
+    startingScanRef.current = true;
+    setStartingScan(true);
+
+    const crmUser = localStorage.getItem('crm_user') || 'Mark';
+
     setShowNewScan(false);
     setViewingScan(null);
     setPageTab('scan');
@@ -1120,6 +1129,7 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let fullText = '';
+      let buffer = '';            // accumulates partial chunks so SSE lines aren't split mid-line
       let currentScanId = null;
 
       while (true) {
@@ -1128,7 +1138,11 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
         const chunk = decoder.decode(value, { stream: true });
         fullText += chunk;
 
-        const lines = chunk.split('\n');
+        // Buffer-aware split — TCP can fragment a single `data: {scanId:...}` across chunks,
+        // and the cancel button breaks if we miss that scanId. Pop the trailing partial line.
+        buffer += chunk;
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             try {
@@ -1136,6 +1150,10 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
               if (d.scanId) {
                 currentScanId = d.scanId;
                 abortRefs.current[currentScanId] = controller;
+              }
+              if (d.error) {
+                // Surface SSE error frames to the user (was silently dropped before)
+                alert(`Scan failed: ${d.error}`);
               }
             } catch {}
           } else if (line.startsWith(': ') && line.length > 2 && currentScanId) {
@@ -1175,6 +1193,9 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
       }
     } catch (e) {
       if (e.name !== 'AbortError') console.error('Scan error:', e);
+    } finally {
+      startingScanRef.current = false;
+      setStartingScan(false);
     }
 
     fetchStatus();
@@ -1630,9 +1651,9 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
                       className="w-full px-4 py-2.5 rounded-xl border border-boro/20 bg-boro/6 text-boro/60 font-medium text-xs hover:bg-boro/12 hover:text-boro transition-all active:scale-[0.98]">
                       Save Search
                     </button>
-                    <button onClick={startScan} disabled={selectedSearchIds !== null && selectedSearchIds.size === 0}
+                    <button onClick={startScan} disabled={startingScan || hasRunning || (selectedSearchIds !== null && selectedSearchIds.size === 0)}
                       className="w-full px-6 py-3 rounded-xl bg-bo/15 border border-bo/30 text-bo font-bold text-sm hover:bg-bo/25 hover:border-bo/50 transition-all active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed">
-                      Run {selectedTierObj?.name} Scan {dynamicCostEstimate ? `(~$${dynamicCostEstimate})` : `(${selectedTierObj?.cost} max)`}
+                      {startingScan ? '⏳ Starting scan…' : hasRunning ? `Scan already running…` : `Run ${selectedTierObj?.name} Scan ${dynamicCostEstimate ? `(~$${dynamicCostEstimate})` : `(${selectedTierObj?.cost} max)`}`}
                     </button>
                   </div>
                 </div>

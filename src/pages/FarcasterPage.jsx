@@ -216,8 +216,8 @@ function CastCard({ cast, addFavorite, isFavorited }) {
       )}
       <div className="flex items-center gap-1.5 flex-wrap">
         <FindSimilar addFavorite={addFavorite} isFavorited={isFavorited} companyName={cast.companyName || cast.harmonic?.name || cast.author} />
-        <CrmButton company={{ name: cast.companyName || cast.author, website: cast.url }} />
-        <RemoveMenu company={{ name: cast.companyName || cast.author, website: cast.url }} />
+        <CrmButton company={{ name: cast.companyName || cast.author, website: cast.meta?.website || '' }} />
+        <RemoveMenu company={{ name: cast.companyName || cast.author, website: cast.meta?.website || '', harmonic_id: cast.meta?.id || null }} />
       </div>
     </div>
   );

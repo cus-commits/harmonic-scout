@@ -832,7 +832,8 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
     // Core filters
     setSectors(search.sectors || []);
     setChains(search.chains || []);
-    setSources(search.sources || [...ALL_SOURCE_KEYS]);
+    // Empty array is truthy — `[] || x` returns []. Force-default to full set when empty.
+    setSources(Array.isArray(search.sources) && search.sources.length ? search.sources : [...ALL_SOURCE_KEYS]);
     setTimeRange(search.timeRange || 'week');
     setMinFollowers(search.minFollowers || 0);
     setMinEngagement(search.minEngagement || 0);

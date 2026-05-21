@@ -70,8 +70,8 @@ function PostCard({ post, addFavorite, isFavorited }) {
       )}
       <div className="flex items-center gap-1.5 flex-wrap">
         <FindSimilar addFavorite={addFavorite} isFavorited={isFavorited} companyName={post.companyName || post.title} />
-        <CrmButton company={{ name: post.companyName || post.title, website: post.url }} />
-        <RemoveMenu company={{ name: post.companyName || post.title, website: post.url }} />
+        <CrmButton company={{ name: post.companyName || post.title, website: post.meta?.website || post.url }} />
+        <RemoveMenu company={{ name: post.companyName || post.title, website: post.meta?.website || '', harmonic_id: post.meta?.id || null }} />
       </div>
     </div>
   );
@@ -94,8 +94,10 @@ export default function ProductHuntPage({ addFavorite, isFavorited }) {
     try {
       const API_BASE = import.meta.env.VITE_API_URL || 'https://pigeon-api.up.railway.app';
       const anthropicKey = localStorage.getItem('scout_anthropic_key') || '';
+      const crmUser = localStorage.getItem('crm_user') || '';
       const headers = { 'Content-Type': 'application/json' };
       if (anthropicKey) headers['x-anthropic-key'] = anthropicKey;
+      if (crmUser) headers['x-user-id'] = crmUser;
 
       const keywords = [...topics.map(t => t.toLowerCase())];
       if (customKeywords.trim()) {

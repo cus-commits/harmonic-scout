@@ -276,8 +276,8 @@ function RepoCard({ repo, addFavorite, isFavorited }) {
       )}
       <div className="flex items-center gap-1.5 flex-wrap">
         <FindSimilar addFavorite={addFavorite} isFavorited={isFavorited} companyName={repo.harmonic?.name || repo.owner || repo.name} />
-        <CrmButton company={{ name: repo.harmonic?.name || repo.name, website: repo.url }} />
-        <RemoveMenu company={{ name: repo.harmonic?.name || repo.name, website: repo.url }} />
+        <CrmButton company={{ name: repo.harmonic?.name || repo.name, website: repo.harmonic?.website || repo.homepage || repo.url }} />
+        <RemoveMenu company={{ name: repo.harmonic?.name || repo.name, website: repo.harmonic?.website || repo.homepage || '', harmonic_id: repo.harmonic?.id || null }} />
       </div>
     </div>
   );
