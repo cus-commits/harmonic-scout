@@ -105,6 +105,30 @@
      LIGHT MODE — Layer 2: Per-component overrides
      ═══════════════════════════════════════════════════════════════ */
 
+  /* Funding/data pills (bo-tinted) — at partial opacity they vanish into the warm
+     paper background in light mode. Boost text to ~full opacity, bump pill bg/border
+     so the $XXM amount is readable on every Harmonic card across all workflows.
+     Dark mode unaffected. */
+  body.light .text-bo\/40,
+  body.light .text-bo\/50,
+  body.light .text-bo\/60,
+  body.light .text-bo\/65,
+  body.light .text-bo\/70,
+  body.light .text-bo\/75,
+  body.light .text-bo\/80,
+  body.light .text-bo\/85 {
+    color: rgb(var(--bo) / 1) !important;
+    font-weight: 600;
+  }
+  body.light .bg-bo\/10,
+  body.light .bg-bo\/12 {
+    background-color: rgb(var(--bo) / 0.18) !important;
+  }
+  body.light .border-bo\/15,
+  body.light .border-bo\/20 {
+    border-color: rgb(var(--bo) / 0.42) !important;
+  }
+
   /* Surface unification — ALL dark brown inline rgba backgrounds */
   body.light [style*="rgba(46, 42, 37"],
   body.light [style*="rgba(54, 50, 44"],
