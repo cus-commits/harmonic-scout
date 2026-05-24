@@ -82,7 +82,9 @@
 
     /* --accent stays gold — brand color, intentionally unchanged */
 
-    --bo: 37 99 235;
+    /* Deepened from #2563eb to #1e3a8a (deep navy) — 0.55 opacity bo on warm paper
+       was unreadable. Deep navy stays legible at every opacity variant used. */
+    --bo: 30 58 138;
     --boro: 99 102 241;
     --sm: 8 145 178;
     --amber: 180 83 9;
@@ -106,27 +108,40 @@
      ═══════════════════════════════════════════════════════════════ */
 
   /* Funding/data pills (bo-tinted) — at partial opacity they vanish into the warm
-     paper background in light mode. Boost text to ~full opacity, bump pill bg/border
-     so the $XXM amount is readable on every Harmonic card across all workflows.
-     Dark mode unaffected. */
+     paper background in light mode. Force every text-bo opacity variant to a deep
+     navy (#1e3a8a) at full opacity so the 💰 $XXM amount is unmistakable on every
+     Harmonic card across all workflows. Pill bg/border bumped too. Dark mode unaffected.
+     IMPORTANT: this block must appear AFTER any per-class text-bo/* rule that caps
+     opacity later in the file. We deleted those caps; this block is the source of truth. */
+  body.light .text-bo,
+  body.light .text-bo\/30,
   body.light .text-bo\/40,
+  body.light .text-bo\/45,
   body.light .text-bo\/50,
+  body.light .text-bo\/55,
   body.light .text-bo\/60,
   body.light .text-bo\/65,
   body.light .text-bo\/70,
   body.light .text-bo\/75,
   body.light .text-bo\/80,
-  body.light .text-bo\/85 {
-    color: rgb(var(--bo) / 1) !important;
+  body.light .text-bo\/85,
+  body.light .text-bo\/90 {
+    color: #1e3a8a !important;       /* deep navy — high contrast on warm paper bg */
     font-weight: 600;
   }
+  body.light .bg-bo\/5,
+  body.light .bg-bo\/8,
   body.light .bg-bo\/10,
-  body.light .bg-bo\/12 {
-    background-color: rgb(var(--bo) / 0.18) !important;
+  body.light .bg-bo\/12,
+  body.light .bg-bo\/15 {
+    background-color: rgba(30, 58, 138, 0.10) !important;
   }
+  body.light .border-bo\/10,
   body.light .border-bo\/15,
-  body.light .border-bo\/20 {
-    border-color: rgb(var(--bo) / 0.42) !important;
+  body.light .border-bo\/20,
+  body.light .border-bo\/25,
+  body.light .border-bo\/30 {
+    border-color: rgba(30, 58, 138, 0.30) !important;
   }
 
   /* Surface unification — ALL dark brown inline rgba backgrounds */
@@ -237,11 +252,9 @@
     transition: all 0.12s ease;
   }
 
-  /* Funding numbers go gold in light mode (per LIGHT_MODE.md Section 19) */
-  body.light .text-bo.font-semibold,
-  body.light [class*="text-bo"][class*="font-"] {
-    color: rgb(var(--accent));
-  }
+  /* Funding numbers were originally gold-in-light-mode (LIGHT_MODE.md Section 19) but
+     gold-on-warm-paper is unreadable. Rule removed — funding-pill block at line ~110
+     is the source of truth and renders them in deep navy with full opacity. */
 
   /* Vote pill overrides */
   body.light [class*="bg-sm/1"][class*="text-sm"][class*="border-sm"] {
@@ -311,10 +324,8 @@
     background-color: rgba(37, 99, 235, 0.04) !important;
   }
 
-  /* --- Stage pills: darker saturated in light mode --- */
-  body.light .bg-bo\/12 { background-color: rgba(37, 99, 235, 0.10) !important; }
-  body.light .text-bo { color: rgb(var(--bo)) !important; }
-  body.light .border-bo\/28 { border-color: rgba(37, 99, 235, 0.22) !important; }
+  /* --- Stage pills: darker saturated in light mode (text-bo handled by funding-pill block) --- */
+  body.light .border-bo\/28 { border-color: rgba(30, 58, 138, 0.30) !important; }
   body.light .bg-boro\/12 { background-color: rgba(99, 102, 241, 0.10) !important; }
   body.light .text-boro { color: rgb(var(--boro)) !important; }
   body.light .border-boro\/28 { border-color: rgba(99, 102, 241, 0.22) !important; }
@@ -405,8 +416,8 @@
     border-color: rgba(99, 102, 241, 0.18) !important;
   }
 
-  /* --- Scan winner rank colors in light mode --- */
-  body.light .text-bo\/70 { color: rgba(37, 99, 235, 0.70) !important; }
+  /* --- Scan winner rank colors in light mode (intentionally NOT capped — overridden in the
+     funding-pill block at ~line 110 so the 💰 $XXM amount is fully readable). --- */
 
   /* --- Muted opacity text in light mode --- */
   body.light .text-muted\/58 { color: rgba(122, 111, 96, 0.70) !important; }
@@ -428,7 +439,7 @@
   body.light .text-sm\/40 { color: rgba(8, 145, 178, 0.50) !important; }
   body.light .text-sm\/50 { color: rgba(8, 145, 178, 0.60) !important; }
   body.light .text-sm\/70 { color: rgba(8, 145, 178, 0.75) !important; }
-  body.light .text-bo\/50 { color: rgba(37, 99, 235, 0.55) !important; }
+  /* text-bo opacity caps removed — see funding-pill block (line ~110) for full-opacity override */
 
   /* --- Border accent opacity variants in light mode --- */
   body.light .border-accent\/12,
@@ -530,9 +541,8 @@
   body.light .text-accent\/55 { color: rgba(200, 144, 32, 0.60) !important; }
 
   /* --- CRM pending vote mini-buttons in light mode --- */
-  body.light .bg-bo\/8 { background-color: rgba(37, 99, 235, 0.06) !important; }
-  body.light .border-bo\/10 { border-color: rgba(37, 99, 235, 0.12) !important; }
-  body.light .text-bo\/65 { color: rgba(37, 99, 235, 0.70) !important; }
+  /* bg-bo/8 + border-bo/10 + text-bo/65 caps removed — funding-pill block above
+     is the source of truth for ALL bo-tinted pills (incl. CRM pending buttons). */
   body.light .border-boro\/20 { border-color: rgba(99, 102, 241, 0.18) !important; }
   body.light .text-boro\/80 { color: rgba(99, 102, 241, 0.85) !important; }
   body.light .text-boro\/70 { color: rgba(99, 102, 241, 0.75) !important; }
