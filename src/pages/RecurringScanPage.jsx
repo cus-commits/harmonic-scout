@@ -1085,7 +1085,9 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
     } catch (e) {}
   };
 
-  // Read inside startScan so identity changes mid-session take effect for the next scan.
+  // Outer read for render-path references (line ~1257 JSX, history mapping, etc).
+  // 9d1ea20 removed this and the page crashed with "crmUser is not defined" → blank screen.
+  const crmUser = localStorage.getItem('crm_user') || 'Mark';
   // Synchronous run-guard ref blocks rapid-fire duplicate POSTs.
   const startingScanRef = useRef(false);
   const [startingScan, setStartingScan] = useState(false);
@@ -1094,8 +1096,6 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
     if (startingScanRef.current) { console.warn('[RecurringScan] Click ignored — scan already starting'); return; }
     startingScanRef.current = true;
     setStartingScan(true);
-
-    const crmUser = localStorage.getItem('crm_user') || 'Mark';
 
     setShowNewScan(false);
     setViewingScan(null);
