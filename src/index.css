@@ -126,8 +126,8 @@
   body.light .text-bo\/80,
   body.light .text-bo\/85,
   body.light .text-bo\/90 {
-    color: #1e3a8a !important;       /* deep navy — high contrast on warm paper bg */
-    font-weight: 600;
+    color: #0f172a !important;       /* slate-900 — near-black for maximum contrast */
+    font-weight: 700 !important;
   }
   body.light .bg-bo\/5,
   body.light .bg-bo\/8,
@@ -372,8 +372,16 @@
   body.light .bg-amber\/12 { background-color: rgba(180, 83, 9, 0.08) !important; }
   body.light .border-amber\/25 { border-color: rgba(180, 83, 9, 0.18) !important; }
 
-  /* --- Funding amounts: gold accent in light mode --- */
-  body.light .text-bo.font-semibold { color: rgb(var(--accent)) !important; }
+  /* --- Funding amounts: deep navy (gold-on-warm-paper was unreadable) --- */
+  /* Higher-specificity override that BEATS the funding-pill block at line ~110 when
+     a pill carries .text-bo + .font-semibold (very common combo). Without this,
+     the old gold rule would win on specificity even with !important. */
+  body.light .text-bo.font-semibold,
+  body.light .text-bo.font-bold {
+    color: #0f172a !important;          /* slate-900 — near-black for max contrast */
+    font-weight: 700 !important;
+    text-shadow: 0 0 0.5px rgba(15, 23, 42, 0.2);
+  }
 
   /* --- H badge (Harmonic): pink tint in light mode --- */
   body.light .bg-rose\/10.text-rose.border-rose\/15 {
@@ -962,4 +970,18 @@
     text-transform: uppercase;
     color: rgb(var(--muted));
   }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   FINAL CASCADE GUARD — light mode bo-text legibility.
+   This block is the LAST text-bo rule in the file. Any new rule added
+   above can't accidentally re-cap text-bo to a washed-out color in light
+   mode without explicitly overriding this.
+   ════════════════════════════════════════════════════════════════════ */
+html body.light [class*="text-bo"]:not([class*="text-boro"]) {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+html body.light .text-bo[class*="font-"] {
+  color: #0f172a !important;
 }
