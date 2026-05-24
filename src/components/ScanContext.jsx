@@ -515,7 +515,11 @@ export function ScanProvider({ children }) {
   const saveSuperHistory = (entry) => {
     setSuperSearchHistory(prev => {
       const next = [entry, ...prev].slice(0, 20);
-      localStorage.setItem('supersearch_history', JSON.stringify(next));
+      // Guard against QuotaExceededError when localStorage is full — without try/catch
+      // the throw aborts the surrounding setState/result-write and the user sees the
+      // scan finish but no history. Falls back to in-memory state on quota failure.
+      try { localStorage.setItem('supersearch_history', JSON.stringify(next)); }
+      catch (e) { console.warn('[SuperSearch] history persist failed (likely quota):', e.message); }
       return next;
     });
   };
@@ -587,15 +591,22 @@ export function ScanProvider({ children }) {
     };
     recoverSuper();
     // Re-check every 15s — catches scans that started AFTER mount or SSE drops mid-scan.
-    // No-ops cheaply when nothing is running. Keeps UI in sync when backend is alive
-    // but our SSE connection died (Railway 10-min HTTP proxy timeout, network blips, etc).
+    // CRITICAL: stop polling once the user has either dismissed results or seen a
+    // terminal state. Otherwise "ghost results" from a 60-min-old scan keep
+    // reappearing on every interval tick after the user cleared them.
+    const recoveredOnceRef = { current: false };
     const periodicId = setInterval(() => {
-      // Only re-check if we don't already have an active scan tracked locally
-      // (otherwise the existing pollInterval is doing the work)
-      if (!superAbortRef.current && !superSearchResults) recoverSuper();
+      // Only re-check if we don't already have a tracked scan (results or active fetch).
+      if (superAbortRef.current || superSearchResults) return;
+      // Don't auto-recover terminal states more than once per mount — if the user
+      // cleared/cancelled, respect that decision.
+      if (superSearchStatus && ['done', 'cancelled', 'error', 'interrupted'].includes(superSearchStatus.status)) return;
+      if (recoveredOnceRef.current && !superSearchStatus) return; // already attempted recovery, nothing changed
+      recoveredOnceRef.current = true;
+      recoverSuper();
     }, 15000);
     return () => clearInterval(periodicId);
-  }, []);
+  }, [superSearchStatus, superSearchResults]);
 
   const runSuperSearch = useCallback(async (params) => {
     // Synchronous guard — protects against rapid double-clicks where React state

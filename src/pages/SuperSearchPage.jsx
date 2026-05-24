@@ -909,13 +909,14 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
 
     const fullParams = { sectors, chains, sources, timeRange, minFollowers, minEngagement, stage, customKeywords, superTier, fundingFilter, ...anchors };
 
-    // Warn on identical params within 60s — prevents accidental duplicate scans
+    // Identical-params re-run within 60s — silently block (the native confirm() dialog
+    // looked like a "glitch" to users). A console hint is enough; the user can just
+    // wait or change params if they really want to re-run quickly.
     const sigCheck = checkSuperSearchSignature ? checkSuperSearchSignature(fullParams) : { kind: 'fresh' };
     if (sigCheck.kind === 'duplicate') {
-      const proceed = window.confirm(
-        `You just ran an identical search ${Math.round((sigCheck.ageMs || 0) / 1000)} seconds ago. Run it again anyway?`
-      );
-      if (!proceed) { setSubmitting(false); return; }
+      console.warn(`[SuperSearch] Identical scan ran ${Math.round((sigCheck.ageMs || 0) / 1000)}s ago — blocked.`);
+      setSubmitting(false);
+      return;
     }
 
     setShowCostConfirm(false);
@@ -923,13 +924,17 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
     setFilterSignal('all');
     setResults(null);
 
-    // Scroll progress panel into view so the user sees the scan started.
-    // requestAnimationFrame ensures the panel has rendered before we scroll.
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        try { progressPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {}
-      });
-    });
+    // Scroll progress panel into view AFTER the scan has actually started — the panel
+    // only mounts when superSearchStatus.status === 'scanning', so we poll briefly
+    // until the ref attaches (avoids silently no-oping on the first frame).
+    const tryScroll = (attempt = 0) => {
+      if (progressPanelRef.current) {
+        try { progressPanelRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {}
+        return;
+      }
+      if (attempt < 10) setTimeout(() => tryScroll(attempt + 1), 50);
+    };
+    setTimeout(tryScroll, 80);
 
     try {
       await runSuperSearch(fullParams);

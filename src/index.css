@@ -113,36 +113,31 @@
      Harmonic card across all workflows. Pill bg/border bumped too. Dark mode unaffected.
      IMPORTANT: this block must appear AFTER any per-class text-bo/* rule that caps
      opacity later in the file. We deleted those caps; this block is the source of truth. */
-  body.light .text-bo,
+  /* Restrict the deep-navy hammer to the WORST offenders only — the very-faded
+     funding-pill variants where partial opacity made the $XXM unreadable. Higher
+     opacity variants (/60-/90) inherit the deepened --bo navy at full saturation
+     and remain readable, which preserves the active-vs-inactive distinction on
+     tier buttons, winners toggles, and hover affordances. */
   body.light .text-bo\/30,
   body.light .text-bo\/40,
   body.light .text-bo\/45,
-  body.light .text-bo\/50,
-  body.light .text-bo\/55,
-  body.light .text-bo\/60,
-  body.light .text-bo\/65,
-  body.light .text-bo\/70,
-  body.light .text-bo\/75,
-  body.light .text-bo\/80,
-  body.light .text-bo\/85,
-  body.light .text-bo\/90 {
-    color: #0f172a !important;       /* slate-900 — near-black for maximum contrast */
+  body.light .text-bo\/50 {
+    color: #0f172a !important;
     font-weight: 700 !important;
   }
-  body.light .bg-bo\/5,
-  body.light .bg-bo\/8,
-  body.light .bg-bo\/10,
-  body.light .bg-bo\/12,
-  body.light .bg-bo\/15 {
-    background-color: rgba(30, 58, 138, 0.10) !important;
-  }
-  body.light .border-bo\/10,
-  body.light .border-bo\/15,
-  body.light .border-bo\/20,
-  body.light .border-bo\/25,
-  body.light .border-bo\/30 {
-    border-color: rgba(30, 58, 138, 0.30) !important;
-  }
+  /* Graduated bg-bo opacities — collapsing them all to 0.10 erased active/inactive
+     distinction on every tier picker and toggle. Keep the ratios that the JSX
+     authors chose deliberately. */
+  body.light .bg-bo\/5  { background-color: rgba(30, 58, 138, 0.05) !important; }
+  body.light .bg-bo\/8  { background-color: rgba(30, 58, 138, 0.07) !important; }
+  body.light .bg-bo\/10 { background-color: rgba(30, 58, 138, 0.09) !important; }
+  body.light .bg-bo\/12 { background-color: rgba(30, 58, 138, 0.11) !important; }
+  body.light .bg-bo\/15 { background-color: rgba(30, 58, 138, 0.14) !important; }
+  body.light .border-bo\/10 { border-color: rgba(30, 58, 138, 0.18) !important; }
+  body.light .border-bo\/15 { border-color: rgba(30, 58, 138, 0.25) !important; }
+  body.light .border-bo\/20 { border-color: rgba(30, 58, 138, 0.32) !important; }
+  body.light .border-bo\/25 { border-color: rgba(30, 58, 138, 0.40) !important; }
+  body.light .border-bo\/30 { border-color: rgba(30, 58, 138, 0.48) !important; }
 
   /* Surface unification — ALL dark brown inline rgba backgrounds */
   body.light [style*="rgba(46, 42, 37"],
@@ -380,7 +375,8 @@
   body.light .text-bo.font-bold {
     color: #0f172a !important;          /* slate-900 — near-black for max contrast */
     font-weight: 700 !important;
-    text-shadow: 0 0 0.5px rgba(15, 23, 42, 0.2);
+    /* text-shadow removed — 0.5px shadow on 8-9px font-mono glyphs created a halo
+       on retina displays. Slate-900 + 700 is already strong contrast on warm paper. */
   }
 
   /* --- H badge (Harmonic): pink tint in light mode --- */
@@ -972,16 +968,8 @@
   }
 }
 
-/* ════════════════════════════════════════════════════════════════════
-   FINAL CASCADE GUARD — light mode bo-text legibility.
-   This block is the LAST text-bo rule in the file. Any new rule added
-   above can't accidentally re-cap text-bo to a washed-out color in light
-   mode without explicitly overriding this.
-   ════════════════════════════════════════════════════════════════════ */
-html body.light [class*="text-bo"]:not([class*="text-boro"]) {
-  color: #0f172a !important;
-  font-weight: 700 !important;
-}
-html body.light .text-bo[class*="font-"] {
-  color: #0f172a !important;
-}
+/* FINAL CASCADE GUARD removed — it used [class*="text-bo"] which also matched
+   hover:text-bo* substrings, killing every "muted at rest, blue on hover"
+   affordance across RecurringScanPage, SuperSearchPage, AutoScanPage. The
+   enumerated rules above (lines 116-128 + 388-393) handle funding pills
+   correctly with literal class names and no over-match. */
