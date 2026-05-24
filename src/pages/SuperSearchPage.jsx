@@ -454,7 +454,9 @@ function MeritCompanyCard({ signal, addFavorite, isFavorited }) {
   if (!m) return null;
   const meta = signal.meta || {};
   const fundingStr = meta.funding ? `$${(meta.funding / 1e6).toFixed(1)}M` : 'undisclosed';
-  const finalScore = m.final;
+  // Guard against partial _merit shapes — missing fields used to crash the whole results render.
+  const finalScore = typeof m.final === 'number' ? m.final : 0;
+  const modifierTotal = typeof m.modifier_total === 'number' ? m.modifier_total : 0;
   const finalTone = finalScore >= 8 ? 'sm' : finalScore >= 6.5 ? 'accent' : finalScore >= 4.5 ? 'bo' : 'muted';
   const saved = isFavorited && isFavorited(signal.companyName || signal.title);
   const company = { name: signal.companyName || signal.title, website: meta.website || signal.url };
@@ -526,7 +528,7 @@ function MeritCompanyCard({ signal, addFavorite, isFavorited }) {
             );
           })}
           <span className="text-[9px] text-muted/40 font-mono ml-1">
-            (net {m.modifier_total > 0 ? '+' : ''}{m.modifier_total.toFixed(2)})
+            (net {modifierTotal > 0 ? '+' : ''}{modifierTotal.toFixed(2)})
           </span>
         </div>
       )}
@@ -1487,8 +1489,8 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
                     <div key={name} className="text-[11px] flex items-baseline gap-2 flex-wrap">
                       <span className="text-bright/75 font-semibold capitalize">{name}</span>
                       <span className="text-muted/40">— anchor's standalone rating:</span>
-                      <span className="text-bo font-mono font-bold">{r.final.toFixed(1)}/10</span>
-                      <span className="text-muted/40 text-[10px]">(P{r.pedigree} T{r.traction} C{r.capital} I{r.investor} D{r.defensibility})</span>
+                      <span className="text-bo font-mono font-bold">{(typeof r?.final === 'number' ? r.final : 0).toFixed(1)}/10</span>
+                      <span className="text-muted/40 text-[10px]">(P{r?.pedigree ?? '?'} T{r?.traction ?? '?'} C{r?.capital ?? '?'} I{r?.investor ?? '?'} D{r?.defensibility ?? '?'})</span>
                     </div>
                   ))}
                   <p className="text-[10px] text-muted/45 italic">Surfaced companies cannot exceed an anchor's score unless they beat it on at least one sub-dimension by ≥1 point.</p>

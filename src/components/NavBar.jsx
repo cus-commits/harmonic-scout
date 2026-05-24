@@ -192,7 +192,10 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
       {searchResults.length > 0 && (
         <div className="max-h-[300px] overflow-y-auto border-t border-border/20">
           {searchResults.map((s, i) => {
-            const webUrl = s.website ? (s.website.startsWith('http') ? s.website : `https://${s.website}`) : null;
+            // Harmonic returns `website` as either string OR { url, domain } — normalize first.
+            // Without this, NavBar throws on every typeahead result → blanks every page.
+            const rawWeb = typeof s.website === 'object' && s.website ? (s.website.url || s.website.domain || '') : (typeof s.website === 'string' ? s.website : '');
+            const webUrl = rawWeb ? (rawWeb.startsWith('http') ? rawWeb : `https://${rawWeb}`) : null;
             const ft = s.funding_total;
             const funding = ft && typeof ft === 'number' ? (ft >= 1e9 ? `$${(ft/1e9).toFixed(1)}B` : ft >= 1e6 ? `$${(ft/1e6).toFixed(1)}M` : `$${(ft/1e3).toFixed(0)}K`) : null;
             return (

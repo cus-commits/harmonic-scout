@@ -61,7 +61,11 @@ export default function CompanyDetail({ addFavorite, isFavorited }) {
   const funding = moneyFmt(company.funding_total);
   const rounds = company.funding_rounds || [];
   const investors = company.investors || [];
-  const webUrl = company.website || '';
+  // Harmonic returns website as either string OR { url, domain }. Without normalizing,
+  // every company page blanks (webUrl.replace TypeError).
+  const webUrl = (typeof company.website === 'object' && company.website)
+    ? (company.website.url || company.website.domain || '')
+    : (typeof company.website === 'string' ? company.website : '');
   const tabs = ['overview', 'funding', 'team', 'contact'];
 
   return (

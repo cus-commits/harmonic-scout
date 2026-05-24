@@ -161,7 +161,7 @@ function CastCard({ cast, addFavorite, isFavorited }) {
               {signalEmoji[sig]} {sig}
             </span>
           </div>
-          <span className="text-[10px] text-bright/40">{cast.followers.toLocaleString()} followers · {timeSince(cast.timestamp)}</span>
+          <span className="text-[10px] text-bright/40">{(cast.followers ?? 0).toLocaleString()} followers · {timeSince(cast.timestamp)}</span>
         </div>
         {addFavorite && (
           <button onClick={() => { const cn = cast.companyName || cast.author; const s = isFavorited && isFavorited(cn); if (!s) addFavorite({ name: cn, description: cast.text?.slice(0, 200), website: cast.url }); }}

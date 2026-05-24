@@ -422,8 +422,11 @@ export function ScanProvider({ children }) {
         }
         if (!data) throw new Error('Could not recover scan results');
       }
-      
-      if (data.error) throw new Error(data.error);
+
+      // Guard against undefined data (happens when cancel cleared abortRef so the
+      // recovery branch above was skipped). Without this, `data.error` throws.
+      if (data && data.error) throw new Error(data.error);
+      if (!data) return; // cancelled — don't overwrite scan results
 
       setScanResults(prev => ({ ...prev, [personId]: data }));
       setActiveScans(prev => ({ ...prev, [personId]: { status: 'done', profileName: profile?.name || 'Scan', finishedAt: Date.now() } }));
