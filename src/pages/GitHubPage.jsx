@@ -268,9 +268,7 @@ function RepoCard({ repo, addFavorite, isFavorited }) {
             {repo.harmonic.fundingTotal ? <span className="text-accent font-medium">💰 ${(repo.harmonic.fundingTotal / 1e6).toFixed(1)}M raised</span> : <span className="text-sm">💰 No funding found</span>}
             {repo.harmonic.lastRound && <span>📋 {repo.harmonic.lastRound}{repo.harmonic.lastRoundDate ? ` (${repo.harmonic.lastRoundDate.slice(0, 7)})` : ''}</span>}
             {repo.harmonic.headcount && <span>👥 ~{repo.harmonic.headcount} people</span>}
-            {repo.harmonic.website && (
-              <a href={repo.harmonic.website.startsWith('http') ? repo.harmonic.website : `https://${repo.harmonic.website}`} target="_blank" rel="noopener" className="text-accent hover:underline">🌐 {repo.harmonic.website.replace(/^https?:\/\//, '').slice(0, 30)}</a>
-            )}
+            {(() => { const rw=repo.harmonic.website; const w=(typeof rw==='object' && rw)?(rw.url||rw.domain||''):(typeof rw==='string'?rw:''); return w?(<a href={w.startsWith('http')?w:`https://${w}`} target="_blank" rel="noopener" className="text-accent hover:underline">🌐 {w.replace(/^https?:\/\//,'').slice(0,30)}</a>):null; })()}
           </div>
         </div>
       )}

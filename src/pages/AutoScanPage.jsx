@@ -400,8 +400,10 @@ function AnalysisWithLinks({ text, companies, scoredCompanies }) {
   // Build a map of company name (lowercase) → website URL
   const urlMap = {};
   for (const c of (companies || [])) {
-    if (c.website) {
-      const url = c.website.startsWith('http') ? c.website : `https://${c.website}`;
+    const rw = c.website;
+    const w = (typeof rw === 'object' && rw) ? (rw.url || rw.domain || '') : (typeof rw === 'string' ? rw : '');
+    if (w) {
+      const url = w.startsWith('http') ? w : `https://${w}`;
       urlMap[(c.name || '').toLowerCase()] = url;
     }
   }
@@ -946,7 +948,7 @@ function TopPicksPanel({ personId, addFavorite, isFavorited }) {
                       {/* Source scan + actions */}
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[9px] text-accent/50">{scanIcon} {scanLabel}</span>
-                        {c.website && <a href={c.website.startsWith('http') ? c.website : `https://${c.website}`} target="_blank" rel="noopener" className="text-[9px] text-bo/65 hover:text-bo hover:underline">🌐 Website</a>}
+                        {(() => { const rw=c.website; const w=(typeof rw==='object' && rw)?(rw.url||rw.domain||''):(typeof rw==='string'?rw:''); return w?(<a href={w.startsWith('http')?w:`https://${w}`} target="_blank" rel="noopener" className="text-[9px] text-bo/65 hover:text-bo hover:underline">🌐 Website</a>):null; })()}
                         {c.location && <span className="text-[9px] text-muted/40">📍 {c.location}</span>}
                         <button onClick={() => setExpandedLogic(isLogicOpen ? null : globalIdx)}
                           className={`text-[9px] px-2 py-0.5 rounded-lg border font-medium transition-all ml-auto ${
@@ -1322,7 +1324,9 @@ function VettingPanel({ team, addFavorite, isFavorited }) {
 
       <div className="space-y-3 max-h-[600px] overflow-y-auto">
         {visible.map((c, idx) => {
-          const webUrl = c.website ? (c.website.startsWith('http') ? c.website : `https://${c.website}`) : null;
+          const _rawWeb = c.website;
+          const _web = (typeof _rawWeb === 'object' && _rawWeb) ? (_rawWeb.url || _rawWeb.domain || '') : (typeof _rawWeb === 'string' ? _rawWeb : '');
+          const webUrl = _web ? (_web.startsWith('http') ? _web : `https://${_web}`) : null;
           const total = moneyFmt(c.funding_total);
           const stage = stageFmt(c.funding_stage);
           const saved = isFavorited && isFavorited(c.name);

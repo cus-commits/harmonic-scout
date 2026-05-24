@@ -148,11 +148,15 @@ function CompanyCard({ company, onFavorite, isSaved }) {
         )}
       </div>
       <div className="flex gap-2">
-        {company.website && (
-          <a href={company.website.startsWith('http') ? company.website : `https://${company.website}`} target="_blank" rel="noopener" className="text-[10px] text-accent hover:underline">
-            🌐 Website
-          </a>
-        )}
+        {(() => {
+          const rw = company.website;
+          const w = (typeof rw === 'object' && rw) ? (rw.url || rw.domain || '') : (typeof rw === 'string' ? rw : '');
+          return w ? (
+            <a href={w.startsWith('http') ? w : `https://${w}`} target="_blank" rel="noopener" className="text-[10px] text-accent hover:underline">
+              🌐 Website
+            </a>
+          ) : null;
+        })()}
         {company.socials?.linkedin && (
           <a href={company.socials.linkedin} target="_blank" rel="noopener" className="text-[10px] text-accent hover:underline">
             💼 LinkedIn

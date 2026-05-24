@@ -203,9 +203,7 @@ function TweetCard({ tweet, addFavorite, isFavorited }) {
             {tweet.harmonic.fundingTotal ? <span className="text-accent font-medium">💰 ${(tweet.harmonic.fundingTotal / 1e6).toFixed(1)}M raised</span> : <span className="text-sm">💰 No funding found</span>}
             {tweet.harmonic.lastRound && <span>📋 {tweet.harmonic.lastRound}{tweet.harmonic.lastRoundDate ? ` (${tweet.harmonic.lastRoundDate.slice(0, 7)})` : ''}</span>}
             {tweet.harmonic.headcount && <span>👥 ~{tweet.harmonic.headcount} people</span>}
-            {tweet.harmonic.website && (
-              <a href={tweet.harmonic.website.startsWith('http') ? tweet.harmonic.website : `https://${tweet.harmonic.website}`} target="_blank" rel="noopener" className="text-accent hover:underline">🌐 {tweet.harmonic.website.replace(/^https?:\/\//, '').slice(0, 30)}</a>
-            )}
+            {(() => { const rw=tweet.harmonic.website; const w=(typeof rw==='object' && rw)?(rw.url||rw.domain||''):(typeof rw==='string'?rw:''); return w?(<a href={w.startsWith('http')?w:`https://${w}`} target="_blank" rel="noopener" className="text-accent hover:underline">🌐 {w.replace(/^https?:\/\//,'').slice(0,30)}</a>):null; })()}
           </div>
         </div>
       )}

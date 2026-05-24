@@ -188,7 +188,9 @@ function RemoveMenu({ company, onHide, onBackburn }) {
 function VettingCard({ company, onHide, onBackburn, addFavorite, isFavorited }) {
   const stage = stageFmt(company.funding_stage);
   const total = moneyFmt(company.funding_total);
-  const webUrl = company.website ? (company.website.startsWith('http') ? company.website : `https://${company.website}`) : null;
+  const _rawWeb = company.website;
+  const _web = (typeof _rawWeb === 'object' && _rawWeb) ? (_rawWeb.url || _rawWeb.domain || '') : (typeof _rawWeb === 'string' ? _rawWeb : '');
+  const webUrl = _web ? (_web.startsWith('http') ? _web : `https://${_web}`) : null;
   const badge = sourceBadge(company.source);
   const scoreDisplay = company.score ? `${company.score}/10` : null;
   const saved = isFavorited && isFavorited(company.name);

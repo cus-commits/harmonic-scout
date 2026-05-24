@@ -63,11 +63,16 @@ function PostCard({ post, addFavorite, isFavorited }) {
           🔗 {post.url.replace(/^https?:\/\//, '').slice(0, 50)}
         </a>
       )}
-      {post.meta?.website && post.meta.website !== post.url && (
-        <a href={post.meta.website.startsWith('http') ? post.meta.website : `https://${post.meta.website}`} target="_blank" rel="noopener" className="text-[10px] text-accent hover:underline truncate block">
-          🌐 {post.meta.website.replace(/^https?:\/\//, '').slice(0, 40)}
-        </a>
-      )}
+      {(() => {
+        const rw = post.meta?.website;
+        const w = (typeof rw === 'object' && rw) ? (rw.url || rw.domain || '') : (typeof rw === 'string' ? rw : '');
+        if (!w || w === post.url) return null;
+        return (
+          <a href={w.startsWith('http') ? w : `https://${w}`} target="_blank" rel="noopener" className="text-[10px] text-accent hover:underline truncate block">
+            🌐 {w.replace(/^https?:\/\//, '').slice(0, 40)}
+          </a>
+        );
+      })()}
       <div className="flex items-center gap-1.5 flex-wrap">
         <FindSimilar addFavorite={addFavorite} isFavorited={isFavorited} companyName={post.companyName || post.title} />
         <CrmButton company={{ name: post.companyName || post.title, website: post.meta?.website || post.url }} />

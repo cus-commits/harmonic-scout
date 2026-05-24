@@ -208,9 +208,7 @@ function CastCard({ cast, addFavorite, isFavorited }) {
             {cast.harmonic.fundingTotal ? <span className="text-accent font-medium">💰 ${(cast.harmonic.fundingTotal / 1e6).toFixed(1)}M raised</span> : <span className="text-sm">💰 No funding found</span>}
             {cast.harmonic.lastRound && <span>📋 {cast.harmonic.lastRound}{cast.harmonic.lastRoundDate ? ` (${cast.harmonic.lastRoundDate.slice(0, 7)})` : ''}</span>}
             {cast.harmonic.headcount && <span>👥 ~{cast.harmonic.headcount} people</span>}
-            {cast.harmonic.website && (
-              <a href={cast.harmonic.website.startsWith('http') ? cast.harmonic.website : `https://${cast.harmonic.website}`} target="_blank" rel="noopener" className="text-accent hover:underline">🌐 {cast.harmonic.website.replace(/^https?:\/\//, '').slice(0, 30)}</a>
-            )}
+            {(() => { const rw=cast.harmonic.website; const w=(typeof rw==='object' && rw)?(rw.url||rw.domain||''):(typeof rw==='string'?rw:''); return w?(<a href={w.startsWith('http')?w:`https://${w}`} target="_blank" rel="noopener" className="text-accent hover:underline">🌐 {w.replace(/^https?:\/\//,'').slice(0,30)}</a>):null; })()}
           </div>
         </div>
       )}

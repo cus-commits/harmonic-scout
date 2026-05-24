@@ -180,7 +180,9 @@ export default function HarmonicSearchBar({ addFavorite, isFavorited }) {
           <p className="text-[10px] text-accent/55 font-bold uppercase tracking-wider">{results.length} compan{results.length === 1 ? 'y' : 'ies'} found</p>
           <div className="space-y-2 max-h-[600px] overflow-y-auto">
             {results.map((c, i) => {
-              const webUrl = c.website ? (c.website.startsWith('http') ? c.website : `https://${c.website}`) : null;
+              const _rawWeb = c.website;
+              const _web = (typeof _rawWeb === 'object' && _rawWeb) ? (_rawWeb.url || _rawWeb.domain || '') : (typeof _rawWeb === 'string' ? _rawWeb : '');
+              const webUrl = _web ? (_web.startsWith('http') ? _web : `https://${_web}`) : null;
               const funding = moneyFmt(c.funding_total);
               const stage = c.funding_stage ? String(c.funding_stage).replace(/_/g, ' ') : '';
               const saved = isFavorited && isFavorited(c.name);

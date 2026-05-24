@@ -20,7 +20,9 @@ function moneyFmt(n) {
 function CompanyMiniCard({ company, addFavorite, isFavorited }) {
   const name = company.name || '?';
   const desc = (company.description || '').slice(0, 140);
-  const web = company.website || '';
+  // Harmonic returns website as string OR { url, domain } — normalize before .startsWith
+  const _rawWeb = company.website;
+  const web = (typeof _rawWeb === 'object' && _rawWeb) ? (_rawWeb.url || _rawWeb.domain || '') : (typeof _rawWeb === 'string' ? _rawWeb : '');
   const webUrl = web ? (web.startsWith('http') ? web : `https://${web}`) : null;
   const funding = moneyFmt(company.funding_total || null);
   const stage = company.funding_stage || '';

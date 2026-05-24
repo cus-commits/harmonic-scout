@@ -140,7 +140,9 @@ export default function PortcosPage({ addFavorite, isFavorited }) {
             );
           }
 
-          const webUrl = c.website ? (c.website.startsWith('http') ? c.website : `https://${c.website}`) : null;
+          const _rawWeb = c.website;
+          const _web = (typeof _rawWeb === 'object' && _rawWeb) ? (_rawWeb.url || _rawWeb.domain || '') : (typeof _rawWeb === 'string' ? _rawWeb : '');
+          const webUrl = _web ? (_web.startsWith('http') ? _web : `https://${_web}`) : null;
           const ft = c.funding_total;
           const funding = ft && typeof ft === 'number' ? (ft >= 1e9 ? `$${(ft/1e9).toFixed(1)}B` : ft >= 1e6 ? `$${(ft/1e6).toFixed(1)}M` : ft >= 1e3 ? `$${(ft/1e3).toFixed(0)}K` : `$${ft}`) : null;
 
