@@ -263,8 +263,11 @@ export function CrmButton({ company }) {
                     <button onClick={(e) => { e.stopPropagation(); setConfirmSM(false); }}
                       className="flex-1 text-[10px] py-1.5 rounded-md border border-border/20 text-muted/50 hover:text-bright hover:border-border/40">Cancel</button>
                     <button onClick={(e) => { e.stopPropagation(); addToCRM('BORO-SM'); }}
-                      className="flex-1 text-[10px] py-1.5 rounded-md bg-sm/20 border border-sm/30 text-sm hover:bg-sm/30 font-bold">🏆 Confirm</button>
+                      className="flex-1 text-[10px] py-1.5 rounded-md bg-sm/20 border border-sm/30 text-sm hover:bg-sm/30 font-bold">
+                      {loading ? 'Saving…' : '🏆 Confirm'}
+                    </button>
                   </div>
+                  {result?.error && <p className="text-rose/70 text-[9px] text-center pt-1">{result.error}</p>}
                 </div>
               )}
             </div>
