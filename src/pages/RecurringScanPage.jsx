@@ -1287,21 +1287,55 @@ export default function RecurringScanPage({ addFavorite, isFavorited }) {
           {pageTab === 'scan' && (
             <>
               {/* Interrupted banners */}
-              {interruptedScans.map(scan => (
-                <div key={scan.id} className="mb-4 bg-accent/8 border border-accent/20 rounded-xl p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-accent/80 text-sm font-medium">⚠️ Scan interrupted {scan.tier?.name ? `(${scan.tier.name})` : ''}</p>
-                      <p className="text-[10px] text-muted/40 mt-1">{scan.progress || 'Server restarted while scan was running'}</p>
-                      {scan.user && <p className="text-[9px] text-muted/30 mt-0.5">Started by {scan.user}</p>}
+              {interruptedScans.map(scan => {
+                const startedAt = scan.startedAt ? new Date(scan.startedAt) : null;
+                const endedAt = scan.interruptedAt || scan.finishedAt || scan.lastUpdatedAt || null;
+                const ranMs = (startedAt && endedAt) ? Math.max(0, endedAt - scan.startedAt) : null;
+                const ranMin = ranMs != null ? Math.max(1, Math.round(ranMs / 60000)) : null;
+                const fmtAbs = (d) => d ? d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+                const fmtRel = (d) => {
+                  if (!d) return '';
+                  const diff = Date.now() - d.getTime();
+                  const m = Math.round(diff / 60000);
+                  if (m < 1) return 'just now';
+                  if (m < 60) return `${m} min ago`;
+                  const h = Math.round(m / 60);
+                  if (h < 24) return `${h} hr ago`;
+                  const days = Math.round(h / 24);
+                  return `${days} day${days === 1 ? '' : 's'} ago`;
+                };
+                const etaMin = scan.tier?.etaMin;
+                const etaMax = scan.tier?.etaMax;
+                const etaStr = (etaMin && etaMax) ? `~${etaMin}–${etaMax} min` : null;
+                return (
+                  <div key={scan.id} className="mb-4 bg-accent/8 border border-accent/20 rounded-xl p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-accent/80 text-sm font-medium">⚠️ Scan interrupted {scan.tier?.name ? `(${scan.tier.name})` : ''}</p>
+                        <p className="text-[10px] text-muted/50 mt-1 break-words">{scan.progress || 'Server restarted while scan was running'}</p>
+                        {startedAt && (
+                          <p className="text-[10px] text-muted/40 mt-1.5">
+                            Started <span className="text-muted/60">{fmtRel(startedAt)}</span>
+                            <span className="text-muted/30"> · {fmtAbs(startedAt)}</span>
+                          </p>
+                        )}
+                        {(ranMin != null || etaStr) && (
+                          <p className="text-[10px] text-muted/40 mt-0.5">
+                            {ranMin != null && <>Ran <span className="text-muted/60">{ranMin} min</span></>}
+                            {ranMin != null && etaStr && <span className="text-muted/30"> · </span>}
+                            {etaStr && <>Expected <span className="text-muted/60">{etaStr}</span></>}
+                          </p>
+                        )}
+                        {scan.user && <p className="text-[9px] text-muted/30 mt-1">Started by {scan.user}</p>}
+                      </div>
+                      <button onClick={() => cancelScan(scan.id)}
+                        className="text-[10px] px-3 py-1.5 rounded-lg border border-accent/25 text-accent/60 hover:text-accent font-medium flex-shrink-0">
+                        Dismiss
+                      </button>
                     </div>
-                    <button onClick={() => cancelScan(scan.id)}
-                      className="text-[10px] px-3 py-1.5 rounded-lg border border-accent/25 text-accent/60 hover:text-accent font-medium flex-shrink-0">
-                      Dismiss
-                    </button>
                   </div>
-                </div>
-              ))}
+                );
+              })}
 
               {/* Running scan panels */}
               {runningScans.map(scan => (
