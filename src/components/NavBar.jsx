@@ -28,6 +28,27 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
   const appsRef = useRef(null);
   const API_BASE = import.meta.env?.VITE_API_URL || 'https://pigeon-api.up.railway.app';
 
+  // Mobile-nav variant selector. Read from `?navv=1..5` URL param OR `pf_nav_variant`
+  // localStorage. Defaults to variant 3 (most balanced) if neither set.
+  const [showHamburger, setShowHamburger] = useState(false);
+  const hamburgerRef = useRef(null);
+  const mobileVariant = (() => {
+    if (typeof window === 'undefined') return 3;
+    const qp = new URLSearchParams(window.location.search).get('navv');
+    if (qp) {
+      try { localStorage.setItem('pf_nav_variant', qp); } catch (e) {}
+      return Math.max(1, Math.min(5, parseInt(qp) || 3));
+    }
+    try { return Math.max(1, Math.min(5, parseInt(localStorage.getItem('pf_nav_variant')) || 3)); }
+    catch (e) { return 3; }
+  })();
+
+  useEffect(() => {
+    const handler = (e) => { if (hamburgerRef.current && !hamburgerRef.current.contains(e.target)) setShowHamburger(false); };
+    if (showHamburger) document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showHamburger]);
+
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(nickname);
   const [wipeConfirm, setWipeConfirm] = useState(false);
@@ -483,8 +504,8 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
         </div>
       )}
 
-      {/* ─── Bottom nav bar ─── */}
-      <div className="flex items-stretch justify-between h-16 max-w-5xl mx-auto px-3 gap-0.5">
+      {/* ─── DESKTOP Bottom nav bar (≥ md) ─── */}
+      <div className="hidden md:flex items-stretch justify-between h-16 max-w-5xl mx-auto px-3 gap-0.5">
         {navItems.map((item) => {
           const active = isActive(item);
           return (
@@ -528,6 +549,25 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
             daxos.capital
           </a>
         </div>
+      </div>
+
+      {/* ─── MOBILE Bottom nav (< md) — variant chosen via ?navv=1..5 ─── */}
+      <MobileBottomNav
+        variant={mobileVariant}
+        navItems={navItems}
+        isActive={isActive}
+        handleNavClick={handleNavClick}
+        showHamburger={showHamburger}
+        setShowHamburger={setShowHamburger}
+        hamburgerRef={hamburgerRef}
+        onSettingsClick={() => { setShowMenu(!showMenu); setShowSearch(false); setShowScanMenu(false); setShowApps(false); setShowHamburger(false); }}
+        onAppsClick={() => { setShowApps(!showApps); setShowSearch(false); setShowScanMenu(false); setShowMenu(false); setShowHamburger(false); }}
+        navigate={navigate}
+        location={location}
+      />
+      {/* tiny dev badge so you know which variant you're seeing on mobile */}
+      <div className="md:hidden fixed top-1.5 left-1.5 z-[60] text-[8px] font-mono text-muted/40 bg-ink/40 px-1.5 py-0.5 rounded">
+        nav v{mobileVariant}
       </div>
 
       {/* ─── Vote alert pill (top-right) ─── */}
@@ -682,4 +722,269 @@ function GitHubIcon({ active }) {
       <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
     </svg>
   );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MOBILE BOTTOM NAV — 5 variants for the user to pick from on pigeon-redesigns.
+// All variants share: 3 primary items visible (Scan, Search, CRM) + hamburger
+// triggering a bottom sheet with secondary items. Variant chosen via ?navv=1..5.
+// ═══════════════════════════════════════════════════════════════════════════
+
+function MobileBottomNav({ variant, navItems, isActive, handleNavClick, showHamburger, setShowHamburger, hamburgerRef, onSettingsClick, onAppsClick, navigate, location }) {
+  // Primary items always visible
+  const scan = navItems.find(i => i.id === 'scan');
+  const search = navItems.find(i => i.id === 'search');
+  const crm = navItems.find(i => i.id === 'crm');
+  // Secondary items go in the hamburger sheet
+  const secondaryIds = ['home', 'dd', 'dms', 'favs', 'portcos', 'apps'];
+  const secondary = secondaryIds.map(id => navItems.find(i => i.id === id)).filter(Boolean);
+  const secondaryBadge = secondary.reduce((s, it) => s + (it.badge > 0 ? it.badge : 0), 0);
+
+  const primaryBtn = (item, extraClass = '') => {
+    if (!item) return null;
+    const active = isActive(item);
+    return (
+      <button
+        key={item.id}
+        onClick={() => { setShowHamburger(false); handleNavClick(item); }}
+        className={`group relative flex flex-col items-center justify-center gap-0.5 transition-colors ${active ? 'text-accent' : 'text-muted hover:text-bright'} ${extraClass}`}
+      >
+        {active && variant !== 4 && (
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[22px] h-0.5 rounded-b bg-accent" />
+        )}
+        <div className={`relative ${active ? 'drop-shadow-[0_0_6px_rgba(230,199,154,0.45)]' : ''}`}>
+          <item.icon active={active} />
+          {item.badge > 0 && (
+            <span className="absolute -top-1.5 left-1/2 translate-x-1 min-w-[16px] h-[14px] px-1 rounded-full bg-accent text-ink text-[9px] font-bold font-mono flex items-center justify-center leading-none">
+              {item.badge}
+            </span>
+          )}
+        </div>
+        <span className="text-[10px] font-semibold tracking-[0.04em] leading-tight">{item.label}</span>
+      </button>
+    );
+  };
+
+  // Shared hamburger sheet — bottom sheet listing secondary items
+  const sheet = showHamburger && (
+    <>
+      <div className="fixed inset-0 z-[55] bg-black/40 md:hidden" onClick={() => setShowHamburger(false)} />
+      <div ref={hamburgerRef} className="md:hidden fixed bottom-[68px] left-0 right-0 z-[58] mx-2 mb-2 rounded-2xl border border-accent/15 fade-in"
+        style={{ background: 'rgba(46, 42, 37, 0.96)', backdropFilter: 'blur(24px) saturate(140%)', WebkitBackdropFilter: 'blur(24px) saturate(140%)', boxShadow: '0 -16px 48px rgba(0,0,0,0.55), 0 -1px 0 rgba(230, 199, 154, 0.08)' }}>
+        <p className="text-[9px] uppercase tracking-widest text-muted/50 font-bold font-mono px-4 pt-3 pb-1">More</p>
+        <div className="grid grid-cols-3 gap-0.5 p-2">
+          {secondary.map(item => {
+            const active = isActive(item);
+            return (
+              <button key={item.id}
+                onClick={() => { setShowHamburger(false); handleNavClick(item); }}
+                className={`flex flex-col items-center justify-center gap-1 py-3 rounded-xl transition-colors ${active ? 'bg-accent/10 text-accent' : 'text-bright/70 hover:bg-card-hi'}`}>
+                <div className="relative">
+                  <item.icon active={active} />
+                  {item.badge > 0 && (
+                    <span className="absolute -top-1.5 -right-2 min-w-[16px] h-[14px] px-1 rounded-full bg-accent text-ink text-[9px] font-bold font-mono flex items-center justify-center leading-none">
+                      {item.badge}
+                    </span>
+                  )}
+                </div>
+                <span className="text-[10px] font-semibold tracking-[0.04em]">{item.label}</span>
+              </button>
+            );
+          })}
+          <button onClick={onSettingsClick}
+            className="flex flex-col items-center justify-center gap-1 py-3 rounded-xl text-bright/70 hover:bg-card-hi">
+            <SettingsIcon />
+            <span className="text-[10px] font-semibold tracking-[0.04em]">Settings</span>
+          </button>
+        </div>
+        <div className="border-t border-border/20 mx-3 my-1" />
+        <div className="px-4 py-2 flex items-center justify-between">
+          <CrmIdentity />
+          <a href="https://www.daxos.capital" target="_blank" rel="noopener"
+            className="text-[9px] font-mono font-bold tracking-[0.18em] text-accent/60">
+            daxos.capital
+          </a>
+        </div>
+      </div>
+    </>
+  );
+
+  // ───────────── VARIANT 1: Classic 4-tab bar [Scan][Search][CRM][≡] ─────────────
+  if (variant === 1) {
+    return (
+      <>
+        <div className="flex md:hidden items-stretch justify-around h-[60px] px-1 gap-0.5">
+          {primaryBtn(scan, 'flex-1')}
+          {primaryBtn(search, 'flex-1')}
+          {primaryBtn(crm, 'flex-1')}
+          <button onClick={() => setShowHamburger(!showHamburger)}
+            className="relative flex flex-col items-center justify-center gap-0.5 flex-1 text-muted hover:text-bright">
+            <div className="relative">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+              {secondaryBadge > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-[14px] px-1 rounded-full bg-accent text-ink text-[9px] font-bold font-mono flex items-center justify-center leading-none">
+                  {secondaryBadge}
+                </span>
+              )}
+            </div>
+            <span className="text-[10px] font-semibold tracking-[0.04em]">More</span>
+          </button>
+        </div>
+        {sheet}
+      </>
+    );
+  }
+
+  // ───────────── VARIANT 2: Floating glass pill + separate FAB hamburger ─────────────
+  if (variant === 2) {
+    return (
+      <>
+        <div className="md:hidden flex items-center justify-center gap-2 px-3 pb-3 pt-1">
+          <div className="flex items-center gap-1 px-2 py-1.5 rounded-full border border-accent/20"
+            style={{ background: 'rgba(46, 42, 37, 0.85)', backdropFilter: 'blur(20px)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
+            {primaryBtn(scan, 'px-3 py-0.5')}
+            {primaryBtn(search, 'px-3 py-0.5')}
+            {primaryBtn(crm, 'px-3 py-0.5')}
+          </div>
+          <button onClick={() => setShowHamburger(!showHamburger)}
+            className="relative w-11 h-11 rounded-full border border-accent/20 flex items-center justify-center text-muted hover:text-accent"
+            style={{ background: 'rgba(46, 42, 37, 0.85)', backdropFilter: 'blur(20px)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="6" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="18" r="1.5"/></svg>
+            {secondaryBadge > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[16px] h-[14px] px-1 rounded-full bg-accent text-ink text-[9px] font-bold font-mono flex items-center justify-center leading-none">
+                {secondaryBadge}
+              </span>
+            )}
+          </button>
+        </div>
+        {sheet}
+      </>
+    );
+  }
+
+  // ───────────── VARIANT 3: Tab bar with "More (N)" tab (iOS standard) ─────────────
+  if (variant === 3) {
+    return (
+      <>
+        <div className="flex md:hidden items-stretch justify-around h-[62px] px-1">
+          {primaryBtn(scan, 'flex-1')}
+          {primaryBtn(search, 'flex-1')}
+          {primaryBtn(crm, 'flex-1')}
+          <button onClick={() => setShowHamburger(!showHamburger)}
+            className={`relative flex flex-col items-center justify-center gap-0.5 flex-1 transition-colors ${showHamburger ? 'text-accent' : 'text-muted hover:text-bright'}`}>
+            {showHamburger && <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[22px] h-0.5 rounded-b bg-accent" />}
+            <div className="relative">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill={showHamburger ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.6">
+                <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
+              </svg>
+              {secondaryBadge > 0 && (
+                <span className="absolute -top-1.5 left-1/2 translate-x-1 min-w-[16px] h-[14px] px-1 rounded-full bg-accent text-ink text-[9px] font-bold font-mono flex items-center justify-center leading-none">
+                  {secondaryBadge}
+                </span>
+              )}
+            </div>
+            <span className="text-[10px] font-semibold tracking-[0.04em]">More</span>
+          </button>
+        </div>
+        {sheet}
+      </>
+    );
+  }
+
+  // ───────────── VARIANT 4: Top hamburger + bottom 3 large round pills ─────────────
+  if (variant === 4) {
+    return (
+      <>
+        {/* Top-left hamburger floats above content */}
+        <button onClick={() => setShowHamburger(!showHamburger)}
+          className="md:hidden fixed top-3.5 left-3.5 z-[60] w-10 h-10 rounded-full border border-accent/20 flex items-center justify-center text-bright/80"
+          style={{ background: 'rgba(46, 42, 37, 0.92)', backdropFilter: 'blur(20px)', boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          {secondaryBadge > 0 && (
+            <span className="absolute -top-1 -right-1 min-w-[16px] h-[14px] px-1 rounded-full bg-accent text-ink text-[9px] font-bold font-mono flex items-center justify-center leading-none">
+              {secondaryBadge}
+            </span>
+          )}
+        </button>
+        {/* Bottom 3 large pills */}
+        <div className="md:hidden flex items-center justify-center gap-2 px-4 py-3">
+          {[scan, search, crm].filter(Boolean).map(item => {
+            const active = isActive(item);
+            return (
+              <button key={item.id} onClick={() => { setShowHamburger(false); handleNavClick(item); }}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl border transition-all ${active ? 'bg-accent/15 border-accent/40 text-accent' : 'bg-card border-border/20 text-bright/80 hover:border-accent/25'}`}>
+                <div className="relative">
+                  <item.icon active={active} />
+                  {item.badge > 0 && (
+                    <span className="absolute -top-2 -right-2 min-w-[16px] h-[14px] px-1 rounded-full bg-accent text-ink text-[9px] font-bold font-mono flex items-center justify-center leading-none">
+                      {item.badge}
+                    </span>
+                  )}
+                </div>
+                <span className="text-[11px] font-bold tracking-[0.04em]">{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+        {sheet}
+      </>
+    );
+  }
+
+  // ───────────── VARIANT 5: Compact 3 + expandable upward tray (chevron) ─────────────
+  if (variant === 5) {
+    return (
+      <>
+        {showHamburger && (
+          <div ref={hamburgerRef} className="md:hidden border-b border-accent/15 px-2 py-2"
+            style={{ background: 'rgba(46, 42, 37, 0.92)' }}>
+            <div className="grid grid-cols-4 gap-0.5">
+              {secondary.slice(0, 6).map(item => {
+                const active = isActive(item);
+                return (
+                  <button key={item.id} onClick={() => { setShowHamburger(false); handleNavClick(item); }}
+                    className={`flex flex-col items-center justify-center gap-0.5 py-2 rounded-lg transition-colors ${active ? 'bg-accent/10 text-accent' : 'text-bright/70 hover:bg-card-hi'}`}>
+                    <div className="relative">
+                      <item.icon active={active} />
+                      {item.badge > 0 && (
+                        <span className="absolute -top-1.5 -right-2 min-w-[14px] h-[12px] px-1 rounded-full bg-accent text-ink text-[8px] font-bold font-mono flex items-center justify-center leading-none">
+                          {item.badge}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[9px] font-semibold tracking-[0.04em]">{item.label}</span>
+                  </button>
+                );
+              })}
+              <button onClick={onSettingsClick}
+                className="flex flex-col items-center justify-center gap-0.5 py-2 rounded-lg text-bright/70 hover:bg-card-hi">
+                <SettingsIcon /><span className="text-[9px] font-semibold tracking-[0.04em]">Settings</span>
+              </button>
+            </div>
+          </div>
+        )}
+        <div className="flex md:hidden items-stretch justify-around h-[60px] px-1">
+          {primaryBtn(scan, 'flex-1')}
+          {primaryBtn(search, 'flex-1')}
+          {primaryBtn(crm, 'flex-1')}
+          <button onClick={() => setShowHamburger(!showHamburger)}
+            className={`relative flex flex-col items-center justify-center gap-0.5 flex-1 transition-colors ${showHamburger ? 'text-accent' : 'text-muted hover:text-bright'}`}>
+            <div className="relative">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: showHamburger ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 200ms' }}>
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+              {!showHamburger && secondaryBadge > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-[14px] px-1 rounded-full bg-accent text-ink text-[9px] font-bold font-mono flex items-center justify-center leading-none">
+                  {secondaryBadge}
+                </span>
+              )}
+            </div>
+            <span className="text-[10px] font-semibold tracking-[0.04em]">{showHamburger ? 'Less' : 'More'}</span>
+          </button>
+        </div>
+      </>
+    );
+  }
+
+  return null;
 }
