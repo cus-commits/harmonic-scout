@@ -28,19 +28,20 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
   const appsRef = useRef(null);
   const API_BASE = import.meta.env?.VITE_API_URL || 'https://pigeon-api.up.railway.app';
 
-  // Mobile-nav variant selector. Read from `?navv=1..5` URL param OR `pf_nav_variant`
-  // localStorage. Defaults to variant 3 (most balanced) if neither set.
+  // Mobile-nav variant — v2 (floating glass pill + FAB hamburger) was picked.
+  // URL param `?navv=N` (1-5) still overrides for one-off testing and writes to
+  // localStorage; default is now 2.
   const [showHamburger, setShowHamburger] = useState(false);
   const hamburgerRef = useRef(null);
   const mobileVariant = (() => {
-    if (typeof window === 'undefined') return 3;
+    if (typeof window === 'undefined') return 2;
     const qp = new URLSearchParams(window.location.search).get('navv');
     if (qp) {
       try { localStorage.setItem('pf_nav_variant', qp); } catch (e) {}
-      return Math.max(1, Math.min(5, parseInt(qp) || 3));
+      return Math.max(1, Math.min(5, parseInt(qp) || 2));
     }
-    try { return Math.max(1, Math.min(5, parseInt(localStorage.getItem('pf_nav_variant')) || 3)); }
-    catch (e) { return 3; }
+    try { return Math.max(1, Math.min(5, parseInt(localStorage.getItem('pf_nav_variant')) || 2)); }
+    catch (e) { return 2; }
   })();
 
   useEffect(() => {
@@ -565,26 +566,15 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
         navigate={navigate}
         location={location}
       />
-      {/* Tappable variant cycler — tap to advance through 1→2→3→4→5→1.
-          Setting the URL ?navv=N also persists to localStorage. */}
-      <button
-        onClick={() => {
-          const next = mobileVariant >= 5 ? 1 : mobileVariant + 1;
-          try { localStorage.setItem('pf_nav_variant', String(next)); } catch (e) {}
-          const url = new URL(window.location.href);
-          url.searchParams.set('navv', String(next));
-          window.location.href = url.toString();
-        }}
-        className="md:hidden fixed top-3 left-3 z-[70] text-[10px] font-mono font-bold tracking-wide text-accent/85 bg-card/90 border border-accent/30 px-2 py-1 rounded-full shadow-md hover:bg-card hover:border-accent active:scale-95 transition-all"
-        title="Tap to cycle through nav variants 1-5"
-      >
-        nav v{mobileVariant} ↻
-      </button>
+      {/* Variant cycler removed — v2 locked in as default. Override with ?navv=N if needed. */}
 
-      {/* ─── Vote alert pill (top-right) ─── */}
+      {/* ─── Vote alert pill (top-right, DESKTOP only) ───
+          Hidden on mobile because (a) the CRM tab in the bottom nav already shows
+          the same pending-count badge, and (b) when the mobile hamburger sheet is
+          open this pill sits on top of it and steals taps. */}
       {!crmRestricted && pendingCount > 0 && (
         <button onClick={() => navigate('/airtable')}
-          className="fixed top-3.5 right-3.5 z-[60] flex items-center gap-1.5 h-8 px-3 rounded-full border transition-all hover:scale-[1.02]"
+          className="hidden md:flex fixed top-3.5 right-3.5 z-[60] items-center gap-1.5 h-8 px-3 rounded-full border transition-all hover:scale-[1.02]"
           style={{
             background: 'rgb(var(--card))',
             borderColor: 'var(--border-2)',
