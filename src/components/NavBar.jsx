@@ -565,10 +565,21 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
         navigate={navigate}
         location={location}
       />
-      {/* tiny dev badge so you know which variant you're seeing on mobile */}
-      <div className="md:hidden fixed top-1.5 left-1.5 z-[60] text-[8px] font-mono text-muted/40 bg-ink/40 px-1.5 py-0.5 rounded">
-        nav v{mobileVariant}
-      </div>
+      {/* Tappable variant cycler — tap to advance through 1→2→3→4→5→1.
+          Setting the URL ?navv=N also persists to localStorage. */}
+      <button
+        onClick={() => {
+          const next = mobileVariant >= 5 ? 1 : mobileVariant + 1;
+          try { localStorage.setItem('pf_nav_variant', String(next)); } catch (e) {}
+          const url = new URL(window.location.href);
+          url.searchParams.set('navv', String(next));
+          window.location.href = url.toString();
+        }}
+        className="md:hidden fixed top-3 left-3 z-[70] text-[10px] font-mono font-bold tracking-wide text-accent/85 bg-card/90 border border-accent/30 px-2 py-1 rounded-full shadow-md hover:bg-card hover:border-accent active:scale-95 transition-all"
+        title="Tap to cycle through nav variants 1-5"
+      >
+        nav v{mobileVariant} ↻
+      </button>
 
       {/* ─── Vote alert pill (top-right) ─── */}
       {!crmRestricted && pendingCount > 0 && (

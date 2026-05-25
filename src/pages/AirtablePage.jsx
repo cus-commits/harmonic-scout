@@ -944,35 +944,26 @@ export default function AirtablePage() {
                     {/* Vote pills — individual votes + IN/OUT buttons */}
                     <div className="flex items-center gap-1.5 flex-wrap">
                       {c.in_or_out && (Array.isArray(c.in_or_out) ? c.in_or_out : typeof c.in_or_out === 'string' && c.in_or_out ? [c.in_or_out] : []).map((v, j) => {
-                        const upper = typeof v === 'string' ? v.toUpperCase() : '';
-                        // Distinguish IN / MAYBE / OUT. Check MAYBE first because the string
-                        // "Joe C: MAYBE" also contains "IN" (substring) — must not be misread as IN.
-                        const isMaybe = upper.includes('MAYBE');
-                        const isIn = !isMaybe && upper.includes('IN');
-                        const isOut = !isMaybe && !isIn && upper.includes('OUT');
+                        const isIn = typeof v === 'string' && v.toUpperCase().includes('IN');
                         const name = typeof v === 'string' ? v.split(':')[0].trim() : '';
                         const myAirtableName = (getAirtableVoter(crmUser) || '').toLowerCase();
                         const isMe = !!crmUser && name.toLowerCase() === myAirtableName;
-                        const glyph = isIn ? '✓' : isMaybe ? '?' : '✗';
-                        const tone = isIn
-                          ? 'text-ink bg-sm border-sm/50'
-                          : isMaybe
-                            ? 'text-ink bg-accent/85 border-accent/60'  // amber/gold = "maybe"
-                            : 'text-bright bg-rose/80 border-rose/50';
                         if (isMe) {
                           const busy = votingOn === `${c.company}-UNDO`;
                           return (
-                            <button key={j} onClick={() => handleUndoVote(c)} disabled={busy}
-                              className={`group relative font-mono text-[9px] px-2 py-0.5 rounded-full font-bold cursor-pointer border transition-all hover:opacity-70 ${tone}`}
-                              title="Click to cancel your vote">
-                              <span className="group-hover:hidden">{busy ? '...' : `${name}${glyph}`}</span>
+                            <button key={j} onClick={() => handleUndoVote(c)}
+                              disabled={busy}
+                              className={`group relative font-mono text-[9px] px-2 py-0.5 rounded-full font-bold cursor-pointer border transition-all ${
+                                isIn ? 'text-ink bg-sm border-sm/50 hover:bg-rose/70 hover:text-bright hover:border-rose/50' : 'text-bright bg-rose/80 border-rose/50 hover:bg-muted/40 hover:text-bright'
+                              }`} title="Click to cancel your vote">
+                              <span className="group-hover:hidden">{busy ? '...' : `${name}${isIn ? '✓' : '✗'}`}</span>
                               <span className="hidden group-hover:inline">✕ cancel</span>
                             </button>
                           );
                         }
                         return (
-                          <span key={j} className={`font-mono text-[9px] px-2 py-0.5 rounded-full font-bold border ${tone}`}>
-                            {name}{glyph}
+                          <span key={j} className={`font-mono text-[9px] px-2 py-0.5 rounded-full font-bold ${isIn ? 'text-ink bg-sm' : 'text-bright bg-rose/80'}`}>
+                            {name}{isIn ? '✓' : '✗'}
                           </span>
                         );
                       })}
@@ -985,11 +976,6 @@ export default function AirtablePage() {
                             <button onClick={() => handleVote(c, 'IN')} disabled={!!votingOn}
                               className="text-[9px] px-2.5 py-0.5 rounded-lg bg-sm/15 text-sm border border-sm/20 font-bold hover:bg-sm/25 disabled:opacity-30">
                               {votingOn === `${c.company}-IN` ? '...' : 'IN'}
-                            </button>
-                            <button onClick={() => handleVote(c, 'MAYBE')} disabled={!!votingOn}
-                              className="text-[9px] px-2.5 py-0.5 rounded-lg bg-accent/10 text-accent/80 border border-accent/25 font-bold hover:bg-accent/20 disabled:opacity-30"
-                              title="Maybe — need more info">
-                              {votingOn === `${c.company}-MAYBE` ? '...' : '?'}
                             </button>
                             <button onClick={() => handleVote(c, 'OUT')} disabled={!!votingOn}
                               className="text-[9px] px-2.5 py-0.5 rounded-lg bg-rose/[0.08] text-rose/60 border border-rose/10 font-bold hover:bg-rose/20 disabled:opacity-30">
