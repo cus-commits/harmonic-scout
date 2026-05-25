@@ -130,7 +130,9 @@ export default function AirtablePage() {
       const r = await fetch(`${API_BASE}/api/airtable/vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ company: company.company, voter: crmUser, vote }),
+        // Send airtable_id when available so vote hits the specific record the user
+        // clicked, not whatever Airtable returns first when names collide.
+        body: JSON.stringify({ company: company.company, voter: crmUser, vote, airtable_id: company.airtable_id || null }),
       });
       const data = await r.json();
       if (data.success) {
@@ -415,7 +417,7 @@ export default function AirtablePage() {
       const r = await fetch(`${API_BASE}/api/airtable/update-stage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ company: company.company, stage: newStage }),
+        body: JSON.stringify({ company: company.company, stage: newStage, airtable_id: company.airtable_id || null }),
       });
       const data = await r.json();
       if (data.success) {
