@@ -754,6 +754,12 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
   const [showCostConfirm, setShowCostConfirm] = useState(false);
   const [results, setResults] = useState(null);
 
+  // Preflight state — checks query quality before user pays for a scan.
+  const [preflight, setPreflight] = useState(null);          // {ok, warnings[], expected{}}
+  const [isPreflighting, setIsPreflighting] = useState(false);
+  const [preflightError, setPreflightError] = useState(null); // 'timeout' | 'network' | null
+  const [ackWarnings, setAckWarnings] = useState(false);
+
   // Sync context state to local display state
   const isScanning = superSearchStatus?.status === 'scanning';
   const contextResults = superSearchResults;
@@ -871,13 +877,77 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
 
   const hasAnchors = baselines.length > 0 || (includeCRM && crmStages.length > 0) || portfolioSelected.length > 0;
 
+  // Build the exact payload that will be POSTed to /api/signals/super. Reused by
+  // preflight and confirmAndScan so they speak the same language.
+  const buildScanParams = (overrideKeywords) => {
+    const anchors = {};
+    if (baselines.length > 0) {
+      anchors.baselines = baselines.map(b => ({ name: b.name, id: b.id }));
+      anchors.baselineImportance = baselineImportance;
+    }
+    if (includeCRM && crmStages.length > 0) {
+      anchors.includeCRM = true;
+      anchors.crmStages = crmStages;
+      anchors.crmImportance = crmImportance;
+    }
+    if (portfolioSelected.length > 0) {
+      const selected = PORTFOLIO.filter(p => portfolioSelected.includes(p.name));
+      anchors.portfolioCompanies = selected.map(p => ({ name: p.name, id: p.harmonic_id || null, domain: p.domain }));
+      anchors.portfolioImportance = portfolioImportance;
+    }
+    if (additionalInfo.trim()) anchors.additionalInfo = additionalInfo.trim();
+    return {
+      sectors, chains, sources, timeRange, minFollowers, minEngagement, stage,
+      customKeywords: overrideKeywords !== undefined ? overrideKeywords : customKeywords,
+      superTier, fundingFilter, ...anchors,
+    };
+  };
+
+  // Call /api/signals/super/preflight to check query quality before the user pays.
+  const runPreflight = async (overrideKeywords) => {
+    setIsPreflighting(true);
+    setPreflightError(null);
+    setPreflight(null);
+    setAckWarnings(false);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    try {
+      const body = { ...buildScanParams(overrideKeywords), suggestKeywords: true };
+      const r = await fetch(`${API_BASE}/api/signals/super/preflight`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      setPreflight(await r.json());
+    } catch (e) {
+      clearTimeout(timer);
+      setPreflightError(e.name === 'AbortError' ? 'timeout' : 'network');
+    } finally {
+      setIsPreflighting(false);
+    }
+  };
+
+  const addSuggestedKeywords = (kws) => {
+    if (!kws || kws.length === 0) return;
+    const existing = customKeywords.split(',').map(s => s.trim()).filter(Boolean);
+    const merged = [...new Set([...existing, ...kws])].join(', ');
+    setCustomKeywords(merged);
+    // Re-run preflight with the new merged keywords passed explicitly (state isn't
+    // committed yet when this runs).
+    setTimeout(() => runPreflight(merged), 0);
+  };
+
   const handleScan = async () => {
     if (sectors.length === 0 && !customKeywords.trim() && !hasAnchors) {
       setResults({ signals: [], error: 'Pick a sector, add keywords, or add a baseline anchor.' });
       return;
     }
-    // Show cost confirmation before starting
     setShowCostConfirm(true);
+    // Fire preflight in parallel — modal renders skeleton then populates with warnings
+    runPreflight();
   };
 
   const confirmAndScan = async () => {
@@ -1257,6 +1327,57 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
         return (
           <div className={`mb-4 bg-ink/40 border rounded-xl p-4 space-y-3 ${isExpensive ? 'border-rose/30' : 'border-accent/20'}`}>
             <p className="text-[10px] text-accent/60 uppercase tracking-wider font-bold">Cost Breakdown — {tierLabel}</p>
+
+            {/* ── Preflight Warnings Panel ── */}
+            {isPreflighting && (
+              <div className="bg-ink/40 border border-border/20 rounded-lg px-3 py-2 flex items-center gap-2">
+                <span className="w-3 h-3 border-2 border-bo border-t-transparent rounded-full animate-spin" />
+                <span className="text-[11px] text-muted/60">Checking query quality…</span>
+              </div>
+            )}
+            {!isPreflighting && preflightError && (
+              <div className="bg-accent/10 border border-accent/30 rounded-lg px-3 py-2">
+                <p className="text-[11px] text-accent font-bold">⚠ Preflight unavailable ({preflightError === 'timeout' ? 'timed out' : 'network error'})</p>
+                <p className="text-[10px] text-accent/60 mt-0.5">Proceed at your own risk — no warnings could be checked.</p>
+              </div>
+            )}
+            {!isPreflighting && preflight && preflight.warnings?.length > 0 && (
+              <div className="space-y-1.5">
+                {preflight.warnings.map((w, i) => {
+                  const style = {
+                    error: 'bg-rose/10 border-rose/30 text-rose',
+                    warn:  'bg-accent/10 border-accent/30 text-accent',
+                    info:  'bg-bo/10 border-bo/30 text-bo',
+                  }[w.severity] || 'bg-ink/40 border-border/25 text-muted';
+                  const icon = { error: '⛔', warn: '⚠', info: 'ℹ' }[w.severity] || '•';
+                  return (
+                    <div key={i} className={`border rounded-lg px-3 py-2 ${style}`}>
+                      <p className="text-[11px] font-bold">{icon} {w.message}</p>
+                      {w.fix && <p className="text-[10px] opacity-70 mt-0.5">→ {w.fix}</p>}
+                    </div>
+                  );
+                })}
+                {preflight.expected?.suggestedKeywords?.length > 0 && (
+                  <div className="bg-ink/40 border border-border/20 rounded-lg px-3 py-2">
+                    <p className="text-[10px] text-muted/60 mb-1.5">Suggested broader keywords:</p>
+                    <div className="flex flex-wrap gap-1.5 items-center">
+                      {preflight.expected.suggestedKeywords.map((kw, i) => (
+                        <span key={i} className="px-2 py-0.5 rounded-full bg-bo/10 border border-bo/25 text-[10px] text-bo">{kw}</span>
+                      ))}
+                      <button onClick={() => addSuggestedKeywords(preflight.expected.suggestedKeywords)}
+                        className="ml-1 px-2 py-0.5 rounded-md bg-bo/15 border border-bo/35 text-[10px] text-bo hover:bg-bo/25 font-bold">+ Add all</button>
+                    </div>
+                  </div>
+                )}
+                {preflight.warnings.some(w => w.severity === 'warn') && !preflight.warnings.some(w => w.severity === 'error') && (
+                  <label className="flex items-center gap-2 text-[10px] text-accent/80 cursor-pointer pt-1">
+                    <input type="checkbox" checked={ackWarnings} onChange={e => setAckWarnings(e.target.checked)} className="accent-amber-500" />
+                    I understand the warnings and want to proceed anyway.
+                  </label>
+                )}
+              </div>
+            )}
+
             {isExpensive && (
               <div className="bg-rose/10 border border-rose/25 rounded-lg px-3 py-2">
                 <p className="text-[11px] text-rose font-bold">⚠️ High cost search</p>
@@ -1304,13 +1425,27 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
               </div>
             </div>
             <div className="flex gap-2">
-              <button onClick={confirmAndScan} disabled={submitting || isScanning}
-                className={`flex-1 py-2 rounded-lg font-bold text-[11px] transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                  isExpensive ? 'bg-rose/15 border border-rose/30 text-rose hover:bg-rose/25' : 'bg-sm/15 border border-sm/30 text-sm hover:bg-sm/25'
-                }`}>
-                {submitting ? '⏳ Starting…' : (isExpensive ? '⚠️ Run Anyway' : '✓ Run Search')}
-              </button>
-              <button onClick={() => setShowCostConfirm(false)} disabled={submitting}
+              {(() => {
+                const hasError = preflight?.warnings?.some(w => w.severity === 'error');
+                const hasWarn  = preflight?.warnings?.some(w => w.severity === 'warn');
+                const blocked  = hasError || (hasWarn && !ackWarnings) || isPreflighting;
+                return (
+                  <button onClick={confirmAndScan} disabled={submitting || isScanning || blocked}
+                    className={`flex-1 py-2 rounded-lg font-bold text-[11px] transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                      hasError ? 'bg-rose/15 border border-rose/30 text-rose'
+                      : isExpensive ? 'bg-rose/15 border border-rose/30 text-rose hover:bg-rose/25'
+                      : 'bg-sm/15 border border-sm/30 text-sm hover:bg-sm/25'
+                    }`}>
+                    {submitting ? '⏳ Starting…'
+                      : isPreflighting ? '⏳ Checking…'
+                      : hasError ? '⛔ Fix errors to continue'
+                      : (hasWarn && !ackWarnings) ? '⚠ Acknowledge warnings to proceed'
+                      : isExpensive ? '⚠️ Run Anyway'
+                      : '✓ Run Search'}
+                  </button>
+                );
+              })()}
+              <button onClick={() => { setShowCostConfirm(false); setPreflight(null); setPreflightError(null); setAckWarnings(false); }} disabled={submitting}
                 className="px-4 py-2 rounded-lg border border-border/20 text-muted/40 text-[11px] disabled:opacity-40">
                 Cancel
               </button>

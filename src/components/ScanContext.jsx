@@ -593,23 +593,14 @@ export function ScanProvider({ children }) {
       } catch (e) { console.log('[SuperRecovery] Check failed:', e.message); }
     };
     recoverSuper();
-    // Re-check every 15s — catches scans that started AFTER mount or SSE drops mid-scan.
-    // CRITICAL: stop polling once the user has either dismissed results or seen a
-    // terminal state. Otherwise "ghost results" from a 60-min-old scan keep
-    // reappearing on every interval tick after the user cleared them.
-    const recoveredOnceRef = { current: false };
-    const periodicId = setInterval(() => {
-      // Only re-check if we don't already have a tracked scan (results or active fetch).
-      if (superAbortRef.current || superSearchResults) return;
-      // Don't auto-recover terminal states more than once per mount — if the user
-      // cleared/cancelled, respect that decision.
-      if (superSearchStatus && ['done', 'cancelled', 'error', 'interrupted'].includes(superSearchStatus.status)) return;
-      if (recoveredOnceRef.current && !superSearchStatus) return; // already attempted recovery, nothing changed
-      recoveredOnceRef.current = true;
-      recoverSuper();
-    }, 15000);
-    return () => clearInterval(periodicId);
-  }, [superSearchStatus, superSearchResults]);
+    // Mount-only recovery. The previous 15s periodic interval created an infinite
+    // loop with server-side `done` scans (60-min retention) — any UI flow that
+    // nulled status+results triggered re-recovery, re-set state, re-rendered,
+    // re-ran the effect, reset the (broken inline) guard ref. Result: 80+ logs
+    // of "[SuperRecovery] Recovered..." and constant re-renders.
+    // The active-scan branch installs its own 3s poll, and runSuperSearch's SSE
+    // stream handles tab-local scans, so the periodic recheck was redundant.
+  }, []);
 
   const runSuperSearch = useCallback(async (params) => {
     // Synchronous guard — protects against rapid double-clicks where React state
