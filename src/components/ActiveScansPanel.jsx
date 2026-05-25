@@ -139,6 +139,11 @@ function ScanCard({ scanId, scan, isMine }) {
           {tierMeta.emoji} {tierMeta.label}
         </span>
         <span className="text-[10px] text-bright/65 font-mono">{stageLabel}</span>
+        {scan.userId && (
+          <span className="text-[9px] px-1.5 py-0.5 rounded bg-bright/8 text-bright/70 border border-border/25 font-semibold capitalize">
+            {isMine ? `${scan.userId} (you)` : scan.userId}
+          </span>
+        )}
         {isMine && <span className="text-[9px] px-1.5 py-0.5 rounded bg-accent/12 text-accent/85 border border-accent/25 font-semibold ml-auto">YOURS</span>}
       </div>
 
@@ -206,13 +211,11 @@ export default function ActiveScansPanel() {
     return () => clearInterval(id);
   }, []);
 
-  const myScanId = (() => {
-    try {
-      // We don't have a great way to know "which scan is mine" without backend attribution.
-      // Heuristic: if the user has a scan currently tracked in localStorage, match by scanId.
-      // ScanContext stores active state in memory only, so this is best-effort.
-      return null;
-    } catch { return null; }
+  // Per-user ownership now lives on each scan via `scan.userId` (backend stamps it on
+  // creation). Compare to the current crm_user to surface a "YOURS" badge accurately.
+  const myUserId = (() => {
+    try { return (localStorage.getItem('crm_user') || '').trim().toLowerCase(); }
+    catch { return ''; }
   })();
 
   const activeCount = Object.keys(scans).length;
@@ -255,7 +258,7 @@ export default function ActiveScansPanel() {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         {Object.entries(scans).map(([scanId, scan]) => (
-          <ScanCard key={scanId} scanId={scanId} scan={scan} isMine={scanId === myScanId} />
+          <ScanCard key={scanId} scanId={scanId} scan={scan} isMine={!!myUserId && scan.userId === myUserId} />
         ))}
       </div>
       {recentDone.length > 0 && (

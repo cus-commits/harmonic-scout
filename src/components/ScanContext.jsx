@@ -530,8 +530,16 @@ export function ScanProvider({ children }) {
   // Recover super search status on mount/refresh
   useEffect(() => {
     const recoverSuper = async () => {
+      // Per-user recovery: only attach to scans this user owns. Without this,
+      // Jake opening /super would auto-attach to Mark's running scan.
+      const crmUser = (typeof window !== 'undefined' ? localStorage.getItem('crm_user') : '' || '').trim().toLowerCase();
+      if (!crmUser) {
+        console.log('[SuperRecovery] No crm_user set — skipping recovery (cannot determine scan ownership)');
+        return;
+      }
+      const statusUrl = `${API_BASE}/api/signals/super/status?userId=${encodeURIComponent(crmUser)}`;
       try {
-        const r = await fetch(`${API_BASE}/api/signals/super/status`);
+        const r = await fetch(statusUrl, { headers: { 'x-user-id': crmUser } });
         if (!r.ok) return;
         const statuses = await r.json();
         const now = Date.now();
@@ -560,7 +568,7 @@ export function ScanProvider({ children }) {
             
             const pollInterval = setInterval(async () => {
               try {
-                const sr = await fetch(`${API_BASE}/api/signals/super/status`);
+                const sr = await fetch(statusUrl, { headers: { 'x-user-id': crmUser } });
                 if (!sr.ok) return;
                 const statuses2 = await sr.json();
                 const current = statuses2[scanId];
@@ -627,7 +635,7 @@ export function ScanProvider({ children }) {
 
     try {
       const anthropicKey = localStorage.getItem('scout_anthropic_key') || '';
-      const crmUser = localStorage.getItem('crm_user') || '';
+      const crmUser = (localStorage.getItem('crm_user') || '').trim().toLowerCase();
       const headers = { 'Content-Type': 'application/json' };
       if (anthropicKey) headers['x-anthropic-key'] = anthropicKey;
       if (crmUser) headers['x-user-id'] = crmUser;
@@ -635,7 +643,8 @@ export function ScanProvider({ children }) {
       const res = await fetch(`${API_BASE}/api/signals/super`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ ...params, scanId }),
+        // Body also carries userId so disk-persisted records survive proxy header stripping.
+        body: JSON.stringify({ ...params, scanId, userId: crmUser }),
         signal: controller.signal,
       });
 
@@ -724,10 +733,14 @@ export function ScanProvider({ children }) {
     // Tell the backend to actually stop the running scan (otherwise it just keeps running server-side)
     const scanId = superSearchStatus?.scanId;
     try {
+      const crmUser = (localStorage.getItem('crm_user') || '').trim().toLowerCase();
+      const headers = { 'Content-Type': 'application/json' };
+      if (crmUser) headers['x-user-id'] = crmUser;
       await fetch(`${API_BASE}/api/signals/super/cancel`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scanId }),
+        headers,
+        // userId in body too — backend refuses cross-user cancel unless ?force=true
+        body: JSON.stringify({ scanId, userId: crmUser }),
       });
     } catch (e) { /* best effort */ }
     // Abort the SSE stream from the frontend side
