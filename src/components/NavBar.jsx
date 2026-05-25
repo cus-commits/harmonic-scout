@@ -732,12 +732,13 @@ function GitHubIcon({ active }) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 function MobileBottomNav({ variant, navItems, isActive, handleNavClick, showHamburger, setShowHamburger, hamburgerRef, onSettingsClick, onAppsClick, navigate, location }) {
-  // Primary items always visible
+  // Primary items always visible — 4 of them, Home leftmost.
+  const home = navItems.find(i => i.id === 'home');
   const scan = navItems.find(i => i.id === 'scan');
   const search = navItems.find(i => i.id === 'search');
   const crm = navItems.find(i => i.id === 'crm');
   // Secondary items go in the hamburger sheet
-  const secondaryIds = ['home', 'dd', 'dms', 'favs', 'portcos', 'apps'];
+  const secondaryIds = ['dd', 'dms', 'favs', 'portcos', 'apps'];
   const secondary = secondaryIds.map(id => navItems.find(i => i.id === id)).filter(Boolean);
   const secondaryBadge = secondary.reduce((s, it) => s + (it.badge > 0 ? it.badge : 0), 0);
 
@@ -837,18 +838,22 @@ function MobileBottomNav({ variant, navItems, isActive, handleNavClick, showHamb
   }
 
   // ───────────── VARIANT 2: Floating glass pill + separate FAB hamburger ─────────────
+  // 4 primary items + hamburger. Layout calibrated to fit comfortably on iPhone SE (375pt):
+  //   outer px-2 (16) + pill[px-1.5 (12) + 4 buttons × (px-2 + ~36px content = 52) + 3 × gap-0.5 (6)]
+  //   + gap-1.5 (6) + FAB (40) = 282pt total → ~90pt breathing room on 375pt viewport.
   if (variant === 2) {
     return (
       <>
-        <div className="md:hidden flex items-center justify-center gap-2 px-3 pb-3 pt-1">
-          <div className="flex items-center gap-1 px-2 py-1.5 rounded-full border border-accent/20"
+        <div className="md:hidden flex items-center justify-center gap-1.5 px-2 pb-3 pt-1">
+          <div className="flex items-center gap-0.5 px-1.5 py-1.5 rounded-full border border-accent/20"
             style={{ background: 'rgba(46, 42, 37, 0.85)', backdropFilter: 'blur(20px)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
-            {primaryBtn(scan, 'px-3 py-0.5')}
-            {primaryBtn(search, 'px-3 py-0.5')}
-            {primaryBtn(crm, 'px-3 py-0.5')}
+            {primaryBtn(home, 'px-2 py-0.5')}
+            {primaryBtn(scan, 'px-2 py-0.5')}
+            {primaryBtn(search, 'px-2 py-0.5')}
+            {primaryBtn(crm, 'px-2 py-0.5')}
           </div>
           <button onClick={() => setShowHamburger(!showHamburger)}
-            className="relative w-11 h-11 rounded-full border border-accent/20 flex items-center justify-center text-muted hover:text-accent"
+            className="relative w-11 h-11 rounded-full border border-accent/20 flex items-center justify-center text-muted hover:text-accent flex-shrink-0"
             style={{ background: 'rgba(46, 42, 37, 0.85)', backdropFilter: 'blur(20px)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="6" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="18" r="1.5"/></svg>
             {secondaryBadge > 0 && (
