@@ -757,8 +757,10 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
   // Preflight state — checks query quality before user pays for a scan.
   const [preflight, setPreflight] = useState(null);          // {ok, warnings[], expected{}}
   const [isPreflighting, setIsPreflighting] = useState(false);
+  const [preflightStartedAt, setPreflightStartedAt] = useState(null);
   const [preflightError, setPreflightError] = useState(null); // 'timeout' | 'network' | null
   const [ackWarnings, setAckWarnings] = useState(false);
+  const [autoWidenOn, setAutoWidenOn] = useState(true);       // user toggle, defaults true when suggested
 
   // Sync context state to local display state
   const isScanning = superSearchStatus?.status === 'scanning';
@@ -906,6 +908,7 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
   // Call /api/signals/super/preflight to check query quality before the user pays.
   const runPreflight = async (overrideKeywords) => {
     setIsPreflighting(true);
+    setPreflightStartedAt(Date.now());
     setPreflightError(null);
     setPreflight(null);
     setAckWarnings(false);
@@ -921,12 +924,16 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
       });
       clearTimeout(timer);
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      setPreflight(await r.json());
+      const data = await r.json();
+      setPreflight(data);
+      // Default the auto-widen toggle to whatever the backend suggested
+      if (data?.expected?.autoWidenSuggested) setAutoWidenOn(true);
     } catch (e) {
       clearTimeout(timer);
       setPreflightError(e.name === 'AbortError' ? 'timeout' : 'network');
     } finally {
       setIsPreflighting(false);
+      setPreflightStartedAt(null);
     }
   };
 
@@ -938,6 +945,25 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
     // Re-run preflight with the new merged keywords passed explicitly (state isn't
     // committed yet when this runs).
     setTimeout(() => runPreflight(merged), 0);
+  };
+
+  // ── Severity ladder (Agent 1 + 2 spec) ──
+  const SEVERITY = {
+    critical: { rank: 0, cls: 'bg-rose/20 border-rose text-rose',          icon: '🚨', label: 'ALERT',    pulse: true  },
+    high:     { rank: 1, cls: 'bg-amber-500/15 border-amber-500/60 text-amber-400', icon: '⚠', label: 'WARNING',  pulse: false },
+    medium:   { rank: 2, cls: 'bg-accent/10 border-accent/40 text-accent', icon: '⚠', label: 'Notice',   pulse: false },
+    low:      { rank: 3, cls: 'bg-bo/10 border-bo/30 text-bo',             icon: 'ℹ', label: 'Heads up', pulse: false },
+    info:     { rank: 4, cls: 'bg-ink/40 border-border/25 text-muted',     icon: 'ℹ', label: 'FYI',      pulse: false },
+  };
+  // Back-compat: API still returns error|warn|info from older code paths
+  const normSev = (s) => ({ error: 'critical', warn: 'high' })[s] || s || 'info';
+  const signalHealth = (n) => {
+    if (n == null) return null;
+    if (n < 50)    return { cls: 'text-rose',   label: 'TOO FEW',  pulse: true  };
+    if (n < 200)   return { cls: 'text-amber-400', label: 'low',   pulse: false };
+    if (n < 500)   return { cls: 'text-accent', label: 'moderate', pulse: false };
+    if (n < 1000)  return { cls: 'text-muted',  label: 'ok',       pulse: false };
+    return         { cls: 'text-sm',     label: 'healthy',  pulse: false };
   };
 
   const handleScan = async () => {
@@ -979,7 +1005,7 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
       anchors.additionalInfo = additionalInfo.trim();
     }
 
-    const fullParams = { sectors, chains, sources, timeRange, minFollowers, minEngagement, stage, customKeywords, superTier, fundingFilter, ...anchors };
+    const fullParams = { sectors, chains, sources, timeRange, minFollowers, minEngagement, stage, customKeywords, superTier, fundingFilter, optedIntoWiden: autoWidenOn, ...anchors };
 
     // Identical-params re-run within 60s — silently block (the native confirm() dialog
     // looked like a "glitch" to users). A console hint is enough; the user can just
@@ -1330,9 +1356,11 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
 
             {/* ── Preflight Warnings Panel ── */}
             {isPreflighting && (
-              <div className="bg-ink/40 border border-border/20 rounded-lg px-3 py-2 flex items-center gap-2">
+              <div className="bg-ink/40 border border-bo/25 rounded-lg px-3 py-2 flex items-center gap-2">
                 <span className="w-3 h-3 border-2 border-bo border-t-transparent rounded-full animate-spin" />
-                <span className="text-[11px] text-muted/60">Checking query quality…</span>
+                <span className="text-[11px] text-bo">
+                  Validating query: {baselines.length + portfolioSelected.length} anchor{baselines.length + portfolioSelected.length === 1 ? '' : 's'}, {sources.length} source{sources.length === 1 ? '' : 's'}, {sectors.length || 0} sector{sectors.length === 1 ? '' : 's'}…
+                </span>
               </div>
             )}
             {!isPreflighting && preflightError && (
@@ -1341,42 +1369,96 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
                 <p className="text-[10px] text-accent/60 mt-0.5">Proceed at your own risk — no warnings could be checked.</p>
               </div>
             )}
-            {!isPreflighting && preflight && preflight.warnings?.length > 0 && (
-              <div className="space-y-1.5">
-                {preflight.warnings.map((w, i) => {
-                  const style = {
-                    error: 'bg-rose/10 border-rose/30 text-rose',
-                    warn:  'bg-accent/10 border-accent/30 text-accent',
-                    info:  'bg-bo/10 border-bo/30 text-bo',
-                  }[w.severity] || 'bg-ink/40 border-border/25 text-muted';
-                  const icon = { error: '⛔', warn: '⚠', info: 'ℹ' }[w.severity] || '•';
-                  return (
-                    <div key={i} className={`border rounded-lg px-3 py-2 ${style}`}>
-                      <p className="text-[11px] font-bold">{icon} {w.message}</p>
-                      {w.fix && <p className="text-[10px] opacity-70 mt-0.5">→ {w.fix}</p>}
+            {!isPreflighting && preflight && (preflight.warnings?.length > 0 || preflight.expected) && (() => {
+              const sortedW = [...(preflight.warnings || [])].sort(
+                (a, b) => (SEVERITY[normSev(a.severity)]?.rank ?? 99) - (SEVERITY[normSev(b.severity)]?.rank ?? 99)
+              );
+              const exp = preflight.expected || {};
+              const expSignals = exp.estimatedSignals;
+              const firing = exp.firingSources || exp.sourcesLikelyToFire || [];
+              const empty = exp.emptySources || (exp.sourcesLikelyEmpty || []).map(e => typeof e === 'string' ? e : `${e.source} (${e.reason})`);
+              const health = signalHealth(expSignals);
+              return (
+                <div className="space-y-1.5">
+                  {/* Expected results HEADLINE */}
+                  {expSignals != null && health && (
+                    <div className="bg-ink/60 border border-border/30 rounded-lg px-3 py-2.5">
+                      <div className="flex items-baseline gap-2">
+                        <span className={`text-2xl font-extrabold tabular-nums ${health.cls} ${health.pulse ? 'animate-pulse' : ''}`}>
+                          {expSignals.toLocaleString()}
+                        </span>
+                        <span className="text-[10px] text-muted/60 uppercase tracking-wider">signals expected · {health.label}</span>
+                        <span className="ml-auto text-[10px] text-muted/40">~${exp.estimatedCostUsd}</span>
+                      </div>
+                      {(firing.length > 0 || empty.length > 0) && (
+                        <div className="mt-1.5 space-y-0.5 text-[10px]">
+                          {firing.length > 0 && <p className="text-sm/80"><span className="text-muted/40">{firing.length} firing:</span> {firing.join(', ')}</p>}
+                          {empty.length > 0 && <p className="text-rose/70"><span className="text-muted/40">{empty.length} empty:</span> {empty.join(', ')}</p>}
+                        </div>
+                      )}
                     </div>
-                  );
-                })}
-                {preflight.expected?.suggestedKeywords?.length > 0 && (
-                  <div className="bg-ink/40 border border-border/20 rounded-lg px-3 py-2">
-                    <p className="text-[10px] text-muted/60 mb-1.5">Suggested broader keywords:</p>
-                    <div className="flex flex-wrap gap-1.5 items-center">
-                      {preflight.expected.suggestedKeywords.map((kw, i) => (
-                        <span key={i} className="px-2 py-0.5 rounded-full bg-bo/10 border border-bo/25 text-[10px] text-bo">{kw}</span>
-                      ))}
-                      <button onClick={() => addSuggestedKeywords(preflight.expected.suggestedKeywords)}
-                        className="ml-1 px-2 py-0.5 rounded-md bg-bo/15 border border-bo/35 text-[10px] text-bo hover:bg-bo/25 font-bold">+ Add all</button>
+                  )}
+
+                  {/* Sorted severity banners */}
+                  {sortedW.map((w, i) => {
+                    const sev = normSev(w.severity);
+                    const S = SEVERITY[sev] || SEVERITY.info;
+                    return (
+                      <div key={i} className={`border rounded-lg px-3 py-2 ${S.cls} ${S.pulse ? 'border-2' : ''}`}>
+                        <p className="text-[11px] font-bold flex items-center gap-1.5 flex-wrap">
+                          <span className={S.pulse ? 'animate-pulse text-base' : ''}>{S.icon}</span>
+                          <span className="uppercase tracking-wider text-[9px] opacity-70">{S.label}</span>
+                          <span>· {w.message}</span>
+                        </p>
+                        {w.fix && <p className="text-[10px] opacity-75 mt-0.5">→ {w.fix}</p>}
+                      </div>
+                    );
+                  })}
+
+                  {/* Auto-widen toggle (when suggested) */}
+                  {exp.autoWidenSuggested && (
+                    <div className="bg-bo/8 border border-bo/25 rounded-lg px-3 py-2">
+                      <label className="flex items-start gap-2 cursor-pointer">
+                        <input type="checkbox" checked={autoWidenOn} onChange={e => setAutoWidenOn(e.target.checked)}
+                          className="mt-0.5 accent-bo" />
+                        <div className="flex-1">
+                          <p className="text-[11px] font-bold text-bo">🔄 Auto-widen if Harmonic returns thin (recommended)</p>
+                          <p className="text-[10px] text-bo/70 mt-0.5">{exp.autoWidenExplanation}</p>
+                        </div>
+                      </label>
                     </div>
-                  </div>
-                )}
-                {preflight.warnings.some(w => w.severity === 'warn') && !preflight.warnings.some(w => w.severity === 'error') && (
-                  <label className="flex items-center gap-2 text-[10px] text-accent/80 cursor-pointer pt-1">
-                    <input type="checkbox" checked={ackWarnings} onChange={e => setAckWarnings(e.target.checked)} className="accent-amber-500" />
-                    I understand the warnings and want to proceed anyway.
-                  </label>
-                )}
-              </div>
-            )}
+                  )}
+
+                  {/* Suggested keywords */}
+                  {exp.suggestedKeywords?.length > 0 && (
+                    <div className="bg-ink/40 border border-border/20 rounded-lg px-3 py-2">
+                      <p className="text-[10px] text-muted/60 mb-1.5">Suggested broader keywords:</p>
+                      <div className="flex flex-wrap gap-1.5 items-center">
+                        {exp.suggestedKeywords.map((kw, i) => (
+                          <span key={i} className="px-2 py-0.5 rounded-full bg-bo/10 border border-bo/25 text-[10px] text-bo">{kw}</span>
+                        ))}
+                        <button onClick={() => addSuggestedKeywords(exp.suggestedKeywords)}
+                          className="ml-1 px-2 py-0.5 rounded-md bg-bo/15 border border-bo/35 text-[10px] text-bo hover:bg-bo/25 font-bold">+ Add all</button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Ack checkbox for high/medium (critical doesn't need it — button is loud enough) */}
+                  {(() => {
+                    const sevSet = new Set(sortedW.map(w => normSev(w.severity)));
+                    if ((sevSet.has('high') || sevSet.has('medium')) && !sevSet.has('critical')) {
+                      return (
+                        <label className={`flex items-center gap-2 text-[10px] cursor-pointer pt-1 ${sevSet.has('high') ? 'text-amber-400' : 'text-accent/80'}`}>
+                          <input type="checkbox" checked={ackWarnings} onChange={e => setAckWarnings(e.target.checked)} className="accent-amber-500" />
+                          I understand the {sevSet.has('high') ? 'warnings' : 'notices'} and want to proceed anyway.
+                        </label>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
+              );
+            })()}
 
             {isExpensive && (
               <div className="bg-rose/10 border border-rose/25 rounded-lg px-3 py-2">
@@ -1426,22 +1508,30 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
             </div>
             <div className="flex gap-2">
               {(() => {
-                const hasError = preflight?.warnings?.some(w => w.severity === 'error');
-                const hasWarn  = preflight?.warnings?.some(w => w.severity === 'warn');
-                const blocked  = hasError || (hasWarn && !ackWarnings) || isPreflighting;
+                const sevSet = new Set((preflight?.warnings || []).map(w => normSev(w.severity)));
+                const hasCritical = sevSet.has('critical');
+                const hasHigh = sevSet.has('high');
+                const hasMedium = sevSet.has('medium');
+                const needsAck = (hasHigh || hasMedium) && !ackWarnings;
+                const blocked = needsAck || isPreflighting;
+                const btnCls = hasCritical
+                  ? 'bg-rose/25 border-2 border-rose text-rose hover:bg-rose/35 animate-pulse'
+                  : hasHigh ? 'bg-amber-500/15 border border-amber-500/50 text-amber-400 hover:bg-amber-500/25'
+                  : hasMedium ? 'bg-accent/15 border border-accent/40 text-accent hover:bg-accent/25'
+                  : isExpensive ? 'bg-rose/15 border border-rose/30 text-rose hover:bg-rose/25'
+                  : 'bg-sm/15 border border-sm/30 text-sm hover:bg-sm/25';
+                const label = submitting ? '⏳ Starting…'
+                  : isPreflighting ? '⏳ Validating…'
+                  : hasCritical ? '🚨 Run Anyway (high risk of empty results)'
+                  : needsAck ? `⚠ Acknowledge ${hasHigh ? 'warnings' : 'notices'} to proceed`
+                  : hasHigh ? '⚠ Run Anyway'
+                  : hasMedium ? '⚠ Run with notices'
+                  : isExpensive ? '⚠️ Run Anyway'
+                  : '✓ Run Search';
                 return (
                   <button onClick={confirmAndScan} disabled={submitting || isScanning || blocked}
-                    className={`flex-1 py-2 rounded-lg font-bold text-[11px] transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-                      hasError ? 'bg-rose/15 border border-rose/30 text-rose'
-                      : isExpensive ? 'bg-rose/15 border border-rose/30 text-rose hover:bg-rose/25'
-                      : 'bg-sm/15 border border-sm/30 text-sm hover:bg-sm/25'
-                    }`}>
-                    {submitting ? '⏳ Starting…'
-                      : isPreflighting ? '⏳ Checking…'
-                      : hasError ? '⛔ Fix errors to continue'
-                      : (hasWarn && !ackWarnings) ? '⚠ Acknowledge warnings to proceed'
-                      : isExpensive ? '⚠️ Run Anyway'
-                      : '✓ Run Search'}
+                    className={`flex-1 py-2 rounded-lg font-bold text-[11px] transition-all disabled:opacity-50 disabled:cursor-not-allowed ${btnCls}`}>
+                    {label}
                   </button>
                 );
               })()}
