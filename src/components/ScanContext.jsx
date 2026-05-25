@@ -552,8 +552,11 @@ export function ScanProvider({ children }) {
             }
           } else if (s.status === 'scanning' && s.progress && s.startedAt && (now - s.startedAt) < 35 * 60 * 1000) {
             // Active scan — reconnect via polling (window extended to 35 min for Extreme tier)
-            console.log(`[SuperRecovery] Reconnecting to active super search: "${s.progress}"`);
-            setSuperSearchStatus({ status: 'scanning', progress: s.progress, stage: s.stage, startedAt: s.startedAt, scanId, recovered: true });
+            console.log(`[SuperRecovery] Reconnecting to active super search: "${s.progress}" (tier: ${s.tier || 'unknown'})`);
+            // Include `tier` in the recovered status so SuperSearchPage can restore its
+            // ETA calculation. Without this, the page's local `superTier` useState resets
+            // to its default and ETA computes against the wrong tier ceiling.
+            setSuperSearchStatus({ status: 'scanning', progress: s.progress, stage: s.stage, startedAt: s.startedAt, scanId, recovered: true, tier: s.tier || null });
             
             const pollInterval = setInterval(async () => {
               try {

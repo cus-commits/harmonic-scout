@@ -769,6 +769,18 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
   const displayProgress = isScanning ? (superSearchStatus?.progress || 'Scanning...') : '';
   const displayStage = isScanning ? superSearchStatus?.stage : null;
   const displayStartTime = isScanning ? superSearchStatus?.startedAt : null;
+
+  // When the page reloads mid-scan, recoverSuper reconnects with the original tier
+  // from the server-persisted state. Sync that back into the local `superTier` state
+  // so the ETA display uses the right tier ceiling. Without this, ETA shows "0 min"
+  // for any recovered scan whose elapsed > 5 min (the opus20 default).
+  useEffect(() => {
+    const recoveredTier = superSearchStatus?.tier;
+    if (isScanning && recoveredTier && recoveredTier !== superTier) {
+      console.log(`[SuperSearchPage] Restoring superTier from recovered scan: ${recoveredTier}`);
+      setSuperTier(recoveredTier);
+    }
+  }, [superSearchStatus?.tier, isScanning]);
   const [filterSource, setFilterSource] = useState('all');
   const [filterSignal, setFilterSignal] = useState('all');
 
@@ -1633,12 +1645,23 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
         const groupOrder = ['import', 'filter', 'score', 'done'];
         const currentIdx = groupOrder.indexOf(stageGroup);
 
-        // Tier-based ETA (total minutes), then subtract elapsed
+        // Tier-based ETA (total minutes), then subtract elapsed.
+        // When elapsed > tier ceiling (long-running or recovered-but-tier-unknown scan),
+        // show a soft "running long" message instead of stale "0 min" or negative time.
         const tierEta = { haiku: 1.5, sonnet: 3, opus20: 5, opus80: 12, extreme: 20 };
         const totalMin = tierEta[superTier] || 5;
         const elapsedMin = displayStartTime ? (Date.now() - displayStartTime) / 60000 : 0;
-        const remainMin = Math.max(0, totalMin - elapsedMin);
-        const etaText = remainMin < 1 ? `<1 min` : remainMin < 2 ? `~1-2 min` : `~${Math.ceil(remainMin)} min`;
+        const remainMin = totalMin - elapsedMin;
+        const tierKnown = !!superSearchStatus?.tier || !superSearchStatus?.recovered;
+        const etaText = !tierKnown
+          ? '~? min (recovered)'
+          : remainMin <= 0
+            ? `running long (>${Math.floor(elapsedMin)} min)`
+            : remainMin < 1
+              ? `<1 min`
+              : remainMin < 2
+                ? `~1-2 min`
+                : `~${Math.ceil(remainMin)} min`;
 
         // Tier-based cost label (matches the cost confirmation modal range)
         const tierCost = { haiku: '~$0.05', sonnet: '~$0.20', opus20: '~$0.60', opus80: '~$3.50', extreme: '~$12' };
