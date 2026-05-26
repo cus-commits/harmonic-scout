@@ -459,7 +459,9 @@ function MeritCompanyCard({ signal, addFavorite, isFavorited }) {
   const modifierTotal = typeof m.modifier_total === 'number' ? m.modifier_total : 0;
   const finalTone = finalScore >= 8 ? 'sm' : finalScore >= 6.5 ? 'accent' : finalScore >= 4.5 ? 'bo' : 'muted';
   const saved = isFavorited && isFavorited(signal.companyName || signal.title);
-  const company = { name: signal.companyName || signal.title, website: meta.website || signal.url };
+  // Never pass signal.url as website — signal.url is the source POST URL (tweet/cast/etc.),
+  // not the company domain. Let the backend's Harmonic enrichment populate the real domain.
+  const company = { name: signal.companyName || signal.title, website: meta.website || '' };
 
   return (
     <div className={`bg-surface/40 backdrop-blur-sm border rounded-xl p-3.5 space-y-2.5 transition-all border-${finalTone}/25 shadow-[0_0_12px_rgba(0,0,0,0.05)]`}>
@@ -662,7 +664,7 @@ function SignalCard({ signal, addFavorite, isFavorited }) {
             ↗ {signal.url.replace(/^https?:\/\//, '').slice(0, 45)}
           </a>
         )}
-        {(signal.companyName || signal.source === 'harmonic') && <div className="flex items-center gap-1.5 flex-wrap">{signal.source === 'harmonic' && signal.id && <a href={`/company/${signal.id.replace('hm-','')}`} className="h-pill" title="Company Card">H</a>}<FindSimilar addFavorite={addFavorite} isFavorited={isFavorited} companyId={signal.id?.replace('hm-','')} companyName={signal.companyName || signal.title} /><CrmButton company={{ name: signal.companyName || signal.title, website: signal.url }} /></div>}
+        {(signal.companyName || signal.source === 'harmonic') && <div className="flex items-center gap-1.5 flex-wrap">{signal.source === 'harmonic' && signal.id && <a href={`/company/${signal.id.replace('hm-','')}`} className="h-pill" title="Company Card">H</a>}<FindSimilar addFavorite={addFavorite} isFavorited={isFavorited} companyId={signal.id?.replace('hm-','')} companyName={signal.companyName || signal.title} /><CrmButton company={{ name: signal.companyName || signal.title, website: signal.meta?.website || (signal.source === 'harmonic' ? signal.url : '') }} /></div>}
       </div>
     </div>
   );

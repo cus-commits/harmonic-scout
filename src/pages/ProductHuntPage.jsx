@@ -75,7 +75,7 @@ function PostCard({ post, addFavorite, isFavorited }) {
       })()}
       <div className="flex items-center gap-1.5 flex-wrap">
         <FindSimilar addFavorite={addFavorite} isFavorited={isFavorited} companyName={post.companyName || post.title} />
-        <CrmButton company={{ name: post.companyName || post.title, website: post.meta?.website || post.url }} />
+        <CrmButton company={{ name: post.companyName || post.title, website: post.meta?.website || '' }} />
         <RemoveMenu company={{ name: post.companyName || post.title, website: post.meta?.website || '', harmonic_id: post.meta?.id || null }} />
       </div>
     </div>
