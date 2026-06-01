@@ -17,6 +17,56 @@ function moneyFmt(n) {
   return `$${n}`;
 }
 
+// Build a clean pasteable string for a list of company cards.
+// Two lines per company: meta row + description. Blank line between.
+function formatForCopy(companies, targetName) {
+  const lines = [];
+  if (targetName) lines.push(`Similar to ${targetName} (${companies.length})`, '');
+  for (const c of companies || []) {
+    const name = c.name || '?';
+    const _raw = c.website;
+    const web = (typeof _raw === 'object' && _raw) ? (_raw.url || _raw.domain || '') : (typeof _raw === 'string' ? _raw : '');
+    const domain = web ? web.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '') : '';
+    const funding = moneyFmt(c.funding_total || null);
+    const stage = c.funding_stage ? String(c.funding_stage).replace(/_/g, ' ') : '';
+    const hc = c.headcount ? `${c.headcount} people` : '';
+    const loc = typeof c.location === 'string' ? c.location : '';
+    const metaParts = [name, domain, stage, funding, hc, loc].filter(Boolean);
+    lines.push(metaParts.join(' · '));
+    const desc = (c.description || '').replace(/\s+/g, ' ').trim();
+    if (desc) lines.push(desc.length > 220 ? desc.slice(0, 217) + '...' : desc);
+    lines.push('');
+  }
+  return lines.join('\n').trim();
+}
+
+function CopyButton({ companies, targetName }) {
+  const [copied, setCopied] = useState(false);
+  const onClick = async (e) => {
+    e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(formatForCopy(companies, targetName));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch (_) {
+      // Fallback for older browsers / no permission
+      const ta = document.createElement('textarea');
+      ta.value = formatForCopy(companies, targetName);
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch {}
+      document.body.removeChild(ta);
+    }
+  };
+  return (
+    <button onClick={onClick} title="Copy all as text"
+      className={`text-[10px] px-2 py-1 rounded-md border font-medium transition-all flex items-center gap-1 flex-shrink-0 ${
+        copied ? 'bg-bo/15 border-bo/30 text-bo' : 'bg-boro/8 border-boro/20 text-boro/70 hover:border-boro/40 hover:text-boro'
+      }`}>
+      {copied ? '✓ Copied' : '📋 Copy'}
+    </button>
+  );
+}
+
 function CompanyMiniCard({ company, addFavorite, isFavorited }) {
   const name = company.name || '?';
   const desc = (company.description || '').slice(0, 140);
@@ -184,9 +234,12 @@ function LiveSearch({ addFavorite, isFavorited }) {
         const remaining = similarResults.length - visibleCount;
         return (
         <div className="space-y-1">
-          <p className="text-[9px] text-boro/40 uppercase tracking-wider font-bold">
-            Showing {visible.length} of {similarResults.length} similar to {selectedCompany?.name}
-          </p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[9px] text-boro/40 uppercase tracking-wider font-bold">
+              Showing {visible.length} of {similarResults.length} similar to {selectedCompany?.name}
+            </p>
+            <CopyButton companies={similarResults} targetName={selectedCompany?.name} />
+          </div>
           <DeepSearchButton company={selectedCompany} />
           <div className="space-y-0.5 max-h-[400px] overflow-y-auto">
             {visible.map((c, i) => (
@@ -268,9 +321,12 @@ export default function FindSimilar({ companyId, companyName, addFavorite, isFav
             <p className="text-boro/40 text-[10px]">No similar companies found</p>
           ) : (
             <>
-              <p className="text-[9px] text-boro/40 uppercase tracking-wider font-bold">
-                Showing {visibleResults.length} of {results.length} similar to {companyName}
-              </p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[9px] text-boro/40 uppercase tracking-wider font-bold">
+                  Showing {visibleResults.length} of {results.length} similar to {companyName}
+                </p>
+                <CopyButton companies={results} targetName={companyName} />
+              </div>
               <DeepSearchButton company={{ name: companyName, id: companyId }} />
               <div className="space-y-0.5 max-h-[500px] overflow-y-auto">
                 {visibleResults.map((c, i) => (
