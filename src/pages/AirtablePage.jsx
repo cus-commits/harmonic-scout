@@ -991,7 +991,7 @@ export default function AirtablePage() {
                       {hd?.harmonic_id && (
                         <a href={`/company/${hd.harmonic_id}`} className="h-pill" title="Company Card">H</a>
                       )}
-                      <FindSimilar companyName={c.company} companyId={null} />
+                      <FindSimilar companyName={c.company} companyId={c.harmonic_id || hd?.harmonic_id || null} />
                       {enrichAvailable[c.company] && <button onClick={() => handleEnrich(c)} disabled={enriching === c.company} className="text-[9px] text-amber-400 font-bold animate-pulse">⚡</button>}
                       <div className="ml-auto flex items-center gap-1.5 md:gap-3">
                         <button onClick={() => { setNoteModal({ company: c.company, existing: c.notes || '' }); setNoteText(''); }}
