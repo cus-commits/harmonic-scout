@@ -724,7 +724,7 @@ export default function AirtablePage() {
 
       {/* Search */}
       <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-        placeholder="Filter…"
+        placeholder={search ? `Searching ${filtered.length} across BO · BORO · SM · Warm` : 'Search CRM — across all stages (BO · BORO · SM · Warm)…'}
         className="input-base text-xs mb-3" />
 
       {/* Table */}
@@ -875,7 +875,14 @@ export default function AirtablePage() {
               const twitterWarn = ta && ta.days_since !== null && ta.days_since > 10;
 
               return (
-                <div key={c.airtable_id || i} className="rounded-[14px] border border-border/[0.06] hover:border-accent/18 transition-all relative shadow-sm hover:shadow-md" style={{ background: 'rgba(46, 42, 37, 0.55)' }}>
+                <div key={c.airtable_id || i} className={`rounded-[14px] border border-border/[0.06] hover:border-accent/18 transition-all relative shadow-sm hover:shadow-md border-l-4 ${
+                  c.crm_stage === 'BO' ? 'border-l-bo'
+                  : c.crm_stage === 'BORO' ? 'border-l-boro'
+                  : c.crm_stage === 'BORO-SM' ? 'border-l-sm'
+                  : c.crm_stage === 'Warm' ? 'border-l-amber-500'
+                  : c.crm_stage === 'Backburn' ? 'border-l-rose-500'
+                  : 'border-l-border/20'
+                }`} style={{ background: 'rgba(46, 42, 37, 0.55)' }}>
                   <button
                     onClick={async (e) => {
                       e.stopPropagation();
@@ -1034,7 +1041,14 @@ export default function AirtablePage() {
                         <button onClick={() => { setNoteModal({ company: c.company, existing: c.notes || '' }); setNoteText(''); }}
                           className="text-[10px] opacity-30 hover:opacity-60" title="Add note">📝</button>
                         <select value={c.crm_stage} onChange={(e) => handleStageChange(c, e.target.value)} disabled={changingStage === c.company}
-                          className="text-[9px] bg-transparent border border-border/30 rounded px-1.5 py-0.5 text-muted/50 outline-none cursor-pointer hover:border-accent/20">
+                          className={`text-[10px] font-bold rounded-md px-2 py-0.5 outline-none cursor-pointer border transition-colors ${
+                            c.crm_stage === 'BO' ? 'bg-bo/15 text-bo border-bo/30 hover:bg-bo/25'
+                            : c.crm_stage === 'BORO' ? 'bg-boro/15 text-boro border-boro/30 hover:bg-boro/25'
+                            : c.crm_stage === 'BORO-SM' ? 'bg-sm/15 text-sm border-sm/30 hover:bg-sm/25'
+                            : c.crm_stage === 'Warm' ? 'bg-amber-500/15 text-amber-400 border-amber-500/30 hover:bg-amber-500/25'
+                            : c.crm_stage === 'Backburn' ? 'bg-rose-500/15 text-rose-400 border-rose-500/30 hover:bg-rose-500/25'
+                            : 'bg-transparent text-muted/50 border-border/30 hover:border-accent/20'
+                          }`}>
                           <option value="BO">BO</option>
                           <option value="BORO">BORO</option>
                           <option value="BORO-SM">SM</option>
