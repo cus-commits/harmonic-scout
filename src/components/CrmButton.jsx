@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useCrmIndex, lookupCrmStage } from '../hooks/useCrmIndex';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://pigeon-api.up.railway.app';
 const CRM_STAGES = ['BO', 'BORO', 'BORO-SM', 'Backburn'];
@@ -111,6 +112,13 @@ export function CrmButton({ company }) {
   const user = getCrmUser();
   const isRestricted = RESTRICTED.includes(user);
 
+  // Cross-workflow CRM stage badge: every card shows the stage if the company
+  // is already in Airtable (any stage). Local `result` always wins because it
+  // reflects an action the user just performed in THIS session.
+  const crmIdx = useCrmIndex();
+  const existingStage = lookupCrmStage(crmIdx, company);
+  const displayStage = result?.stage || existingStage || null;
+
   useEffect(() => {
     const handler = (e) => {
       // Close only if click is outside BOTH the trigger button and the portaled dropdown
@@ -185,23 +193,26 @@ export function CrmButton({ company }) {
     'BO': 'bg-bo/15 text-bo border-bo/25 hover:bg-bo/25',
     'BORO': 'bg-boro/15 text-boro border-boro/25 hover:bg-boro/25',
     'BORO-SM': 'bg-sm/15 text-sm border-sm/25 hover:bg-sm/25',
+    'Warm': 'bg-amber-500/15 text-amber-400 border-amber-500/25 hover:bg-amber-500/25',
     'Backburn': 'bg-rose/10 text-rose/60 border-rose/15 hover:bg-rose/20',
   };
+  // Shorthand label so "BORO-SM" doesn't get truncated on tight rows
+  const stageLabel = (s) => s === 'BORO-SM' ? 'SM' : s === 'Backburn' ? 'Burn' : s;
+  const buttonClass = displayStage
+    ? `${stageColors[displayStage] || 'bg-accent/12 border-accent/25 text-accent'}`
+    : isRestricted ? 'bg-muted/6 border-muted/10 text-muted/30 cursor-not-allowed'
+    : !user ? 'bg-muted/6 border-muted/15 text-muted/40'
+    : 'bg-accent/6 border-accent/15 text-accent/60 hover:border-accent/30 hover:text-accent';
 
   return (
     <div ref={ref} className="relative inline-flex" style={{ zIndex: open ? 90 : 'auto' }}>
       <Confetti active={showConfetti} onDone={() => setShowConfetti(false)} />
 
-      <button onClick={handleClick}
-        className={`text-[9px] px-2 py-0.5 rounded-md border transition-all font-medium ${
-          result?.stage ? 'bg-sm/12 border-sm/25 text-sm'
-          : isRestricted ? 'bg-muted/6 border-muted/10 text-muted/30 cursor-not-allowed'
-          : !user ? 'bg-muted/6 border-muted/15 text-muted/40'
-          : 'bg-accent/6 border-accent/15 text-accent/60 hover:border-accent/30 hover:text-accent'
-        }`}>
+      <button onClick={handleClick} title={existingStage ? `Already in CRM: ${existingStage}` : 'Add to CRM'}
+        className={`text-[9px] px-2 py-0.5 rounded-md border transition-all font-medium ${buttonClass}`}>
         {loading ? (
           <span className="flex items-center gap-1"><span className="w-2 h-2 border border-accent border-t-transparent rounded-full animate-spin" /> Saving...</span>
-        ) : result?.stage ? `✓ ${result.stage}` : (
+        ) : displayStage ? `✓ ${stageLabel(displayStage)}` : (
           <span className="flex items-center gap-1">
             <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12.07 1.63L21.3 5.73c.55.24.55.64 0 .89L12.07 10.7c-.37.16-.77.16-1.14 0L1.7 6.62c-.55-.25-.55-.65 0-.89l9.23-4.1c.37-.16.77-.16 1.14 0zM22.3 10.3l-2.07-.92-7.1 3.15c-.37.17-.77.17-1.14 0l-7.1-3.15-2.07.92c-.55.24-.55.64 0 .89l9.23 4.08c.37.17.77.17 1.14 0l9.23-4.08c.55-.25.55-.65 0-.89zm0 4.58l-2.07-.92-7.1 3.15c-.37.17-.77.17-1.14 0l-7.1-3.15-2.07.92c-.55.24-.55.64 0 .89l9.23 4.08c.37.17.77.17 1.14 0l9.23-4.08c.55-.25.55-.65 0-.89z"/></svg>
             CRM

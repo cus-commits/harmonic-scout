@@ -98,6 +98,9 @@ export default function AirtablePage() {
   const [pwError, setPwError] = useState(false);
 
   const [companies, setCompanies] = useState([]);
+  // All-stage union for cross-stage filter search (BO + BORO + BORO-SM + Warm).
+  // Backburn intentionally excluded — too large + rarely filtered to.
+  const [allStageCompanies, setAllStageCompanies] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeStage, setActiveStage] = useState('BO');
   const [enriching, setEnriching] = useState(null);
@@ -290,6 +293,27 @@ export default function AirtablePage() {
   const silentRefresh = () => fetchCompanies(activeStage, true);
 
   useEffect(() => { fetchCompanies(activeStage); }, [activeStage]);
+
+  // Load the full pipeline (BO + BORO + BORO-SM + Warm) once on mount so the
+  // filter input can search across all stages without per-keystroke fetches.
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const r = await fetch(`${API_BASE}/api/airtable/companies?stage=BO,BORO,BORO-SM,Warm&limit=1000`);
+        const data = await r.json();
+        if (alive) setAllStageCompanies((data.companies || []).filter(c => c.company && c.company.trim()));
+      } catch (e) { console.error('all-stage fetch error:', e); }
+    })();
+    const onUpdated = () => {
+      fetch(`${API_BASE}/api/airtable/companies?stage=BO,BORO,BORO-SM,Warm&limit=1000`)
+        .then(r => r.json())
+        .then(data => alive && setAllStageCompanies((data.companies || []).filter(c => c.company && c.company.trim())))
+        .catch(() => {});
+    };
+    window.addEventListener('crm-updated', onUpdated);
+    return () => { alive = false; window.removeEventListener('crm-updated', onUpdated); };
+  }, []);
 
   // Serena notification: fetch missing reachouts on CRM load
   useEffect(() => {
@@ -512,9 +536,22 @@ export default function AirtablePage() {
     'Sector': '📂 Sector',
   };
 
-  const filtered = search
-    ? companies.filter(c => (c.company || '').toLowerCase().includes(search.toLowerCase()))
-    : companies;
+  // When the user types a filter, search the FULL pipeline (BO+BORO+BORO-SM+Warm)
+  // not just the active stage. Dedupe by airtable_id in case a company shows up in
+  // both companies and allStageCompanies (e.g. after a stage change).
+  const filtered = (() => {
+    if (!search) return companies;
+    const q = search.toLowerCase();
+    const seen = new Set();
+    const pool = allStageCompanies.length ? allStageCompanies : companies;
+    const out = [];
+    for (const c of pool) {
+      const id = c.airtable_id || c.company;
+      if (seen.has(id)) continue;
+      if ((c.company || '').toLowerCase().includes(q)) { out.push(c); seen.add(id); }
+    }
+    return out;
+  })();
 
   const stageCounts = {};
   companies.forEach(c => { stageCounts[c.crm_stage] = (stageCounts[c.crm_stage] || 0) + 1; });
