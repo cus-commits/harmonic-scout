@@ -300,7 +300,7 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
   const isActive = (item) => {
     if (item.id === 'home') return location.pathname === '/';
     if (item.id === 'search') return showSearch || location.pathname === '/chat';
-    if (item.id === 'scan') return showScanMenu || ['/super', '/searchagent', '/recurring'].includes(location.pathname);
+    if (item.id === 'scan') return showScanMenu || ['/super', '/searchagent', '/recurring'].includes(location.pathname) || location.pathname.startsWith('/weekly');
     if (item.id === 'apps') return showApps || ['/chat', '/twitter', '/farcaster', '/producthunt', '/github'].includes(location.pathname);
     if (item.path) return location.pathname === item.path;
     return false;
@@ -412,6 +412,21 @@ export default function NavBar({ onLogout, favCount, nickname, setNickname, user
                     Custom hunt — anchor on baseline companies, layer CRM/portfolio context, weight by importance, AI scores results.
                   </div>
                   <span className="sc-opt-cta">Open Super Search →</span>
+                </button>
+
+                <button
+                  className="sc-opt sc-opt-scan"
+                  onClick={() => { navigate('/weekly'); setShowScanMenu(false); }}
+                >
+                  <div className="sc-opt-top">
+                    <span className="sc-opt-glyph sc-opt-glyph-scan">📅</span>
+                    <span className="sc-opt-badge">Per partner</span>
+                  </div>
+                  <div className="sc-opt-h">Weekly Search</div>
+                  <div className="sc-opt-d">
+                    Each partner keeps their own paste-in prompt, context, and filters. Run a fresh search any time. Designed for the weekly cadence.
+                  </div>
+                  <span className="sc-opt-cta">Open Weekly Search →</span>
                 </button>
               </div>
 

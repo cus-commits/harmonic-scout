@@ -19,6 +19,14 @@ import AirtablePage from './pages/AirtablePage';
 import PortcosPage from './pages/PortcosPage';
 import ReachoutsPage from './pages/ReachoutsPage';
 import DeepSearchPage from './pages/DeepSearchPage';
+import WeeklyChooser from './pages/weekly/WeeklyChooser';
+import WeeklyV1 from './pages/weekly/WeeklyV1';
+import WeeklyV2 from './pages/weekly/WeeklyV2';
+import WeeklyV3 from './pages/weekly/WeeklyV3';
+import WeeklyV4 from './pages/weekly/WeeklyV4';
+import WeeklyV5 from './pages/weekly/WeeklyV5';
+import WeeklyV6 from './pages/weekly/WeeklyV6';
+import WeeklyV7 from './pages/weekly/WeeklyV7';
 import NavBar from './components/NavBar';
 import ThemeToggle from './components/ThemeToggle';
 import Trollbox from './components/Trollbox';
@@ -167,6 +175,14 @@ function AppContent({ ready, setReady }) {
           <Route path="/deepsearch" element={<DeepSearchPage addFavorite={addFavorite} isFavorited={isFavorited} />} />
           <Route path="/recurring" element={<RecurringScanPage addFavorite={addFavorite} isFavorited={isFavorited} />} />
           <Route path="/searchagent" element={<RecurringScanPage addFavorite={addFavorite} isFavorited={isFavorited} />} />
+          <Route path="/weekly" element={<WeeklyChooser />} />
+          <Route path="/weekly/v1" element={<WeeklyV1 />} />
+          <Route path="/weekly/v2" element={<WeeklyV2 />} />
+          <Route path="/weekly/v3" element={<WeeklyV3 />} />
+          <Route path="/weekly/v4" element={<WeeklyV4 />} />
+          <Route path="/weekly/v5" element={<WeeklyV5 />} />
+          <Route path="/weekly/v6" element={<WeeklyV6 />} />
+          <Route path="/weekly/v7" element={<WeeklyV7 />} />
           <Route path="/recurring/live/:scanId" element={<RealTimeScanPage />} />
           <Route path="/searchagent/live/:scanId" element={<RealTimeScanPage />} />
           <Route path="*" element={<Navigate to="/" />} />
