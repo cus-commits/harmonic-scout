@@ -175,7 +175,8 @@ function AppContent({ ready, setReady }) {
           <Route path="/deepsearch" element={<DeepSearchPage addFavorite={addFavorite} isFavorited={isFavorited} />} />
           <Route path="/recurring" element={<RecurringScanPage addFavorite={addFavorite} isFavorited={isFavorited} />} />
           <Route path="/searchagent" element={<RecurringScanPage addFavorite={addFavorite} isFavorited={isFavorited} />} />
-          <Route path="/weekly" element={<WeeklyChooser />} />
+          <Route path="/weekly" element={<WeeklyV2 />} />
+          <Route path="/weekly/compare" element={<WeeklyChooser />} />
           <Route path="/weekly/v1" element={<WeeklyV1 />} />
           <Route path="/weekly/v2" element={<WeeklyV2 />} />
           <Route path="/weekly/v3" element={<WeeklyV3 />} />

@@ -9,8 +9,12 @@ import {
   updatePartner,
   runPartnerScan,
   pollScanStatus,
+  lockChunk,
+  parseContextChunks,
   defaultPartner,
 } from './sharedWeekly';
+
+const KNOWN_IDS = new Set(WEEKLY_PARTNERS.map(p => p.id));
 
 function buildInitial() {
   const out = {};
@@ -29,10 +33,11 @@ export default function useWeeklyController() {
   });
   const [loading, setLoading] = useState(true);
   const [saveState, setSaveState] = useState('idle'); // idle | saving | saved | error
-  const [runState, setRunState] = useState({ status: 'idle', scanId: null, message: '', progress: null });
+  const [runState, setRunState] = useState({ status: 'idle', scanId: null, message: '', progress: null, startedAt: null, etaMinMinutes: null, etaMaxMinutes: null, phase: null, current: null, total: null });
   const [dirtyMap, setDirtyMap] = useState({}); // partnerId → bool
 
   const pollTimer = useRef(null);
+  const contextDebounceTimer = useRef(null);
 
   // Initial load.
   useEffect(() => {
@@ -43,8 +48,9 @@ export default function useWeeklyController() {
       setPartners(prev => {
         const merged = { ...prev };
         const incoming = (data && data.partners) || {};
+        // Ignore unknown ids (e.g. transiently returned during backend prune).
         for (const id of Object.keys(merged)) {
-          if (incoming[id]) {
+          if (incoming[id] && KNOWN_IDS.has(id)) {
             merged[id] = { ...merged[id], ...incoming[id] };
             // Defensive merge: ensure filters object always exists.
             merged[id].filters = { ...merged[id].filters, ...(incoming[id].filters || {}) };
@@ -128,6 +134,75 @@ export default function useWeeklyController() {
     }
   }, [activeId, partners, saveState]);
 
+  // Debounced PUT specifically for context — so the backend can re-parse chunks
+  // and return canonical contextChunks (id + weight + lockedByUser). 600ms debounce.
+  const scheduleContextSync = useCallback((nextContext) => {
+    if (contextDebounceTimer.current) clearTimeout(contextDebounceTimer.current);
+    const pid = activeId;
+    contextDebounceTimer.current = setTimeout(async () => {
+      try {
+        const res = await updatePartner(pid, { context: nextContext || '' });
+        const chunks = res && (res.contextChunks || res.partner?.contextChunks);
+        if (Array.isArray(chunks)) {
+          setPartners(prev => ({ ...prev, [pid]: { ...prev[pid], contextChunks: chunks } }));
+        }
+      } catch {
+        // Stay silent — main Save button handles user-visible failure cases.
+      }
+    }, 600);
+  }, [activeId]);
+
+  // Updates a context chunk's weight locally and pings the backend to lock it
+  // (dragging implicitly locks so the next roll doesn't overwrite). Fail-soft.
+  const updateChunkWeight = useCallback((chunkId, weight) => {
+    setPartners(prev => {
+      const cur = prev[activeId];
+      if (!cur) return prev;
+      const chunks = (cur.contextChunks || []).map(ch =>
+        ch.id === chunkId ? { ...ch, weight, lockedByUser: true } : ch
+      );
+      return { ...prev, [activeId]: { ...cur, contextChunks: chunks } };
+    });
+    lockChunk(activeId, { chunkId, locked: true, weight });
+  }, [activeId]);
+
+  const toggleChunkLock = useCallback((chunkId) => {
+    setPartners(prev => {
+      const cur = prev[activeId];
+      if (!cur) return prev;
+      let nextLocked = false;
+      let nextWeight = 50;
+      const chunks = (cur.contextChunks || []).map(ch => {
+        if (ch.id !== chunkId) return ch;
+        nextLocked = !ch.lockedByUser;
+        nextWeight = ch.weight ?? 50;
+        return { ...ch, lockedByUser: nextLocked };
+      });
+      lockChunk(activeId, { chunkId, locked: nextLocked, weight: nextWeight });
+      return { ...prev, [activeId]: { ...cur, contextChunks: chunks } };
+    });
+  }, [activeId]);
+
+  const setAutoVary = useCallback((next) => {
+    setPartners(prev => ({
+      ...prev,
+      [activeId]: { ...prev[activeId], autoVaryWeekly: !!next },
+    }));
+    setDirtyMap(prev => ({ ...prev, [activeId]: true }));
+  }, [activeId]);
+
+  const applyPreviewWeights = useCallback((weightsByChunkId) => {
+    setPartners(prev => {
+      const cur = prev[activeId];
+      if (!cur) return prev;
+      const chunks = (cur.contextChunks || []).map(ch =>
+        weightsByChunkId[ch.id] != null ? { ...ch, weight: weightsByChunkId[ch.id] } : ch
+      );
+      return { ...prev, [activeId]: { ...cur, contextChunks: chunks } };
+    });
+    setDirtyMap(prev => ({ ...prev, [activeId]: true }));
+  }, [activeId]);
+
   const pollOnce = useCallback(async (scanId) => {
     try {
       const s = await pollScanStatus(scanId);
@@ -150,16 +225,26 @@ export default function useWeeklyController() {
             lastCorpusSize: corpusSize ?? prev[activeId]?.lastCorpusSize,
           },
         }));
-        setRunState({ status: 'done', scanId, message: 'Scan finished', progress: 100 });
+        setRunState(prev => ({ ...prev, status: 'done', scanId, message: 'Scan finished', progress: 100, phase: null, current: null, total: null }));
         return;
       }
       if (s.status === 'error' || s.status === 'failed') {
-        setRunState({ status: 'error', scanId, message: s.error || 'Scan failed', progress: null });
+        setRunState(prev => ({ ...prev, status: 'error', scanId, message: s.error || 'Scan failed', progress: null }));
         return;
       }
-      const msg = s.message || s.stage || 'Running…';
-      const progress = typeof s.progress === 'number' ? s.progress : null;
-      setRunState({ status: 'running', scanId, message: msg, progress });
+      // Backend may return an object `progress: { phase, current, total }` OR a numeric progress.
+      let progress = null;
+      let phase = null, current = null, total = null;
+      if (s.progress && typeof s.progress === 'object') {
+        phase = s.progress.phase ?? null;
+        current = s.progress.current ?? null;
+        total = s.progress.total ?? null;
+        if (current != null && total) progress = Math.round((current / total) * 100);
+      } else if (typeof s.progress === 'number') {
+        progress = s.progress;
+      }
+      const msg = s.message || phase || s.stage || 'Running…';
+      setRunState(prev => ({ ...prev, status: 'running', scanId, message: msg, progress, phase, current, total }));
       pollTimer.current = setTimeout(() => pollOnce(scanId), 4000);
     } catch (e) {
       // Don't abandon on a single failed poll — try again in 6s.
@@ -169,7 +254,7 @@ export default function useWeeklyController() {
 
   const run = useCallback(async () => {
     if (runState.status === 'running') return;
-    setRunState({ status: 'starting', scanId: null, message: 'Kicking off…', progress: null });
+    setRunState({ status: 'starting', scanId: null, message: 'Kicking off…', progress: null, startedAt: null, etaMinMinutes: null, etaMaxMinutes: null, phase: null, current: null, total: null });
     try {
       // Save first so the run uses the latest config.
       if (dirtyMap[activeId]) {
@@ -184,13 +269,24 @@ export default function useWeeklyController() {
       const out = await runPartnerScan(activeId);
       const scanId = out.scanId || out.scan_id;
       if (!scanId) {
-        setRunState({ status: 'error', scanId: null, message: 'No scanId returned', progress: null });
+        setRunState(prev => ({ ...prev, status: 'error', scanId: null, message: 'No scanId returned', progress: null }));
         return;
       }
-      setRunState({ status: 'running', scanId, message: 'Running…', progress: 0 });
+      setRunState({
+        status: 'running',
+        scanId,
+        message: 'Running…',
+        progress: 0,
+        startedAt: out.startedAt || new Date().toISOString(),
+        etaMinMinutes: out.etaMinMinutes ?? null,
+        etaMaxMinutes: out.etaMaxMinutes ?? null,
+        phase: null,
+        current: null,
+        total: null,
+      });
       pollOnce(scanId);
     } catch (e) {
-      setRunState({ status: 'error', scanId: null, message: e.message || 'Failed to start', progress: null });
+      setRunState(prev => ({ ...prev, status: 'error', scanId: null, message: e.message || 'Failed to start', progress: null }));
     }
   }, [active, activeId, dirtyMap, pollOnce, runState.status]);
 
@@ -208,5 +304,10 @@ export default function useWeeklyController() {
     run,
     runState,
     isDirty: !!dirtyMap[activeId],
+    scheduleContextSync,
+    updateChunkWeight,
+    toggleChunkLock,
+    setAutoVary,
+    applyPreviewWeights,
   };
 }
