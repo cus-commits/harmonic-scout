@@ -8,6 +8,7 @@ import {
   parseContextChunks,
   formatEtaRange,
   formatNextRun,
+  formatCountdown,
   formatElapsedMin,
   formatRolledRelative,
 } from './sharedWeekly';
@@ -20,12 +21,18 @@ import {
 // ---- ETA / progress strip ----
 
 function EtaLine({ partner }) {
-  const eta = formatEtaRange(partner?.etaMinMinutes, partner?.etaMaxMinutes);
+  const countdown = formatCountdown(partner?.nextRunAt);
   const when = formatNextRun(partner?.nextRunAt);
-  if (!when && !eta) return null;
+  const eta = formatEtaRange(partner?.etaMinMinutes, partner?.etaMaxMinutes);
+  if (!countdown && !when && !eta) return null;
+  const dueNow = countdown === 'Due now';
   return (
-    <p className="text-[11px] text-muted/70 font-mono">
-      Next auto-run: {when || '—'}{eta ? ` · ${eta}` : ''}
+    <p className="text-[11px] font-mono">
+      <span className={dueNow ? 'text-bo font-semibold' : 'text-bright/85'}>
+        Next auto-run {countdown ? (dueNow ? '— Due now' : `in ${countdown}`) : ''}
+      </span>
+      {when && <span className="text-muted/60"> · {when}</span>}
+      {eta && <span className="text-muted/60"> · {eta}</span>}
     </p>
   );
 }
@@ -222,13 +229,13 @@ function ContextEmphasis({ partner, partnerId, controller }) {
 
 export default function WeeklyV2() {
   const c = useWeeklyController();
-  // Force a tick so elapsed-minutes counter advances while a scan runs.
+  // 30s heartbeat: ticks both the live countdown (idle) and the elapsed-minutes
+  // counter (running). Cheap; one timer for the whole page.
   const [, setTick] = useState(0);
   useEffect(() => {
-    if (c.runState.status !== 'running' && c.runState.status !== 'starting') return;
     const t = setInterval(() => setTick(n => n + 1), 30000);
     return () => clearInterval(t);
-  }, [c.runState.status]);
+  }, []);
 
   if (c.loading) return <div className="p-12 text-muted text-sm">Loading…</div>;
   const a = c.active;

@@ -168,6 +168,25 @@ export function formatNextRun(nextRunAtIso) {
   return `${day} ${hh}:${mm} UTC`;
 }
 
+// Live countdown from now → nextRunAt. Minute precision so a 30s tick is enough.
+// "1d 7h 21m" / "3h 19m" / "47m" / "Due now".
+export function formatCountdown(nextRunAtIso) {
+  if (!nextRunAtIso) return '';
+  let d;
+  try { d = new Date(nextRunAtIso); } catch { return ''; }
+  if (Number.isNaN(d.getTime())) return '';
+  const ms = d.getTime() - Date.now();
+  if (ms <= 0) return 'Due now';
+  const totalMin = Math.floor(ms / 60000);
+  if (totalMin < 1) return 'Due now';
+  const days = Math.floor(totalMin / 1440);
+  const hours = Math.floor((totalMin % 1440) / 60);
+  const mins = totalMin % 60;
+  if (days > 0) return `${days}d ${hours}h ${mins}m`;
+  if (hours > 0) return `${hours}h ${mins}m`;
+  return `${mins}m`;
+}
+
 export function formatElapsedMin(startIso) {
   if (!startIso) return '';
   let d;

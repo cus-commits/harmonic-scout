@@ -272,6 +272,14 @@ export default function useWeeklyController() {
         setRunState(prev => ({ ...prev, status: 'error', scanId: null, message: 'No scanId returned', progress: null }));
         return;
       }
+      // Optimistically bump nextRunAt locally so the countdown resets immediately
+      // without waiting for a refetch. Backend has already persisted now+7d.
+      if (out.nextRunAt) {
+        setPartners(prev => ({
+          ...prev,
+          [activeId]: { ...prev[activeId], nextRunAt: out.nextRunAt },
+        }));
+      }
       setRunState({
         status: 'running',
         scanId,
