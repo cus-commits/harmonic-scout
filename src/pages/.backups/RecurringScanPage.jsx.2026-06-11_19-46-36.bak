@@ -743,7 +743,6 @@ function ResultsView({ data, addFavorite, isFavorited }) {
           {data.stats.filtered > 0 && <span className="text-accent/60">→ {data.stats.filtered} filtered</span>}
           {data.stats.scored > 0 && <span className="text-rose/60">→ {data.stats.scored} scored 7+</span>}
           <span className="text-sm/60">→ {data.stats.deepScored} deep-scored</span>
-          {data.stats.fableRefined > 0 && <span className="text-boro/60">→ 🧠 {data.stats.fableRefined} Fable-refined</span>}
           <span className="text-rose/60">→ {data.stats.topResults} rated 7+</span>
           {data.stats.ddPushed > 0 && <span className="text-sm/70 font-medium">→ {data.stats.ddPushed} to DD</span>}
           <span className="text-bo/50">· ${data.budgetUsed} spent</span>

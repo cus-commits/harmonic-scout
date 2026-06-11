@@ -18,10 +18,10 @@ function authHeaders() {
 
 const TIERS = [
   { key: 'scout',    name: 'Quick Scout',  cost: '$12',  emoji: '⚡', color: 'sky',     ddPush: 2,  desc: 'Haiku pre-screen → Sonnet deep 10 → top 2 to DD', time: '15-30 min', estMinutes: 25 },
-  { key: 'standard', name: 'Standard',     cost: '$18', emoji: '🔍', color: 'violet',  ddPush: 5,  desc: 'Sonnet pre-screen → Opus deep 15 → Fable-5 re-rates top 10 → top 5 to DD', time: '30-60 min', estMinutes: 45 },
-  { key: 'deep',     name: 'Deep Dive',    cost: '$28', emoji: '🔬', color: 'amber',   ddPush: 8,  desc: 'Sonnet all → Opus deep 40 → Fable-5 re-rates top 10 → top 8 to DD', time: '1-2 hours', estMinutes: 90 },
-  { key: 'sweep',    name: 'Full Sweep',   cost: '$38', emoji: '🌊', color: 'pink',    ddPush: 12, desc: 'Sonnet full → Opus deep 60 → Fable-5 re-rates top 10 → top 12 to DD', time: '2-3 hours', estMinutes: 150 },
-  { key: 'maximum',  name: 'Maximum',      cost: '$50', emoji: '🚀', color: 'emerald', ddPush: 20, desc: 'Full pipeline → Opus deep 100 → Fable-5 re-rates top 10 → top 20 to DD', time: '3-5 hours', estMinutes: 240 },
+  { key: 'standard', name: 'Standard',     cost: '$18', emoji: '🔍', color: 'violet',  ddPush: 5,  desc: 'Sonnet pre-screen → Opus deep 15 → top 5 to DD', time: '30-60 min', estMinutes: 45 },
+  { key: 'deep',     name: 'Deep Dive',    cost: '$28', emoji: '🔬', color: 'amber',   ddPush: 8,  desc: 'Sonnet all → Opus deep 40 → top 8 to DD', time: '1-2 hours', estMinutes: 90 },
+  { key: 'sweep',    name: 'Full Sweep',   cost: '$38', emoji: '🌊', color: 'pink',    ddPush: 12, desc: 'Sonnet full → Opus deep 60 → top 12 to DD', time: '2-3 hours', estMinutes: 150 },
+  { key: 'maximum',  name: 'Maximum',      cost: '$50', emoji: '🚀', color: 'emerald', ddPush: 20, desc: 'Full pipeline → Opus deep 100 → top 20 to DD', time: '3-5 hours', estMinutes: 240 },
 ];
 
 const CRM_STAGES = [
@@ -376,7 +376,6 @@ function ScanProgress({ scan, onCancel }) {
             {stats.filtered > 0 && <span className="text-accent/60">→ {stats.filtered} filtered</span>}
             {stats.scored > 0 && <span className="text-rose/60">→ {stats.scored} scored 7+</span>}
             {stats.deepScored > 0 && <span className="text-sm/60">→ {stats.deepScored} deep-scored</span>}
-            {stats.fableRefined > 0 && <span className="text-boro/60">→ 🧠 {stats.fableRefined} Fable-refined</span>}
           </div>
         )}
 
@@ -556,7 +555,6 @@ function ResultCard({ result, rank, addFavorite, isFavorited }) {
             <h3 className="font-bold text-bright text-sm truncate">{result.name}</h3>
             <span className={`text-[10px] px-2 py-0.5 rounded-md border font-bold ${scoreColor}`}>{score}/10</span>
             {result.confidence && <span className={`text-[9px] ${confidenceColor}`}>{result.confidence}</span>}
-            {(result.ratedBy || result._ratedBy) === 'fable-5' && <span className="text-[9px] px-1.5 py-0.5 rounded-md border bg-boro/10 text-boro/70 border-boro/20" title={`Opus had ${result._preFableScore ?? '?'}/10`}>🧠 Fable</span>}
             {companyId && typeof companyId === 'number' && <a href={`/company/${companyId}`} className="h-pill" title="Harmonic Card">H</a>}
             {webUrl && <a href={webUrl} target="_blank" rel="noopener" className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded bg-bo/15 text-bo border border-bo/30 hover:bg-bo/20 font-medium">🌐</a>}
           </div>
@@ -666,7 +664,6 @@ function HistoryPanel({ history, onViewScan, addFavorite, isFavorited }) {
                     {scan.stats.filtered > 0 && <span className="text-accent/60">→ {scan.stats.filtered} filtered</span>}
                     {scan.stats.scored > 0 && <span className="text-rose/60">→ {scan.stats.scored} scored 7+</span>}
                     <span className="text-sm/60">→ {scan.stats.deepScored} deep-scored</span>
-                    {scan.stats.fableRefined > 0 && <span className="text-boro/60">→ 🧠 {scan.stats.fableRefined} Fable-refined</span>}
                     {scan.stats.ddPushed > 0 && <span className="text-sm/70 font-medium">→ {scan.stats.ddPushed} to DD</span>}
                     <span className="text-bo/50">· ${scan.budgetUsed} spent</span>
                   </div>
@@ -743,7 +740,6 @@ function ResultsView({ data, addFavorite, isFavorited }) {
           {data.stats.filtered > 0 && <span className="text-accent/60">→ {data.stats.filtered} filtered</span>}
           {data.stats.scored > 0 && <span className="text-rose/60">→ {data.stats.scored} scored 7+</span>}
           <span className="text-sm/60">→ {data.stats.deepScored} deep-scored</span>
-          {data.stats.fableRefined > 0 && <span className="text-boro/60">→ 🧠 {data.stats.fableRefined} Fable-refined</span>}
           <span className="text-rose/60">→ {data.stats.topResults} rated 7+</span>
           {data.stats.ddPushed > 0 && <span className="text-sm/70 font-medium">→ {data.stats.ddPushed} to DD</span>}
           <span className="text-bo/50">· ${data.budgetUsed} spent</span>

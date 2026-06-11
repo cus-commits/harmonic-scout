@@ -479,11 +479,6 @@ function MeritCompanyCard({ signal, addFavorite, isFavorited }) {
             <span className={`text-[14px] font-mono font-extrabold text-${finalTone} px-2 py-0.5 rounded-md bg-${finalTone}/10 border border-${finalTone}/25`}>
               {finalScore.toFixed(1)}/10
             </span>
-            {signal._ratedBy === 'fable-5' && (
-              <span className="text-[8px] px-1.5 py-0.5 rounded bg-boro/10 text-boro/70 border border-boro/20" title={`Opus had ${signal._preFableScore ?? '?'} — re-rated by Fable-5`}>
-                🧠 Fable
-              </span>
-            )}
             {m.capped_to_anchor && (
               <span className="text-[8px] px-1.5 py-0.5 rounded bg-rose/10 text-rose/70 border border-rose/20" title="Capped to anchor — didn't beat anchor on any dimension">
                 ⚠ capped to anchor
@@ -613,11 +608,6 @@ function SignalCard({ signal, addFavorite, isFavorited }) {
             {signal.companyName && (
               <span className="text-[9px] px-1.5 py-0.5 rounded bg-bo/8 text-bo border border-bo/20 font-medium">
                 {signal.companyName}
-              </span>
-            )}
-            {signal._ratedBy === 'fable-5' && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded bg-boro/10 text-boro/70 border border-boro/20" title={`Opus had ${signal._preFableScore ?? '?'} — re-rated by Fable-5`}>
-                🧠 Fable
               </span>
             )}
           </div>
@@ -1304,9 +1294,9 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
           {[
             { id: 'haiku',   label: 'Quick',     emoji: '⚡', baseCost: '$0.05', desc: 'Haiku screen, initial similar pool only — fastest, cheapest' },
             { id: 'sonnet',  label: 'Standard',  emoji: '💰', baseCost: '$0.20', desc: 'Sonnet screens all signals from initial pool, no Opus' },
-            { id: 'opus20',  label: 'Deep',      emoji: '🔍', baseCost: '$1.10', desc: 'Sonnet + Opus 5-dim merit scoring on top 20 (anchored)' },
-            { id: 'opus80',  label: 'Max',       emoji: '🧠', baseCost: '$2.30', desc: '+ AI Query Expansion (20 queries × 2 endpoints × size 500) → ~3,000-6,000 candidates → Opus on top 80' },
-            { id: 'extreme', label: 'Extreme',   emoji: '🚀', baseCost: '$5.50', desc: '+ AI Query Expansion (50 queries × 2 endpoints × size 1000) → ~8,000-15,000 candidates → Opus 5-dim on top 300' },
+            { id: 'opus20',  label: 'Deep',      emoji: '🔍', baseCost: '$0.60', desc: 'Sonnet + Opus 5-dim merit scoring on top 20 (anchored)' },
+            { id: 'opus80',  label: 'Max',       emoji: '🧠', baseCost: '$3.50', desc: '+ AI Query Expansion (20 queries × 2 endpoints × size 500) → ~3,000-6,000 candidates → Opus on top 80' },
+            { id: 'extreme', label: 'Extreme',   emoji: '🚀', baseCost: '$12.00', desc: '+ AI Query Expansion (50 queries × 2 endpoints × size 1000) → ~8,000-15,000 candidates → Opus 5-dim on top 300' },
           ].map(t => (
             <button key={t.id} onClick={() => setSuperTier(t.id)}
               className={`text-left rounded-lg border p-2 transition-all ${
@@ -1366,7 +1356,7 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
         const opusEffective = Math.min(cfg.opusN, totalSignals);
         const opusCost = opusEffective * cfg.opusCostPerSignal;
         // Additional info goes to Opus too (heavier penalty since Opus is 5x Sonnet input cost)
-        const additionalInfoOpusCost = (additionalInfoTokens * Math.ceil(opusEffective / 8) * 5) / 1_000_000;
+        const additionalInfoOpusCost = (additionalInfoTokens * Math.ceil(opusEffective / 8) * 15) / 1_000_000;
         const overhead = cfg.summary; // base summary/orchestration overhead
 
         const totalEst = screenCost + opusCost + additionalInfoSonnetCost + additionalInfoOpusCost + overhead;
@@ -1796,7 +1786,6 @@ export default function SuperSearchPage({ addFavorite, isFavorited }) {
                 {displayResults.costBreakdown.sonnet > 0 && <p>Sonnet: ${displayResults.costBreakdown.sonnet.toFixed(3)} · {displayResults.costBreakdown.tokens.sonnetIn?.toLocaleString()} in / {displayResults.costBreakdown.tokens.sonnetOut?.toLocaleString()} out</p>}
                 {displayResults.costBreakdown.opus > 0 && <p>Opus: ${displayResults.costBreakdown.opus.toFixed(3)} · {displayResults.costBreakdown.tokens.opusIn?.toLocaleString()} in / {displayResults.costBreakdown.tokens.opusOut?.toLocaleString()} out</p>}
                 {displayResults.costBreakdown.haiku > 0 && <p>Haiku: ${displayResults.costBreakdown.haiku.toFixed(3)} · {displayResults.costBreakdown.tokens.haikuIn?.toLocaleString()} in / {displayResults.costBreakdown.tokens.haikuOut?.toLocaleString()} out</p>}
-                {displayResults.costBreakdown.fable > 0 && <p>Fable: ${displayResults.costBreakdown.fable.toFixed(3)} · {displayResults.costBreakdown.tokens.fableIn?.toLocaleString()} in / {displayResults.costBreakdown.tokens.fableOut?.toLocaleString()} out</p>}
                 <p className="text-bright/60">Total: ${displayResults.costBreakdown.total.toFixed(3)}</p>
               </div>
             </details>

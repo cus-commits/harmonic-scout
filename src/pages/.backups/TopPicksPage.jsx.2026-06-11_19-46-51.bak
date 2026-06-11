@@ -236,7 +236,6 @@ function VettingCard({ company, onHide, onBackburn, addFavorite, isFavorited }) 
                   : 'bg-muted/12 text-muted border-muted/20'
                 }`}>⭐ {scoreDisplay}</span>
               )}
-              {company._ratedBy === 'fable-5' && <span className="text-[9px] px-1.5 py-0.5 rounded border bg-boro/10 text-boro/70 border-boro/20">🧠 Fable</span>}
               {stage && <span className={`font-mono text-[10px] font-semibold px-2 py-0.5 rounded-[5px] border ${stageColor(company.funding_stage)}`}>{stage}</span>}
               {total && <span className="font-mono text-[10px] font-semibold px-2 py-0.5 rounded-[5px] border bg-bo/12 text-bo border-bo/20">💰 {total}</span>}
               <WebGrowthBadge company={company} />

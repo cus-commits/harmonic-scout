@@ -128,9 +128,6 @@ function HistoryEntry({ entry }) {
                 {r.pushedToDD && (
                   <span className="text-[9.5px] font-mono font-bold px-1.5 py-0.5 rounded-full border border-boro/40 text-boro bg-boro/10 shrink-0">DD</span>
                 )}
-                {r.ratedBy === 'fable-5' && (
-                  <span className="text-[9.5px] font-mono px-1.5 py-0.5 rounded-full border border-boro/40 text-boro bg-boro/10 shrink-0">🧠</span>
-                )}
                 <span title={r.analysis} className="text-[10.5px] text-muted/65 truncate flex-1 min-w-0">{r.analysis}</span>
               </div>
             ))

@@ -206,7 +206,7 @@ export default function useWeeklyController() {
   // Coarse percent per pipeline phase — used when no batch counter is available.
   const PHASE_PCT = {
     starting: 2, 'harmonic-fetch': 10, 'sonnet-prescreen': 30, enrich: 50,
-    'sonnet-screen': 65, 'opus-deep': 85, 'fable-refine': 92, running: 50, finalize: 98,
+    'sonnet-screen': 65, 'opus-deep': 85, running: 50, finalize: 98,
   };
 
   const pollOnce = useCallback(async (scanId) => {

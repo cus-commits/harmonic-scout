@@ -544,7 +544,6 @@ function ScanResultCard({ company: raw, onFavorite, isFavorited, onDismiss, onSh
             'bg-muted/10 text-muted/60 border-border/20'
           }`}>{company._score||company.score}/10</span>
         )}
-        {company._ratedBy === 'fable-5' && <span className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded border bg-boro/10 text-boro/70 border-boro/20">🧠 Fable</span>}
         {onShowLogic && <button onClick={() => onShowLogic(company.name)} className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded bg-boro/10 text-boro border border-boro/15 hover:bg-boro/20 font-medium" title="View scoring logic">🧠</button>}
         <button onClick={() => !isFavorited && onFavorite({...company})} className={`flex-shrink-0 text-base ${isFavorited ? 'text-bo' : 'text-muted/40 hover:text-bo'}`}>{isFavorited ? '★' : '☆'}</button>
         {onDismiss && <UnvettedRemoveMenu company={company} onHide={(c) => {

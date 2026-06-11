@@ -376,7 +376,6 @@ function ScanProgress({ scan, onCancel }) {
             {stats.filtered > 0 && <span className="text-accent/60">→ {stats.filtered} filtered</span>}
             {stats.scored > 0 && <span className="text-rose/60">→ {stats.scored} scored 7+</span>}
             {stats.deepScored > 0 && <span className="text-sm/60">→ {stats.deepScored} deep-scored</span>}
-            {stats.fableRefined > 0 && <span className="text-boro/60">→ 🧠 {stats.fableRefined} Fable-refined</span>}
           </div>
         )}
 
@@ -666,7 +665,6 @@ function HistoryPanel({ history, onViewScan, addFavorite, isFavorited }) {
                     {scan.stats.filtered > 0 && <span className="text-accent/60">→ {scan.stats.filtered} filtered</span>}
                     {scan.stats.scored > 0 && <span className="text-rose/60">→ {scan.stats.scored} scored 7+</span>}
                     <span className="text-sm/60">→ {scan.stats.deepScored} deep-scored</span>
-                    {scan.stats.fableRefined > 0 && <span className="text-boro/60">→ 🧠 {scan.stats.fableRefined} Fable-refined</span>}
                     {scan.stats.ddPushed > 0 && <span className="text-sm/70 font-medium">→ {scan.stats.ddPushed} to DD</span>}
                     <span className="text-bo/50">· ${scan.budgetUsed} spent</span>
                   </div>
@@ -743,7 +741,6 @@ function ResultsView({ data, addFavorite, isFavorited }) {
           {data.stats.filtered > 0 && <span className="text-accent/60">→ {data.stats.filtered} filtered</span>}
           {data.stats.scored > 0 && <span className="text-rose/60">→ {data.stats.scored} scored 7+</span>}
           <span className="text-sm/60">→ {data.stats.deepScored} deep-scored</span>
-          {data.stats.fableRefined > 0 && <span className="text-boro/60">→ 🧠 {data.stats.fableRefined} Fable-refined</span>}
           <span className="text-rose/60">→ {data.stats.topResults} rated 7+</span>
           {data.stats.ddPushed > 0 && <span className="text-sm/70 font-medium">→ {data.stats.ddPushed} to DD</span>}
           <span className="text-bo/50">· ${data.budgetUsed} spent</span>

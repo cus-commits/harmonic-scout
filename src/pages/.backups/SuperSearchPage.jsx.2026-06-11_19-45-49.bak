@@ -615,11 +615,6 @@ function SignalCard({ signal, addFavorite, isFavorited }) {
                 {signal.companyName}
               </span>
             )}
-            {signal._ratedBy === 'fable-5' && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded bg-boro/10 text-boro/70 border border-boro/20" title={`Opus had ${signal._preFableScore ?? '?'} — re-rated by Fable-5`}>
-                🧠 Fable
-              </span>
-            )}
           </div>
           <p className="text-[13px] font-semibold text-bright leading-snug">{signal.title}</p>
           <p className="text-[11px] text-muted/70">{signal.subtitle}</p>
