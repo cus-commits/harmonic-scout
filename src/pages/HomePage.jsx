@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { CrmButton } from '../components/CrmButton';
 import RemoveMenu from '../components/RemoveMenu';
 import ActiveScansPanel from '../components/ActiveScansPanel';
+import NeedsReplyPanel from '../components/NeedsReplyPanel';
 
 const API_BASE = import.meta.env?.VITE_API_URL || 'https://pigeon-api.up.railway.app';
 
@@ -170,6 +171,9 @@ export default function HomePage({ addFavorite, isFavorited }) {
           <span className="text-[11px] font-semibold text-accent/70 group-hover:text-accent transition-colors">Favorites</span>
         </button>
       </div>
+
+      {/* Gmail needs-reply digest */}
+      <NeedsReplyPanel />
 
       {/* Funding alerts panel */}
       {visibleAlerts.length > 0 && (
