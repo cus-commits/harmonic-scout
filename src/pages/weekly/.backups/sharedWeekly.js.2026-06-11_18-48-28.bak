@@ -229,26 +229,9 @@ export function formatLastRun(lastRunAt, lastRunCount) {
   if (Number.isNaN(d.getTime())) return '—';
   const day = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
   if (typeof lastRunCount === 'number' && lastRunCount > 0) {
-    return `Last run ${day} · ${lastRunCount} top`;
+    return `Last run ${day} · ${lastRunCount} to DD`;
   }
   return `Last run ${day}`;
-}
-
-// "Mon Jun 15" + UTC clock for history rows.
-export function formatHistoryDate(iso) {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '—';
-  const day = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
-  const hh = String(d.getUTCHours()).padStart(2, '0');
-  const mm = String(d.getUTCMinutes()).padStart(2, '0');
-  return `${day} ${hh}:${mm} UTC`;
-}
-
-export function formatDurationSec(sec) {
-  if (sec == null || !Number.isFinite(Number(sec))) return '';
-  const mins = Math.round(Number(sec) / 60);
-  return mins < 1 ? '<1 min' : `${mins} min`;
 }
 
 // ---- Default partner shape so iterations never crash on empty backend ----
@@ -275,10 +258,9 @@ export function defaultPartner(id) {
       keywords: '',
       excludeKeywords: '',
     },
-    isEnabled: false,
+    isEnabled: true,
     lastRunAt: null,
     lastRunCount: null,
-    lastRunResultCount: null,
     lastCorpusSize: null,
     nextRunAt: null,
     etaMinMinutes: null,

@@ -27,14 +27,6 @@ function EtaLine({ partner }) {
   const countdown = formatCountdown(partner?.nextRunAt);
   const when = formatNextRun(partner?.nextRunAt);
   const eta = formatEtaRange(partner?.etaMinMinutes, partner?.etaMaxMinutes);
-  if (!partner?.isEnabled) {
-    return (
-      <p className="text-[11px] font-mono text-rose-400/90">
-        Auto-run disabled — flip the toggle above to schedule weekly runs.
-        {when && <span className="text-muted/50"> (would next fire {when})</span>}
-      </p>
-    );
-  }
   if (!countdown && !when && !eta) return null;
   const dueNow = countdown === 'Due now';
   return (
@@ -44,7 +36,6 @@ function EtaLine({ partner }) {
       </span>
       {when && <span className="text-muted/60"> · {when}</span>}
       {eta && <span className="text-muted/60"> · {eta}</span>}
-      <span className="text-muted/60"> · top 5 → DD</span>
     </p>
   );
 }
@@ -70,99 +61,6 @@ function ProgressStrip({ runState }) {
             className="h-full bg-bo/70 transition-all duration-500"
             style={{ width: `${pct}%` }}
           />
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ---- Run history panel ----
-
-function statusTone(status) {
-  if (status === 'done') return { dot: 'bg-emerald-400', text: 'text-emerald-400', label: 'done' };
-  if (status === 'error') return { dot: 'bg-rose-400', text: 'text-rose-400', label: 'failed' };
-  return { dot: 'bg-muted/60', text: 'text-muted/70', label: status || 'unknown' };
-}
-
-function HistoryEntry({ entry }) {
-  const [open, setOpen] = useState(false);
-  const t = statusTone(entry.status);
-  const summary = [
-    formatDurationSec(entry.durationSec),
-    entry.budgetUsed ? `$${entry.budgetUsed}` : null,
-    entry.corpusSize ? `${Number(entry.corpusSize).toLocaleString()} pool` : null,
-    entry.status === 'done' ? `${entry.ddPushed ?? 0} → DD` : null,
-  ].filter(Boolean).join(' · ');
-  return (
-    <div className="border border-border/25 rounded-lg bg-ink/40">
-      <button
-        type="button"
-        onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center gap-2.5 px-3 py-2 text-left"
-      >
-        <span className={`w-2 h-2 rounded-full shrink-0 ${t.dot}`} />
-        <span className="text-[11.5px] font-mono text-bright/85">{formatHistoryDate(entry.startedAt)}</span>
-        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-border/30 text-muted/70">
-          {entry.trigger === 'auto' ? 'auto' : 'manual'}
-        </span>
-        {entry.status !== 'done' && <span className={`text-[10.5px] font-mono ${t.text}`}>{t.label}{entry.error ? ` — ${entry.error}` : ''}</span>}
-        <span className="ml-auto text-[10.5px] font-mono text-muted/60">{summary}</span>
-        <span className="text-[10px] text-muted/50 font-mono">{open ? '▾' : '▸'}</span>
-      </button>
-      {open && (
-        <div className="px-3 pb-2.5 space-y-1">
-          {(entry.topResults || []).length === 0 ? (
-            <p className="text-[11px] text-muted/60 py-1">No results recorded for this run.</p>
-          ) : (
-            entry.topResults.map((r, i) => (
-              <div key={i} className="flex items-center gap-2 py-1 border-t border-border/10 first:border-t-0">
-                <span className={`text-[10.5px] font-mono font-bold w-8 text-center rounded border px-1 py-0.5 ${
-                  (r.score ?? 0) >= 7 ? 'border-emerald-500/40 text-emerald-400' : 'border-border/40 text-bright/70'
-                }`}>{r.score ?? '—'}</span>
-                {r.website ? (
-                  <a href={r.website.startsWith('http') ? r.website : `https://${r.website}`} target="_blank" rel="noreferrer"
-                     className="text-[11.5px] font-semibold text-bright/90 hover:text-accent truncate max-w-[180px]">{r.name}</a>
-                ) : (
-                  <span className="text-[11.5px] font-semibold text-bright/90 truncate max-w-[180px]">{r.name}</span>
-                )}
-                {r.pushedToDD && (
-                  <span className="text-[9.5px] font-mono font-bold px-1.5 py-0.5 rounded-full border border-boro/40 text-boro bg-boro/10 shrink-0">DD</span>
-                )}
-                <span title={r.analysis} className="text-[10.5px] text-muted/65 truncate flex-1 min-w-0">{r.analysis}</span>
-              </div>
-            ))
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function HistoryPanel({ partnerId, runStatus }) {
-  const [entries, setEntries] = useState(null); // null = loading
-  useEffect(() => {
-    let alive = true;
-    setEntries(null);
-    fetchPartnerHistory(partnerId).then(h => { if (alive) setEntries(h); });
-    return () => { alive = false; };
-    // Refetch when a run finishes so the new entry shows up immediately.
-  }, [partnerId, runStatus === 'done']);
-
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-[11px] uppercase tracking-wider text-muted/70 font-mono font-semibold">Run history</p>
-        <a href="/toppicks" className="text-[10.5px] font-mono text-boro hover:underline">
-          Top 5 of every run auto-push to Top Picks (DD) →
-        </a>
-      </div>
-      {entries === null ? (
-        <p className="text-[11px] text-muted/60">Loading history…</p>
-      ) : entries.length === 0 ? (
-        <p className="text-[11px] text-muted/60">No runs yet. History appears here after the first weekly (or manual) run.</p>
-      ) : (
-        <div className="space-y-1.5">
-          {entries.map(e => <HistoryEntry key={e.scanId || e.startedAt} entry={e} />)}
         </div>
       )}
     </div>
@@ -220,7 +118,7 @@ function ContextEmphasis({ partner, partnerId, controller }) {
     : parseContextChunks(partner?.context || '');
   const [overlay, setOverlay] = useState(null); // { weightsByChunkId, generatedAt }
   const [loadingPreview, setLoadingPreview] = useState(false);
-  const rolled = formatRolledRelative(partner?.lastWeightRollAt);
+  const rolled = formatRolledRelative(partner?.weeklyAppliedAt);
 
   async function handlePreview() {
     if (loadingPreview) return;
@@ -228,10 +126,16 @@ function ContextEmphasis({ partner, partnerId, controller }) {
     const out = await previewWeights(partnerId);
     setLoadingPreview(false);
     if (!out) return;
-    // Backend shape: { chunks: [{ id, previewWeight, ... }] }.
-    const map = {};
-    for (const c of (out.chunks || [])) {
-      if (c && c.id != null && c.previewWeight != null) map[c.id] = c.previewWeight;
+    // Accept either `weights` (array of {chunkId, weight}) or a plain object map.
+    let map = {};
+    if (Array.isArray(out.weights)) {
+      for (const w of out.weights) {
+        if (w && w.chunkId != null) map[w.chunkId] = w.weight;
+      }
+    } else if (out.weights && typeof out.weights === 'object') {
+      map = out.weights;
+    } else if (out.weightsByChunkId) {
+      map = out.weightsByChunkId;
     }
     setOverlay({ weightsByChunkId: map });
   }
@@ -328,7 +232,6 @@ function ContextEmphasis({ partner, partnerId, controller }) {
 
 export default function WeeklyV2() {
   const c = useWeeklyController();
-  const [showHistory, setShowHistory] = useState(false);
   // 30s heartbeat: ticks both the live countdown (idle) and the elapsed-minutes
   // counter (running). Cheap; one timer for the whole page.
   const [, setTick] = useState(0);
@@ -348,7 +251,6 @@ export default function WeeklyV2() {
         <p className="text-[10px] uppercase tracking-widest text-muted/60 font-mono font-bold mb-2 px-1">Partners</p>
         {WEEKLY_PARTNERS.map(p => {
           const active = p.id === c.activeId;
-          const enabled = !!c.partners[p.id]?.isEnabled;
           return (
             <button
               key={p.id}
@@ -361,10 +263,6 @@ export default function WeeklyV2() {
             >
               <span className="text-lg leading-none">{p.emoji}</span>
               <span className="text-[12.5px] font-semibold">{p.name}</span>
-              <span
-                title={enabled ? 'Weekly auto-run ON' : 'Weekly auto-run OFF'}
-                className={`ml-auto w-2 h-2 rounded-full shrink-0 ${enabled ? 'bg-emerald-400' : 'bg-rose-400/80'}`}
-              />
             </button>
           );
         })}
@@ -377,7 +275,6 @@ export default function WeeklyV2() {
             <span className="mr-2">{a.emoji}</span>{a.name}'s weekly search
           </h1>
           <div className="flex items-center gap-3">
-            <EnableToggle enabled={!!a.isEnabled} onChange={(next) => c.setEnabled(next)} />
             <LastRunLine partner={a} />
             <CorpusPill size={a.lastCorpusSize} />
           </div>
@@ -407,28 +304,11 @@ export default function WeeklyV2() {
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <RunStatusLine runState={c.runState} />
             <div className="flex items-center gap-2 ml-auto">
-              <button
-                type="button"
-                onClick={() => setShowHistory(h => !h)}
-                className={`text-[11.5px] font-semibold px-3 py-1.5 rounded-lg border transition-colors ${
-                  showHistory
-                    ? 'border-accent/40 text-accent bg-accent/10'
-                    : 'border-border/30 text-bright/75 hover:border-accent/40 hover:text-accent'
-                }`}
-              >
-                History
-              </button>
               <SaveButton onClick={c.save} state={c.saveState} isDirty={c.isDirty} />
               <RunButton onClick={c.run} runState={c.runState} />
             </div>
           </div>
         </div>
-
-        {showHistory && (
-          <div className="border border-border/25 rounded-xl bg-card/30 p-4">
-            <HistoryPanel partnerId={c.activeId} runStatus={c.runState.status} />
-          </div>
-        )}
       </main>
     </div>
   );

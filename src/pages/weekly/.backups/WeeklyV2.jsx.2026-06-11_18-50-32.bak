@@ -328,7 +328,6 @@ function ContextEmphasis({ partner, partnerId, controller }) {
 
 export default function WeeklyV2() {
   const c = useWeeklyController();
-  const [showHistory, setShowHistory] = useState(false);
   // 30s heartbeat: ticks both the live countdown (idle) and the elapsed-minutes
   // counter (running). Cheap; one timer for the whole page.
   const [, setTick] = useState(0);
@@ -348,7 +347,6 @@ export default function WeeklyV2() {
         <p className="text-[10px] uppercase tracking-widest text-muted/60 font-mono font-bold mb-2 px-1">Partners</p>
         {WEEKLY_PARTNERS.map(p => {
           const active = p.id === c.activeId;
-          const enabled = !!c.partners[p.id]?.isEnabled;
           return (
             <button
               key={p.id}
@@ -361,10 +359,6 @@ export default function WeeklyV2() {
             >
               <span className="text-lg leading-none">{p.emoji}</span>
               <span className="text-[12.5px] font-semibold">{p.name}</span>
-              <span
-                title={enabled ? 'Weekly auto-run ON' : 'Weekly auto-run OFF'}
-                className={`ml-auto w-2 h-2 rounded-full shrink-0 ${enabled ? 'bg-emerald-400' : 'bg-rose-400/80'}`}
-              />
             </button>
           );
         })}
@@ -377,7 +371,6 @@ export default function WeeklyV2() {
             <span className="mr-2">{a.emoji}</span>{a.name}'s weekly search
           </h1>
           <div className="flex items-center gap-3">
-            <EnableToggle enabled={!!a.isEnabled} onChange={(next) => c.setEnabled(next)} />
             <LastRunLine partner={a} />
             <CorpusPill size={a.lastCorpusSize} />
           </div>
@@ -407,28 +400,11 @@ export default function WeeklyV2() {
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <RunStatusLine runState={c.runState} />
             <div className="flex items-center gap-2 ml-auto">
-              <button
-                type="button"
-                onClick={() => setShowHistory(h => !h)}
-                className={`text-[11.5px] font-semibold px-3 py-1.5 rounded-lg border transition-colors ${
-                  showHistory
-                    ? 'border-accent/40 text-accent bg-accent/10'
-                    : 'border-border/30 text-bright/75 hover:border-accent/40 hover:text-accent'
-                }`}
-              >
-                History
-              </button>
               <SaveButton onClick={c.save} state={c.saveState} isDirty={c.isDirty} />
               <RunButton onClick={c.run} runState={c.runState} />
             </div>
           </div>
         </div>
-
-        {showHistory && (
-          <div className="border border-border/25 rounded-xl bg-card/30 p-4">
-            <HistoryPanel partnerId={c.activeId} runStatus={c.runState.status} />
-          </div>
-        )}
       </main>
     </div>
   );

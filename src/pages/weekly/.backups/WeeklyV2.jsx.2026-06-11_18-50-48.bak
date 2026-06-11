@@ -407,28 +407,11 @@ export default function WeeklyV2() {
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <RunStatusLine runState={c.runState} />
             <div className="flex items-center gap-2 ml-auto">
-              <button
-                type="button"
-                onClick={() => setShowHistory(h => !h)}
-                className={`text-[11.5px] font-semibold px-3 py-1.5 rounded-lg border transition-colors ${
-                  showHistory
-                    ? 'border-accent/40 text-accent bg-accent/10'
-                    : 'border-border/30 text-bright/75 hover:border-accent/40 hover:text-accent'
-                }`}
-              >
-                History
-              </button>
               <SaveButton onClick={c.save} state={c.saveState} isDirty={c.isDirty} />
               <RunButton onClick={c.run} runState={c.runState} />
             </div>
           </div>
         </div>
-
-        {showHistory && (
-          <div className="border border-border/25 rounded-xl bg-card/30 p-4">
-            <HistoryPanel partnerId={c.activeId} runStatus={c.runState.status} />
-          </div>
-        )}
       </main>
     </div>
   );

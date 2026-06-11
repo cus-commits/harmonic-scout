@@ -124,7 +124,7 @@ export default function useWeeklyController() {
         searchPrompt: cur.searchPrompt || '',
         context: cur.context || '',
         filters: cur.filters || {},
-        isEnabled: !!cur.isEnabled,
+        isEnabled: cur.isEnabled !== false,
       });
       setSaveState('saved');
       setDirtyMap(prev => ({ ...prev, [activeId]: false }));
@@ -203,24 +203,10 @@ export default function useWeeklyController() {
     setDirtyMap(prev => ({ ...prev, [activeId]: true }));
   }, [activeId]);
 
-  // Coarse percent per pipeline phase — used when no batch counter is available.
-  const PHASE_PCT = {
-    starting: 2, 'harmonic-fetch': 10, 'sonnet-prescreen': 30, enrich: 50,
-    'sonnet-screen': 65, 'opus-deep': 85, running: 50, finalize: 98,
-  };
-
   const pollOnce = useCallback(async (scanId) => {
     try {
-      const out = await pollScanStatus(scanId);
-      // Backend returns { scans: [...] } (filtered to ?scanId= when supported).
-      const list = Array.isArray(out?.scans) ? out.scans : (out ? [out] : []);
-      const s = list.find(x => x && x.id === scanId) || null;
-      if (!s) {
-        // Scan no longer tracked (server restart / cleanup). Don't spin forever.
-        setRunState(prev => ({ ...prev, status: 'done', scanId, message: 'Scan finished (no longer tracked)', progress: 100, phase: null, current: null, total: null }));
-        return;
-      }
-      const corpusSize = s.corpusSize ?? null;
+      const s = await pollScanStatus(scanId);
+      const corpusSize = s.corpusSize ?? s.corpus_size ?? null;
       // Mirror corpus number back to the partner so the pill stays live.
       if (corpusSize != null) {
         setPartners(prev => ({
@@ -228,52 +214,41 @@ export default function useWeeklyController() {
           [activeId]: { ...prev[activeId], lastCorpusSize: corpusSize },
         }));
       }
-      if (s.status === 'done') {
-        const count = s.stats?.topResults ?? s.stats?.ddPushed ?? null;
+      if (s.status === 'done' || s.status === 'finished' || s.status === 'complete') {
+        const count = s.resultCount ?? s.count ?? null;
         setPartners(prev => ({
           ...prev,
           [activeId]: {
             ...prev[activeId],
             lastRunAt: new Date().toISOString(),
             lastRunCount: count,
-            lastRunResultCount: count,
             lastCorpusSize: corpusSize ?? prev[activeId]?.lastCorpusSize,
           },
         }));
-        const dd = s.stats?.ddPushed;
-        setRunState(prev => ({ ...prev, status: 'done', scanId, message: dd != null ? `Done — ${dd} pushed to DD` : 'Scan finished', progress: 100, phase: null, current: null, total: null }));
+        setRunState(prev => ({ ...prev, status: 'done', scanId, message: 'Scan finished', progress: 100, phase: null, current: null, total: null }));
         return;
       }
-      if (s.status === 'error' || s.status === 'cancelled' || s.status === 'interrupted') {
-        setRunState(prev => ({ ...prev, status: 'error', scanId, message: s.progress || `Scan ${s.status}`, progress: null }));
+      if (s.status === 'error' || s.status === 'failed') {
+        setRunState(prev => ({ ...prev, status: 'error', scanId, message: s.error || 'Scan failed', progress: null }));
         return;
       }
-      // Status endpoint exposes phase / phaseCurrent / phaseTotal at top level;
-      // `progress` itself is a free-form string.
-      const phase = s.phase ?? null;
-      const current = s.phaseCurrent ?? null;
-      const total = s.phaseTotal ?? null;
-      const progress = PHASE_PCT[phase] ?? null;
-      const msg = (typeof s.progress === 'string' && s.progress) || s.phaseLabel || 'Running…';
+      // Backend may return an object `progress: { phase, current, total }` OR a numeric progress.
+      let progress = null;
+      let phase = null, current = null, total = null;
+      if (s.progress && typeof s.progress === 'object') {
+        phase = s.progress.phase ?? null;
+        current = s.progress.current ?? null;
+        total = s.progress.total ?? null;
+        if (current != null && total) progress = Math.round((current / total) * 100);
+      } else if (typeof s.progress === 'number') {
+        progress = s.progress;
+      }
+      const msg = s.message || phase || s.stage || 'Running…';
       setRunState(prev => ({ ...prev, status: 'running', scanId, message: msg, progress, phase, current, total }));
-      pollTimer.current = setTimeout(() => pollOnce(scanId), 5000);
+      pollTimer.current = setTimeout(() => pollOnce(scanId), 4000);
     } catch (e) {
-      // Don't abandon on a single failed poll — try again in 8s.
-      pollTimer.current = setTimeout(() => pollOnce(scanId), 8000);
-    }
-  }, [activeId]);
-
-  // Instant green/red enable toggle — optimistic flip + immediate PUT (no Save needed).
-  const setEnabled = useCallback(async (next, pid = activeId) => {
-    let prevVal;
-    setPartners(prev => {
-      prevVal = prev[pid]?.isEnabled;
-      return { ...prev, [pid]: { ...prev[pid], isEnabled: !!next } };
-    });
-    try {
-      await updatePartner(pid, { isEnabled: !!next });
-    } catch {
-      setPartners(prev => ({ ...prev, [pid]: { ...prev[pid], isEnabled: prevVal } }));
+      // Don't abandon on a single failed poll — try again in 6s.
+      pollTimer.current = setTimeout(() => pollOnce(scanId), 6000);
     }
   }, [activeId]);
 
@@ -287,7 +262,7 @@ export default function useWeeklyController() {
           searchPrompt: active.searchPrompt || '',
           context: active.context || '',
           filters: active.filters || {},
-          isEnabled: !!active.isEnabled,
+          isEnabled: active.isEnabled !== false,
         }).catch(() => {});
         setDirtyMap(prev => ({ ...prev, [activeId]: false }));
       }
@@ -336,7 +311,6 @@ export default function useWeeklyController() {
     saveState,
     run,
     runState,
-    setEnabled,
     isDirty: !!dirtyMap[activeId],
     scheduleContextSync,
     updateChunkWeight,

@@ -214,7 +214,7 @@ export default function useWeeklyController() {
       const out = await pollScanStatus(scanId);
       // Backend returns { scans: [...] } (filtered to ?scanId= when supported).
       const list = Array.isArray(out?.scans) ? out.scans : (out ? [out] : []);
-      const s = list.find(x => x && x.id === scanId) || null;
+      const s = list.find(x => x && x.id === scanId) || (list.length === 1 ? list[0] : null);
       if (!s) {
         // Scan no longer tracked (server restart / cleanup). Don't spin forever.
         setRunState(prev => ({ ...prev, status: 'done', scanId, message: 'Scan finished (no longer tracked)', progress: 100, phase: null, current: null, total: null }));
@@ -336,7 +336,6 @@ export default function useWeeklyController() {
     saveState,
     run,
     runState,
-    setEnabled,
     isDirty: !!dirtyMap[activeId],
     scheduleContextSync,
     updateChunkWeight,
