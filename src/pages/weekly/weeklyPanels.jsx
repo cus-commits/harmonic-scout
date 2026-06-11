@@ -47,10 +47,10 @@ export function EnableToggle({ enabled, onChange }) {
       className={`inline-flex items-center gap-1.5 text-[11px] font-mono font-bold px-2.5 py-1 rounded-full border transition-colors ${
         enabled
           ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/25'
-          : 'bg-rose-500/15 border-rose-500/50 text-rose-400 hover:bg-rose-500/25'
+          : 'bg-rose/15 border-rose/50 text-rose hover:bg-rose/25'
       }`}
     >
-      <span className={`w-2 h-2 rounded-full ${enabled ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+      <span className={`w-2 h-2 rounded-full ${enabled ? 'bg-emerald-400' : 'bg-rose'}`} />
       {enabled ? 'ENABLED' : 'DISABLED'}
     </button>
   );

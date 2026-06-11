@@ -29,7 +29,7 @@ function EtaLine({ partner }) {
   const eta = formatEtaRange(partner?.etaMinMinutes, partner?.etaMaxMinutes);
   if (!partner?.isEnabled) {
     return (
-      <p className="text-[11px] font-mono text-rose-400/90">
+      <p className="text-[11px] font-mono text-rose/90">
         Auto-run disabled — flip the toggle above to schedule weekly runs.
         {when && <span className="text-muted/50"> (would next fire {when})</span>}
       </p>
@@ -80,7 +80,7 @@ function ProgressStrip({ runState }) {
 
 function statusTone(status) {
   if (status === 'done') return { dot: 'bg-emerald-400', text: 'text-emerald-400', label: 'done' };
-  if (status === 'error') return { dot: 'bg-rose-400', text: 'text-rose-400', label: 'failed' };
+  if (status === 'error') return { dot: 'bg-rose', text: 'text-rose', label: 'failed' };
   return { dot: 'bg-muted/60', text: 'text-muted/70', label: status || 'unknown' };
 }
 
@@ -363,7 +363,7 @@ export default function WeeklyV2() {
               <span className="text-[12.5px] font-semibold">{p.name}</span>
               <span
                 title={enabled ? 'Weekly auto-run ON' : 'Weekly auto-run OFF'}
-                className={`ml-auto w-2 h-2 rounded-full shrink-0 ${enabled ? 'bg-emerald-400' : 'bg-rose-400/80'}`}
+                className={`ml-auto w-2 h-2 rounded-full shrink-0 ${enabled ? 'bg-emerald-400' : 'bg-rose/80'}`}
               />
             </button>
           );
