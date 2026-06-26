@@ -505,8 +505,25 @@ export function ScanProvider({ children }) {
   // ---- Super Search state ----
   const [superSearchStatus, setSuperSearchStatus] = useState(null); // { status, progress, stage, startedAt, params }
   const [superSearchResults, setSuperSearchResults] = useState(null);
+  // Per-user localStorage key. Without this all 6 partners share one history
+  // bucket on a given browser; with it Jake's runs stay Jake's and recovery
+  // backfill (from the backend state file) doesn't pollute other partners.
+  const _superHistKey = () => {
+    try {
+      const u = (localStorage.getItem('crm_user') || '').trim().toLowerCase();
+      return u ? `supersearch_history_${u}` : 'supersearch_history';
+    } catch { return 'supersearch_history'; }
+  };
   const [superSearchHistory, setSuperSearchHistory] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('supersearch_history') || '[]'); } catch { return []; }
+    try {
+      const key = _superHistKey();
+      const fromUser = localStorage.getItem(key);
+      if (fromUser) return JSON.parse(fromUser);
+      // One-time legacy migration: if the old global key has entries and the
+      // per-user key doesn't, adopt them as the current user's history.
+      const legacy = localStorage.getItem('supersearch_history');
+      return legacy ? JSON.parse(legacy) : [];
+    } catch { return []; }
   });
   const superAbortRef = useRef(null);
   // Synchronous run-guard: state updates are async so two rapid clicks can both pass the
@@ -517,14 +534,50 @@ export function ScanProvider({ children }) {
 
   const saveSuperHistory = (entry) => {
     setSuperSearchHistory(prev => {
-      const next = [entry, ...prev].slice(0, 20);
+      // Dedupe by scanId so recovery-backfill doesn't double-add a scan that
+      // was already saved when it originally finished.
+      const filtered = entry.scanId ? prev.filter(e => e.scanId !== entry.scanId) : prev;
+      const next = [entry, ...filtered].slice(0, 20);
       // Guard against QuotaExceededError when localStorage is full — without try/catch
       // the throw aborts the surrounding setState/result-write and the user sees the
       // scan finish but no history. Falls back to in-memory state on quota failure.
-      try { localStorage.setItem('supersearch_history', JSON.stringify(next)); }
+      try { localStorage.setItem(_superHistKey(), JSON.stringify(next)); }
       catch (e) { console.warn('[SuperSearch] history persist failed (likely quota):', e.message); }
       return next;
     });
+  };
+
+  // Build a uniform history entry from a results blob. Used by the happy-path
+  // completion handler, the in-flight polling reconnect, and the mount-time
+  // backend recovery — keeps them all writing the same shape.
+  // For HIGH-less scans (Jake's Farcaster sweeps were all LOW) we still show
+  // the top 10 by Opus score, so history actually conveys what the scan found.
+  const buildSuperHistoryEntry = (scanId, results, tier, finishedAt, params) => {
+    const sigs = (results && results.signals) || [];
+    const highs = sigs.filter(s => s.signal === 'HIGH');
+    const topPicks = highs.length > 0
+      ? highs.slice(0, 10)
+      : [...sigs].sort((a, b) => (b._opusScore || 0) - (a._opusScore || 0)).slice(0, 10);
+    return {
+      scanId,
+      id: finishedAt || Date.now(),
+      date: new Date(finishedAt || Date.now()).toISOString(),
+      params: params || undefined,
+      tier: tier || results?.tier || null,
+      signals: highs.length,
+      totalSignals: results?.totalSignals || sigs.length,
+      ddPushed: results?.ddPushed || 0,
+      analysis: results?.analysis || null,
+      elapsed: results?.elapsed || 0,
+      cost: results?.estimatedCost || '0.00',
+      topResults: topPicks.map(s => ({
+        name: s.companyName || s.title || '?',
+        source: s.source,
+        signal: s.signal,
+        opusScore: s._opusScore || null,
+        engagement: s.engagement,
+      })),
+    };
   };
 
   // Recover super search status on mount/refresh
@@ -545,9 +598,16 @@ export function ScanProvider({ children }) {
         const now = Date.now();
         for (const [scanId, s] of Object.entries(statuses)) {
           // Extended windows: Extreme tier can run 25+ min; results worth keeping for 60 min
-          if (s.status === 'done' && s.results && s.finishedAt > now - 60 * 60 * 1000) {
-            // Recent completed scan — show results
-            if (!superSearchResults) {
+          if (s.status === 'done' && s.results) {
+            // ALWAYS backfill history for any done scan the backend remembers,
+            // regardless of age — this is how Jake's 2026-06-24 scans (whose
+            // SSE streams dropped at the Railway edge timeout, so saveSuperHistory
+            // never ran in his browser) finally show up in his History panel.
+            // Dedupe inside saveSuperHistory protects against double-add.
+            saveSuperHistory(buildSuperHistoryEntry(scanId, s.results, s.tier, s.finishedAt));
+            // Only surface as CURRENT results if recent AND we don't already
+            // have something on screen.
+            if (s.finishedAt > now - 60 * 60 * 1000 && !superSearchResults) {
               setSuperSearchResults(s.results);
               setSuperSearchStatus({ status: 'done', finishedAt: s.finishedAt });
               console.log('[SuperRecovery] Recovered completed super search results');
@@ -578,17 +638,7 @@ export function ScanProvider({ children }) {
                   clearInterval(pollInterval);
                   setSuperSearchResults(current.results);
                   setSuperSearchStatus({ status: 'done', finishedAt: current.finishedAt || Date.now() });
-                  saveSuperHistory({
-                    id: Date.now(),
-                    date: new Date().toISOString(),
-                    signals: (current.results.signals || []).filter(sig => sig.signal === 'HIGH').length,
-                    totalSignals: current.results.totalSignals || 0,
-                    ddPushed: current.results.ddPushed || 0,
-                    analysis: current.results.analysis || null,
-                    elapsed: current.results.elapsed || 0,
-                    cost: current.results.estimatedCost || '0.00',
-                    topResults: (current.results.signals || []).filter(sig => sig.signal === 'HIGH').slice(0, 10).map(sig => ({ name: sig.companyName || sig.title, source: sig.source, signal: sig.signal })),
-                  });
+                  saveSuperHistory(buildSuperHistoryEntry(scanId, current.results, current.tier, current.finishedAt || Date.now()));
                 } else if (current.status === 'scanning' && current.progress) {
                   setSuperSearchStatus(prev => ({ ...prev, progress: current.progress, stage: current.stage }));
                 } else if (current.status !== 'scanning') {
@@ -682,24 +732,9 @@ export function ScanProvider({ children }) {
               // Final results
               setSuperSearchResults(data);
               setSuperSearchStatus({ status: 'done', finishedAt: Date.now(), startedAt: startTime });
-              // Save to history
-              saveSuperHistory({
-                id: Date.now(),
-                date: new Date().toISOString(),
-                params,
-                signals: (data.signals || []).filter(s => s.signal === 'HIGH').length,
-                totalSignals: data.totalSignals || 0,
-                ddPushed: data.ddPushed || 0,
-                analysis: data.analysis || null,
-                elapsed: data.elapsed || Math.round((Date.now() - startTime) / 1000),
-                cost: data.estimatedCost || '0.00',
-                topResults: (data.signals || []).filter(s => s.signal === 'HIGH').slice(0, 10).map(s => ({
-                  name: s.companyName || s.title,
-                  source: s.source,
-                  signal: s.signal,
-                  engagement: s.engagement,
-                })),
-              });
+              // Save to history (shared builder with the recovery path so all
+              // history entries have the same shape and dedupe by scanId).
+              saveSuperHistory(buildSuperHistoryEntry(scanId, data, data.tier || params?.superTier, Date.now(), params));
             }
           } catch (e) {}
         }
